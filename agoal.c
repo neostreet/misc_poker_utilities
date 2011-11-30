@@ -3,7 +3,7 @@
 #define MAX_LINE_LEN 1024
 static char line[MAX_LINE_LEN];
 
-static char usage[] = "usage: agal filename\n";
+static char usage[] = "usage: agoal filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
@@ -18,7 +18,7 @@ int main(int argc,char **argv)
   int total_losing_delta;
   double avg_gain;
   double avg_loss;
-  double agal;
+  double agoal;
   int line_len;
   int line_no;
 
@@ -75,9 +75,9 @@ int main(int argc,char **argv)
   avg_gain = (double)total_winning_delta / (double)num_winning_hands;
   avg_loss = (double)total_losing_delta / (double)num_losing_hands;
 
-  agal = avg_gain / avg_loss;
+  agoal = avg_gain / avg_loss;
 
-  printf("%lf\n",agal);
+  printf("%lf\n",agoal);
 
   fclose(fptr);
 
