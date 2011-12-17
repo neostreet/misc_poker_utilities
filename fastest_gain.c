@@ -162,11 +162,8 @@ int main(int argc,char **argv)
 
   for (n = 0; n < num_sessions; n++) {
     if (session_info[n].num_gain_sessions != -1) {
-      if (num_gains != n) {
-        session_info[num_gains].starting_amount = session_info[n].starting_amount;
-        session_info[num_gains].ending_amount = session_info[n].ending_amount;
-        session_info[num_gains].num_gain_sessions = session_info[n].num_gain_sessions;
-      }
+      if (num_gains != n)
+        session_info[num_gains] = session_info[n];
 
       num_gains++;
     }
