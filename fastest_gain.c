@@ -6,6 +6,9 @@
 #include <time.h>
 #include <ctype.h>
 
+#define FALSE 0
+#define TRUE  1
+
 #define YEAR_IX  0
 #define MONTH_IX 1
 #define DAY_IX   2
@@ -15,7 +18,7 @@ static char line[MAX_LINE_LEN];
 
 #define TAB 0x9
 
-static char usage[] = "usage: fastest_gain amount filename\n";
+static char usage[] = "usage: fastest_gain (-verbose) amount filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char malloc_failed1[] = "malloc of %d session info structures failed\n";
@@ -59,6 +62,8 @@ int main(int argc,char **argv)
 {
   int m;
   int n;
+  int curr_arg;
+  int bVerbose;
   int gain_threshold;
   FILE *fptr;
   int line_len;
@@ -69,16 +74,30 @@ int main(int argc,char **argv)
   int retval;
   char *cpt;
 
-  if (argc != 3) {
+  if ((argc < 3) || (argc > 4)) {
     printf(usage);
     return 1;
   }
 
-  sscanf(argv[1],"%d",&gain_threshold);
+  bVerbose = FALSE;
 
-  if ((fptr = fopen(argv[2],"r")) == NULL) {
-    printf(couldnt_open,argv[2]);
+  for (curr_arg = 1; curr_arg < argc; curr_arg++) {
+    if (!strcmp(argv[curr_arg],"-verbose"))
+      bVerbose = TRUE;
+    else
+      break;
+  }
+
+  if (argc - curr_arg != 2) {
+    printf(usage);
     return 2;
+  }
+
+  sscanf(argv[curr_arg],"%d",&gain_threshold);
+
+  if ((fptr = fopen(argv[curr_arg+1],"r")) == NULL) {
+    printf(couldnt_open,argv[curr_arg+1]);
+    return 3;
   }
 
   num_sessions = 0;
@@ -98,7 +117,7 @@ int main(int argc,char **argv)
     num_sessions * sizeof (struct session_info_struct))) == NULL) {
     printf(malloc_failed1,num_sessions);
     fclose(fptr);
-    return 3;
+    return 4;
   }
 
   ix = 0;
@@ -152,7 +171,7 @@ int main(int argc,char **argv)
     num_gains * sizeof (int))) == NULL) {
     printf(malloc_failed2,num_gains);
     fclose(fptr);
-    return 4;
+    return 5;
   }
 
   for (n = 0; n < num_gains; n++)
@@ -160,27 +179,35 @@ int main(int argc,char **argv)
 
   qsort(sort_ixs,num_gains,sizeof (int),elem_compare);
 
-  printf(fmt1,
-    session_info[sort_ixs[0]].starting_amount,
-    session_info[sort_ixs[0]].starting_ix);
+  for (n = 0; n < num_gains; n++) {
+    printf(fmt1,
+      session_info[sort_ixs[n]].starting_amount,
+      session_info[sort_ixs[n]].starting_ix);
 
-  cpt = ctime(&session_info[sort_ixs[0]].gain_start_date);
-  cpt[strlen(cpt) - 1] = 0;
-  printf("%s\n",cpt);
+    cpt = ctime(&session_info[sort_ixs[n]].gain_start_date);
+    cpt[strlen(cpt) - 1] = 0;
+    printf("%s\n",cpt);
 
-  printf(fmt1,
-    session_info[sort_ixs[0]].starting_amount +
-      session_info[sort_ixs[0]].gain_amount,
-    session_info[sort_ixs[0]].starting_ix +
-      session_info[sort_ixs[0]].num_gain_sessions - 1);
+    printf(fmt1,
+      session_info[sort_ixs[n]].starting_amount +
+        session_info[sort_ixs[n]].gain_amount,
+      session_info[sort_ixs[n]].starting_ix +
+        session_info[sort_ixs[n]].num_gain_sessions - 1);
 
-  cpt = ctime(&session_info[sort_ixs[0]].gain_end_date);
-  cpt[strlen(cpt) - 1] = 0;
-  printf("%s\n",cpt);
+    cpt = ctime(&session_info[sort_ixs[n]].gain_end_date);
+    cpt[strlen(cpt) - 1] = 0;
+    printf("%s\n",cpt);
 
-  printf(fmt2,
-    session_info[sort_ixs[0]].gain_amount,
-    session_info[sort_ixs[0]].num_gain_sessions);
+    printf(fmt2,
+      session_info[sort_ixs[n]].gain_amount,
+      session_info[sort_ixs[n]].num_gain_sessions);
+
+    if (!bVerbose)
+      break;
+
+    if (n < num_gains - 1)
+      putchar(0x0a);
+  }
 
   free(session_info);
   free(sort_ixs);
@@ -327,6 +354,13 @@ int elem_compare(const void *elem1,const void *elem2)
   ix1 = *(int *)elem1;
   ix2 = *(int *)elem2;
 
-  return session_info[ix1].num_gain_sessions -
-    session_info[ix2].num_gain_sessions;
+  if (session_info[ix1].num_gain_sessions !=
+      session_info[ix2].num_gain_sessions) {
+    return session_info[ix1].num_gain_sessions -
+      session_info[ix2].num_gain_sessions;
+  }
+  else  {
+    return session_info[ix1].gain_start_date -
+      session_info[ix2].gain_start_date;
+  }
 }
