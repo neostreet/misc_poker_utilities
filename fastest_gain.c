@@ -1,0 +1,332 @@
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <time.h>
+#include <ctype.h>
+
+#define YEAR_IX  0
+#define MONTH_IX 1
+#define DAY_IX   2
+
+#define MAX_LINE_LEN 1024
+static char line[MAX_LINE_LEN];
+
+#define TAB 0x9
+
+static char usage[] = "usage: fastest_gain amount filename\n";
+static char couldnt_open[] = "couldn't open %s\n";
+
+static char malloc_failed1[] = "malloc of %d session info structures failed\n";
+static char malloc_failed2[] = "malloc of %d ints failed\n";
+
+static char fmt1[] = "%10d %4d ";
+static char fmt2[] = "%10d %4d\n";
+
+struct digit_range {
+  int lower;
+  int upper;
+};
+
+static struct digit_range date_checks[3] = {
+  80, 2095,  /* year */
+  1, 12,     /* month */
+  1, 31     /* day */
+};
+
+struct session_info_struct {
+  int starting_amount;
+  int starting_ix;
+  int ending_amount;
+  int gain_amount;
+  int num_gain_sessions;
+  time_t gain_start_date;
+  time_t gain_end_date;
+};
+
+static struct session_info_struct *session_info;
+
+static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
+static int get_session_info(
+  char *line,
+  int line_len,
+  struct session_info_struct *session_info);
+static time_t cvt_date(char *date_str);
+int elem_compare(const void *elem1,const void *elem2);
+
+int main(int argc,char **argv)
+{
+  int m;
+  int n;
+  int gain_threshold;
+  FILE *fptr;
+  int line_len;
+  int num_sessions;
+  int num_gains;
+  int *sort_ixs;
+  int ix;
+  int retval;
+  char *cpt;
+
+  if (argc != 3) {
+    printf(usage);
+    return 1;
+  }
+
+  sscanf(argv[1],"%d",&gain_threshold);
+
+  if ((fptr = fopen(argv[2],"r")) == NULL) {
+    printf(couldnt_open,argv[2]);
+    return 2;
+  }
+
+  num_sessions = 0;
+
+  for ( ; ; ) {
+    GetLine(fptr,line,&line_len,MAX_LINE_LEN);
+
+    if (feof(fptr))
+      break;
+
+    num_sessions++;
+  }
+
+  fseek(fptr,0L,SEEK_SET);
+
+  if ((session_info = (struct session_info_struct *)malloc(
+    num_sessions * sizeof (struct session_info_struct))) == NULL) {
+    printf(malloc_failed1,num_sessions);
+    fclose(fptr);
+    return 3;
+  }
+
+  ix = 0;
+
+  for ( ; ; ) {
+    GetLine(fptr,line,&line_len,MAX_LINE_LEN);
+
+    if (feof(fptr))
+      break;
+
+    retval = get_session_info(line,line_len,&session_info[ix]);
+
+    session_info[ix].num_gain_sessions = -1;
+    session_info[ix].starting_ix = ix;
+
+    ix++;
+  }
+
+  fclose(fptr);
+
+  for (m = 0; m < num_sessions; m++) {
+    for (n = m; n < num_sessions; n++) {
+      if (session_info[n].ending_amount - session_info[m].starting_amount
+        >= gain_threshold) {
+
+        session_info[m].num_gain_sessions = n - m + 1;
+        session_info[m].gain_amount =
+          session_info[n].ending_amount - session_info[m].starting_amount;
+        session_info[m].gain_end_date = session_info[n].gain_start_date;
+
+        break;
+      }
+    }
+  }
+
+  num_gains = 0;
+
+  for (n = 0; n < num_sessions; n++) {
+    if (session_info[n].num_gain_sessions != -1) {
+      if (num_gains != n) {
+        session_info[num_gains].starting_amount = session_info[n].starting_amount;
+        session_info[num_gains].ending_amount = session_info[n].ending_amount;
+        session_info[num_gains].num_gain_sessions = session_info[n].num_gain_sessions;
+      }
+
+      num_gains++;
+    }
+  }
+
+  if ((sort_ixs = (int *)malloc(
+    num_gains * sizeof (int))) == NULL) {
+    printf(malloc_failed2,num_gains);
+    fclose(fptr);
+    return 4;
+  }
+
+  for (n = 0; n < num_gains; n++)
+    sort_ixs[n] = n;
+
+  qsort(sort_ixs,num_gains,sizeof (int),elem_compare);
+
+  printf(fmt1,
+    session_info[sort_ixs[0]].starting_amount,
+    session_info[sort_ixs[0]].starting_ix);
+
+  cpt = ctime(&session_info[sort_ixs[0]].gain_start_date);
+  cpt[strlen(cpt) - 1] = 0;
+  printf("%s\n",cpt);
+
+  printf(fmt1,
+    session_info[sort_ixs[0]].starting_amount +
+      session_info[sort_ixs[0]].gain_amount,
+    session_info[sort_ixs[0]].starting_ix +
+      session_info[sort_ixs[0]].num_gain_sessions - 1);
+
+  cpt = ctime(&session_info[sort_ixs[0]].gain_end_date);
+  cpt[strlen(cpt) - 1] = 0;
+  printf("%s\n",cpt);
+
+  printf(fmt2,
+    session_info[sort_ixs[0]].gain_amount,
+    session_info[sort_ixs[0]].num_gain_sessions);
+
+  free(session_info);
+  free(sort_ixs);
+
+  return 0;
+}
+
+static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen)
+{
+  int chara;
+  int local_line_len;
+
+  local_line_len = 0;
+
+  for ( ; ; ) {
+    chara = fgetc(fptr);
+
+    if (feof(fptr))
+      break;
+
+    if (chara == '\n')
+      break;
+
+    if (local_line_len < maxllen - 1)
+      line[local_line_len++] = (char)chara;
+  }
+
+  line[local_line_len] = 0;
+  *line_len = local_line_len;
+}
+
+static int get_session_info(
+  char *line,
+  int line_len,
+  struct session_info_struct *session_info)
+{
+  int m;
+  int n;
+  int work;
+
+  for (n = 0; n < line_len; n++) {
+    if (line[n] == TAB)
+      break;
+  }
+
+  if (n == line_len)
+    return 1;
+
+  line[n++] = 0;
+
+  session_info->gain_start_date = cvt_date(line);
+
+  for (m = n; n < line_len; n++) {
+    if (line[n] == TAB)
+      break;
+  }
+
+  if (n == line_len)
+    return 2;
+
+  line[n++] = 0;
+
+  sscanf(&line[m],"%d",&work);
+
+  session_info->starting_amount = work;
+
+  sscanf(&line[n],"%d",&work);
+
+  session_info->ending_amount = work;
+
+  return 0;
+}
+
+static time_t cvt_date(char *date_str)
+{
+  struct tm tim;
+  char hold[11];
+  int date_len;
+  int bufix;
+  int holdix;
+  int digits[3];
+  int n;
+  time_t ret_tm;
+
+  date_len = strlen(date_str);
+
+  if (!date_len || (date_len > 10))
+    return -1L;
+
+  bufix = 0;
+
+  for (n = 0; n < 3; n++) {
+    holdix = 0;
+
+    for ( ; bufix < date_len; ) {
+      if (date_str[bufix] == '-') {
+        bufix++;
+        break;
+      }
+
+      if ((date_str[bufix] < '0') || (date_str[bufix] > '9'))
+        return -1L;
+
+      hold[holdix++] = date_str[bufix++];
+    }
+
+    if (!holdix || ((n != 2) && (bufix == date_len)))
+      return -1L;
+
+    hold[holdix] = 0;
+    digits[n] = atoi(hold);
+
+    if ((digits[n] > date_checks[n].upper) ||
+      (digits[n] < date_checks[n].lower))
+      return -1L;
+  }
+
+  if (digits[YEAR_IX] >= 100)
+    if (digits[YEAR_IX] < 1970)
+      return -1L;
+    else
+      digits[YEAR_IX] -= 1900;
+
+  tim.tm_mon = digits[MONTH_IX] - 1;
+  tim.tm_mday = digits[DAY_IX];
+  tim.tm_year = digits[YEAR_IX];
+
+  tim.tm_hour = 0;
+  tim.tm_min = 0;
+  tim.tm_sec = 0;
+
+  tim.tm_isdst = 0;
+
+  ret_tm = mktime(&tim);
+
+  return ret_tm;
+}
+
+int elem_compare(const void *elem1,const void *elem2)
+{
+  int ix1;
+  int ix2;
+
+  ix1 = *(int *)elem1;
+  ix2 = *(int *)elem2;
+
+  return session_info[ix1].num_gain_sessions -
+    session_info[ix2].num_gain_sessions;
+}
