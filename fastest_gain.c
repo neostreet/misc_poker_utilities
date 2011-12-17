@@ -18,8 +18,10 @@ static char line[MAX_LINE_LEN];
 
 #define TAB 0x9
 
-static char usage[] = "usage: fastest_gain (-verbose) amount filename\n";
+static char usage[] = "usage: fastest_gain (-verbose) (-not) amount filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
+
+static int bNot;
 
 static char malloc_failed1[] = "malloc of %d session info structures failed\n";
 static char malloc_failed2[] = "malloc of %d ints failed\n";
@@ -74,16 +76,19 @@ int main(int argc,char **argv)
   int retval;
   char *cpt;
 
-  if ((argc < 3) || (argc > 4)) {
+  if ((argc < 3) || (argc > 5)) {
     printf(usage);
     return 1;
   }
 
   bVerbose = FALSE;
+  bNot = FALSE;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-verbose"))
       bVerbose = TRUE;
+    else if (!strcmp(argv[curr_arg],"-not"))
+      bNot = TRUE;
     else
       break;
   }
@@ -354,13 +359,26 @@ int elem_compare(const void *elem1,const void *elem2)
   ix1 = *(int *)elem1;
   ix2 = *(int *)elem2;
 
-  if (session_info[ix1].num_gain_sessions !=
-      session_info[ix2].num_gain_sessions) {
-    return session_info[ix1].num_gain_sessions -
-      session_info[ix2].num_gain_sessions;
+  if (!bNot) {
+    if (session_info[ix1].num_gain_sessions !=
+        session_info[ix2].num_gain_sessions) {
+      return session_info[ix1].num_gain_sessions -
+        session_info[ix2].num_gain_sessions;
+    }
+    else  {
+      return session_info[ix1].gain_start_date -
+        session_info[ix2].gain_start_date;
+    }
   }
-  else  {
-    return session_info[ix1].gain_start_date -
-      session_info[ix2].gain_start_date;
+  else {
+    if (session_info[ix1].num_gain_sessions !=
+        session_info[ix2].num_gain_sessions) {
+      return session_info[ix2].num_gain_sessions -
+        session_info[ix1].num_gain_sessions;
+    }
+    else  {
+      return session_info[ix2].gain_start_date -
+        session_info[ix1].gain_start_date;
+    }
   }
 }
