@@ -16,18 +16,21 @@
 #define MAX_LINE_LEN 1024
 static char line[MAX_LINE_LEN];
 
+struct session_info_struct {
+  time_t start_date;
+  time_t end_date;
+  int delta;
+  double tgotl;
+};
+
 #define TAB 0x9
 
-static char usage[] = "usage: fastest_gain (-verbose) (-reverse) amount filename\n";
+static char usage[] =
+"usage: session_moving_tgotl (-no_sort) (-ascending) subset_size filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
-
-static int bReverse;
 
 static char malloc_failed1[] = "malloc of %d session info structures failed\n";
 static char malloc_failed2[] = "malloc of %d ints failed\n";
-
-static char fmt1[] = "%10d %4d ";
-static char fmt2[] = "%10d %4d\n";
 
 struct digit_range {
   int lower;
@@ -40,17 +43,8 @@ static struct digit_range date_checks[3] = {
   1, 31     /* day */
 };
 
-struct session_info_struct {
-  int starting_amount;
-  int starting_ix;
-  int ending_amount;
-  int gain_amount;
-  int num_gain_sessions;
-  time_t gain_start_date;
-  time_t gain_end_date;
-};
-
 static struct session_info_struct *session_info;
+static int bAscending;
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
 static int get_session_info(
@@ -64,15 +58,20 @@ int main(int argc,char **argv)
 {
   int m;
   int n;
+  int bNoSort;
   int curr_arg;
-  int bVerbose;
-  int gain_threshold;
+  int session_ix;
+  int subset_size;
   FILE *fptr;
   int line_len;
-  int num_sessions;
-  int num_gains;
+  int set_size;
+  int chara;
   int *sort_ixs;
-  int ix;
+  int num_tgotls;
+  int total_winning_delta;
+  int total_losing_delta;
+  int work;
+  double tgotl;
   int retval;
   char *cpt;
 
@@ -81,14 +80,14 @@ int main(int argc,char **argv)
     return 1;
   }
 
-  bVerbose = FALSE;
-  bReverse = FALSE;
+  bNoSort = FALSE;
+  bAscending = FALSE;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
-    if (!strcmp(argv[curr_arg],"-verbose"))
-      bVerbose = TRUE;
-    else if (!strcmp(argv[curr_arg],"-reverse"))
-      bReverse = TRUE;
+    if (!strcmp(argv[curr_arg],"-no_sort"))
+      bNoSort = TRUE;
+    else if (!strcmp(argv[curr_arg],"-ascending"))
+      bAscending = TRUE;
     else
       break;
   }
@@ -98,14 +97,14 @@ int main(int argc,char **argv)
     return 2;
   }
 
-  sscanf(argv[curr_arg],"%d",&gain_threshold);
+  sscanf(argv[curr_arg],"%d",&subset_size);
 
   if ((fptr = fopen(argv[curr_arg+1],"r")) == NULL) {
     printf(couldnt_open,argv[curr_arg+1]);
     return 3;
   }
 
-  num_sessions = 0;
+  set_size = 0;
 
   for ( ; ; ) {
     GetLine(fptr,line,&line_len,MAX_LINE_LEN);
@@ -113,19 +112,43 @@ int main(int argc,char **argv)
     if (feof(fptr))
       break;
 
-    num_sessions++;
+    if (!line_len)
+      continue;
+
+    chara = line[0];
+
+    if (((chara >= 'a') && (chara <= 'z')) ||
+        ((chara >= 'A') && (chara <= 'Z')))
+      continue;
+
+    set_size++;
   }
 
-  fseek(fptr,0L,SEEK_SET);
-
-  if ((session_info = (struct session_info_struct *)malloc(
-    num_sessions * sizeof (struct session_info_struct))) == NULL) {
-    printf(malloc_failed1,num_sessions);
+  if (subset_size > set_size) {
+    printf("subset_size (%d) > set_size (%d)\n",subset_size,set_size);
     fclose(fptr);
     return 4;
   }
 
-  ix = 0;
+  num_tgotls = set_size - subset_size + 1;
+
+  if ((session_info = (struct session_info_struct *)malloc(
+    set_size * sizeof (struct session_info_struct))) == NULL) {
+    printf(malloc_failed1,set_size);
+    fclose(fptr);
+    return 5;
+  }
+
+  if ((sort_ixs = (int *)malloc(
+    num_tgotls * sizeof (int))) == NULL) {
+    printf(malloc_failed2,set_size);
+    fclose(fptr);
+    return 6;
+  }
+
+  fseek(fptr,0L,SEEK_SET);
+
+  session_ix = 0;
 
   for ( ; ; ) {
     GetLine(fptr,line,&line_len,MAX_LINE_LEN);
@@ -133,84 +156,70 @@ int main(int argc,char **argv)
     if (feof(fptr))
       break;
 
-    retval = get_session_info(line,line_len,&session_info[ix]);
+    if (!line_len)
+      continue;
 
-    session_info[ix].num_gain_sessions = -1;
-    session_info[ix].starting_ix = ix;
+    chara = line[0];
 
-    ix++;
+    if (((chara >= 'a') && (chara <= 'z')) ||
+        ((chara >= 'A') && (chara <= 'Z')))
+      continue;
+
+    retval = get_session_info(line,line_len,&session_info[session_ix]);
+
+    if (retval) {
+      printf("get_session_info() failed on line %d: %d\n",
+        session_ix+1,retval);
+      return 7;
+    }
+
+    session_ix++;
+  }
+
+  for (n = 0; n < num_tgotls; n++) {
+    total_winning_delta = 0;
+    total_losing_delta = 0;
+
+    for (m = 0; m < subset_size; m++) {
+      work = session_info[n+m].delta;
+
+      if (!work)
+        continue;
+
+      if (work > 0)
+        total_winning_delta += work;
+      else {
+        work *= -1;
+        total_losing_delta += work;
+      }
+    }
+
+    if (!total_losing_delta)
+      tgotl = (double)-1;
+    else
+      tgotl = (double)total_winning_delta / total_losing_delta;
+
+    session_info[n].tgotl = tgotl;
+    session_info[n].end_date = session_info[n+subset_size-1].start_date;
+    sort_ixs[n] = n;
+  }
+
+  if (!bNoSort)
+    qsort(sort_ixs,num_tgotls,sizeof (int),elem_compare);
+
+  for (n = 0; n < num_tgotls; n++) {
+    printf("%10lf    ",session_info[sort_ixs[n]].tgotl);
+
+    cpt = ctime(&session_info[sort_ixs[n]].start_date);
+    cpt[strlen(cpt) - 1] = 0;
+    printf("%s    ",cpt);
+
+    cpt = ctime(&session_info[sort_ixs[n]].end_date);
+    cpt[strlen(cpt) - 1] = 0;
+    printf("%s\n",cpt);
   }
 
   fclose(fptr);
-
-  for (m = 0; m < num_sessions; m++) {
-    for (n = m; n < num_sessions; n++) {
-      if (session_info[n].ending_amount - session_info[m].starting_amount
-        >= gain_threshold) {
-
-        session_info[m].num_gain_sessions = n - m + 1;
-        session_info[m].gain_amount =
-          session_info[n].ending_amount - session_info[m].starting_amount;
-        session_info[m].gain_end_date = session_info[n].gain_start_date;
-
-        break;
-      }
-    }
-  }
-
-  num_gains = 0;
-
-  for (n = 0; n < num_sessions; n++) {
-    if (session_info[n].num_gain_sessions != -1) {
-      if (num_gains != n)
-        session_info[num_gains] = session_info[n];
-
-      num_gains++;
-    }
-  }
-
-  if ((sort_ixs = (int *)malloc(
-    num_gains * sizeof (int))) == NULL) {
-    printf(malloc_failed2,num_gains);
-    fclose(fptr);
-    return 5;
-  }
-
-  for (n = 0; n < num_gains; n++)
-    sort_ixs[n] = n;
-
-  qsort(sort_ixs,num_gains,sizeof (int),elem_compare);
-
-  for (n = 0; n < num_gains; n++) {
-    printf(fmt1,
-      session_info[sort_ixs[n]].starting_amount,
-      session_info[sort_ixs[n]].starting_ix);
-
-    cpt = ctime(&session_info[sort_ixs[n]].gain_start_date);
-    cpt[strlen(cpt) - 1] = 0;
-    printf("%s\n",cpt);
-
-    printf(fmt1,
-      session_info[sort_ixs[n]].starting_amount +
-        session_info[sort_ixs[n]].gain_amount,
-      session_info[sort_ixs[n]].starting_ix +
-        session_info[sort_ixs[n]].num_gain_sessions - 1);
-
-    cpt = ctime(&session_info[sort_ixs[n]].gain_end_date);
-    cpt[strlen(cpt) - 1] = 0;
-    printf("%s\n",cpt);
-
-    printf(fmt2,
-      session_info[sort_ixs[n]].gain_amount,
-      session_info[sort_ixs[n]].num_gain_sessions);
-
-    if (!bVerbose)
-      break;
-
-    if (n < num_gains - 1)
-      putchar(0x0a);
-  }
-
   free(session_info);
   free(sort_ixs);
 
@@ -246,7 +255,6 @@ static int get_session_info(
   int line_len,
   struct session_info_struct *session_info)
 {
-  int m;
   int n;
   int work;
 
@@ -260,25 +268,11 @@ static int get_session_info(
 
   line[n++] = 0;
 
-  session_info->gain_start_date = cvt_date(line);
-
-  for (m = n; n < line_len; n++) {
-    if (line[n] == TAB)
-      break;
-  }
-
-  if (n == line_len)
-    return 2;
-
-  line[n++] = 0;
-
-  sscanf(&line[m],"%d",&work);
-
-  session_info->starting_amount = work;
+  session_info->start_date = cvt_date(line);
 
   sscanf(&line[n],"%d",&work);
 
-  session_info->ending_amount = work;
+  session_info->delta = work;
 
   return 0;
 }
@@ -356,26 +350,19 @@ int elem_compare(const void *elem1,const void *elem2)
   ix1 = *(int *)elem1;
   ix2 = *(int *)elem2;
 
-  if (!bReverse) {
-    if (session_info[ix1].num_gain_sessions !=
-        session_info[ix2].num_gain_sessions) {
-      return session_info[ix1].num_gain_sessions -
-        session_info[ix2].num_gain_sessions;
-    }
-    else  {
-      return session_info[ix2].gain_start_date -
-        session_info[ix1].gain_start_date;
-    }
+  if (session_info[ix1].tgotl == session_info[ix2].tgotl)
+    return session_info[ix2].end_date - session_info[ix1].end_date;
+
+  if (bAscending) {
+    if (session_info[ix1].tgotl < session_info[ix2].tgotl)
+      return -1;
+    else
+      return 1;
   }
   else {
-    if (session_info[ix1].num_gain_sessions !=
-        session_info[ix2].num_gain_sessions) {
-      return session_info[ix2].num_gain_sessions -
-        session_info[ix1].num_gain_sessions;
-    }
-    else  {
-      return session_info[ix2].gain_start_date -
-        session_info[ix1].gain_start_date;
-    }
+    if (session_info[ix2].tgotl < session_info[ix1].tgotl)
+      return -1;
+    else
+      return 1;
   }
 }
