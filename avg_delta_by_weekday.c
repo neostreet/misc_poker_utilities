@@ -33,7 +33,7 @@ struct session_info_struct {
 
 #define TAB 0x9
 
-static char usage[] = "usage: delta_by_weekday filename\n";
+static char usage[] = "usage: avg_delta_by_weekday filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 struct digit_range {
@@ -67,6 +67,7 @@ int main(int argc,char **argv)
   struct session_info_struct work_session;
   char *cpt;
   int ix;
+  double work;
 
   if (argc != 2) {
     printf(usage);
@@ -110,8 +111,12 @@ int main(int argc,char **argv)
 
   fclose(fptr);
 
-  for (n = 0; n < NUM_WEEKDAYS; n++)
-    printf("%s: %5d\n",weekdays[n],weekday_stats[n].delta);
+  for (n = 0; n < NUM_WEEKDAYS; n++) {
+    work = (double)weekday_stats[n].delta /
+      (double)weekday_stats[n].num_sessions;
+
+    printf("%s: %lf\n",weekdays[n],work);
+  }
 
   return 0;
 }

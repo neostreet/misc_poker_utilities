@@ -16,8 +16,8 @@ static char *weekdays[] = {
 #define NUM_WEEKDAYS 7
 
 struct stats {
-  int delta;
-  int num_sessions;
+  int winning_sessions;
+  int total_sessions;
 };
 
 static struct stats weekday_stats[NUM_WEEKDAYS];
@@ -33,7 +33,7 @@ struct session_info_struct {
 
 #define TAB 0x9
 
-static char usage[] = "usage: delta_by_weekday filename\n";
+static char usage[] = "usage: winning_pct_by_weekday filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 struct digit_range {
@@ -62,11 +62,12 @@ int main(int argc,char **argv)
   int n;
   FILE *fptr;
   int line_len;
-  int line_no;
+  int num_sessions;
   int retval;
   struct session_info_struct work_session;
   char *cpt;
   int ix;
+  double work;
 
   if (argc != 2) {
     printf(usage);
@@ -78,7 +79,7 @@ int main(int argc,char **argv)
     return 2;
   }
 
-  line_no = 0;
+  num_sessions = 0;
 
   for ( ; ; ) {
     GetLine(fptr,line,&line_len,MAX_LINE_LEN);
@@ -89,7 +90,7 @@ int main(int argc,char **argv)
     retval = get_session_info(line,line_len,&work_session);
 
     if (retval) {
-      printf("get_session_info() failed on line %d: %d\n",line_no+1,retval);
+      printf("get_session_info() failed on line %d: %d\n",num_sessions+1,retval);
       return 3;
     }
 
@@ -98,20 +99,25 @@ int main(int argc,char **argv)
     retval = get_weekday(cpt,&ix);
 
     if (retval) {
-      printf("get_weekday() failed on line %d: %d\n",line_no+1,retval);
+      printf("get_weekday() failed on line %d: %d\n",num_sessions+1,retval);
       return 4;
     }
 
-    weekday_stats[ix].delta += work_session.delta;
-    weekday_stats[ix].num_sessions++;
+    if (work_session.delta > 0)
+      weekday_stats[ix].winning_sessions++;
 
-    line_no++;
+    weekday_stats[ix].total_sessions++;
+
+    num_sessions++;
   }
 
   fclose(fptr);
 
-  for (n = 0; n < NUM_WEEKDAYS; n++)
-    printf("%s: %5d\n",weekdays[n],weekday_stats[n].delta);
+  for (n = 0; n < NUM_WEEKDAYS; n++) {
+    work = (double)weekday_stats[n].winning_sessions /
+     (double)weekday_stats[n].total_sessions * (double)100;
+    printf("%s: %7.4lf\n",weekdays[n],work);
+  }
 
   return 0;
 }
