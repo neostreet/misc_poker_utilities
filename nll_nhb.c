@@ -6,6 +6,9 @@
 #include <time.h>
 #include <ctype.h>
 
+#define FALSE 0
+#define TRUE  1
+
 #define YEAR_IX  0
 #define MONTH_IX 1
 #define DAY_IX   2
@@ -15,7 +18,7 @@ static char line[MAX_LINE_LEN];
 
 #define TAB 0x9
 
-static char usage[] = "usage: nll_nhb filename\n";
+static char usage[] = "usage: nll_nhb (-verbose) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char malloc_failed[] = "malloc of %d session info structures failed\n";
@@ -53,21 +56,38 @@ int main(int argc,char **argv)
 {
   int m;
   int n;
+  int curr_arg;
+  int bVerbose;
   FILE *fptr;
   int line_len;
   int num_sessions;
   int ix;
+  int nll_nhb_count;
   int retval;
   char *cpt;
 
-  if (argc != 2) {
+  if ((argc < 2) || (argc > 3)) {
     printf(usage);
     return 1;
   }
 
-  if ((fptr = fopen(argv[1],"r")) == NULL) {
-    printf(couldnt_open,argv[1]);
+  bVerbose = FALSE;
+
+  for (curr_arg = 1; curr_arg < argc; curr_arg++) {
+    if (!strcmp(argv[curr_arg],"-verbose"))
+      bVerbose = TRUE;
+    else
+      break;
+  }
+
+  if (argc - curr_arg != 1) {
+    printf(usage);
     return 2;
+  }
+
+  if ((fptr = fopen(argv[curr_arg],"r")) == NULL) {
+    printf(couldnt_open,argv[curr_arg]);
+    return 3;
   }
 
   num_sessions = 0;
@@ -87,7 +107,7 @@ int main(int argc,char **argv)
     num_sessions * sizeof (struct session_info_struct))) == NULL) {
     printf(malloc_failed,num_sessions);
     fclose(fptr);
-    return 3;
+    return 4;
   }
 
   ix = 0;
@@ -105,6 +125,8 @@ int main(int argc,char **argv)
 
   fclose(fptr);
 
+  nll_nhb_count = 0;
+
   for (n = 1; n < num_sessions - 1; n++) {
     for (m = n + 1; m < num_sessions; m++) {
       if (session_info[m].ending_amount < session_info[n].ending_amount)
@@ -118,14 +140,23 @@ int main(int argc,char **argv)
       }
 
       if (m == n) {
-        cpt = ctime(&session_info[n].poker_session_date);
-        cpt[strlen(cpt) - 1] = 0;
-        printf("%8d %s\n",session_info[n].ending_amount,cpt);
+        nll_nhb_count++;
+
+        if (bVerbose) {
+          cpt = ctime(&session_info[n].poker_session_date);
+          cpt[strlen(cpt) - 1] = 0;
+          printf("%8d %s\n",session_info[n].ending_amount,cpt);
+        }
       }
     }
   }
 
   free(session_info);
+
+  if (bVerbose)
+    putchar(0x0a);
+
+  printf("%d\n",nll_nhb_count);
 
   return 0;
 }
