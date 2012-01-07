@@ -172,9 +172,36 @@ int main(int argc,char **argv)
       if (num_losses != n)
         session_info[num_losses] = session_info[n];
 
+      if (bDebug) {
+        printf(fmt1,
+          session_info[n].starting_amount,
+          session_info[n].starting_ix);
+
+        cpt = ctime(&session_info[n].loss_start_date);
+        cpt[strlen(cpt) - 1] = 0;
+        printf("%s\n",cpt);
+
+        printf(fmt1,
+          session_info[n].starting_amount -
+            session_info[n].loss_amount,
+          session_info[n].starting_ix +
+            session_info[n].num_loss_sessions - 1);
+
+        cpt = ctime(&session_info[n].loss_end_date);
+        cpt[strlen(cpt) - 1] = 0;
+        printf("%s\n",cpt);
+
+        printf(fmt2,
+          session_info[n].loss_amount,
+          session_info[n].num_loss_sessions);
+      }
+
       num_losses++;
     }
   }
+
+  if (bDebug)
+    printf("**********************************************************\n");
 
   if ((sort_ixs = (int *)malloc(
     num_losses * sizeof (int))) == NULL) {
