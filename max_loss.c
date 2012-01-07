@@ -18,9 +18,8 @@ static char line[MAX_LINE_LEN];
 
 #define TAB 0x9
 
-static char usage[] = "usage: max_loss (-verbose) filename\n";
+static char usage[] = "usage: max_loss (-debug) (-verbose) (-no_sort) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
-
 
 static char malloc_failed1[] = "malloc of %d session info structures failed\n";
 static char malloc_failed2[] = "malloc of %d ints failed\n";
@@ -64,7 +63,9 @@ int main(int argc,char **argv)
   int m;
   int n;
   int curr_arg;
+  int bDebug;
   int bVerbose;
+  int bNoSort;
   FILE *fptr;
   int line_len;
   int num_sessions;
@@ -77,16 +78,22 @@ int main(int argc,char **argv)
   int retval;
   char *cpt;
 
-  if ((argc < 2) || (argc > 3)) {
+  if ((argc < 2) || (argc > 5)) {
     printf(usage);
     return 1;
   }
 
+  bDebug = FALSE;
   bVerbose = FALSE;
+  bNoSort = FALSE;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
-    if (!strcmp(argv[curr_arg],"-verbose"))
+    if (!strcmp(argv[curr_arg],"-debug"))
+      bDebug = TRUE;
+    else if (!strcmp(argv[curr_arg],"-verbose"))
       bVerbose = TRUE;
+    else if (!strcmp(argv[curr_arg],"-no_sort"))
+      bNoSort = TRUE;
     else
       break;
   }
@@ -179,7 +186,8 @@ int main(int argc,char **argv)
   for (n = 0; n < num_losses; n++)
     sort_ixs[n] = n;
 
-  qsort(sort_ixs,num_losses,sizeof (int),elem_compare);
+  if (!bNoSort)
+    qsort(sort_ixs,num_losses,sizeof (int),elem_compare);
 
   for (n = 0; n < num_losses; n++) {
     printf(fmt1,
@@ -213,6 +221,11 @@ int main(int argc,char **argv)
 
   free(session_info);
   free(sort_ixs);
+
+  if (bDebug) {
+    printf("num_sessions = %4d\n",num_sessions);
+    printf("num_losses   = %4d\n",num_losses);
+  }
 
   return 0;
 }
