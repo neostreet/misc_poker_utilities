@@ -26,10 +26,12 @@ struct session_info_struct {
 
 #define TAB 0x9
 
-static char usage[] = "usage: condense (-debug) filename\n";
+static char usage[] =
+"usage: condense (-debug) (-sort) (-ascending) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
-static char malloc_failed[] = "malloc of %d session info structures failed\n";
+static char malloc_failed1[] = "malloc of %d session info structures failed\n";
+static char malloc_failed2[] = "malloc of %d ints failed\n";
 
 struct digit_range {
   int lower;
@@ -43,6 +45,7 @@ static struct digit_range date_checks[3] = {
 };
 
 static struct session_info_struct *session_info;
+static int bAscending;
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
 static int get_session_info(
@@ -50,21 +53,25 @@ static int get_session_info(
   int line_len,
   struct session_info_struct *session_info);
 static time_t cvt_date(char *date_str);
+int elem_compare(const void *elem1,const void *elem2);
 
 int main(int argc,char **argv)
 {
   int m;
   int n;
   int bDebug;
+  int bSort;
   int curr_arg;
   int session_ix;
   FILE *fptr;
   int line_len;
   int num_sessions;
   int chara;
+  int *sort_ixs;
   int retval;
   char *cpt;
   int num_condensed_sessions;
+  int condensed_ix;
 
   if ((argc < 2) || (argc > 3)) {
     printf(usage);
@@ -72,10 +79,16 @@ int main(int argc,char **argv)
   }
 
   bDebug = FALSE;
+  bSort = FALSE;
+  bAscending = FALSE;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-debug"))
       bDebug = TRUE;
+    else if (!strcmp(argv[curr_arg],"-sort"))
+      bSort = TRUE;
+    else if (!strcmp(argv[curr_arg],"-ascending"))
+      bAscending = TRUE;
     else
       break;
   }
@@ -112,7 +125,7 @@ int main(int argc,char **argv)
 
   if ((session_info = (struct session_info_struct *)malloc(
     num_sessions * sizeof (struct session_info_struct))) == NULL) {
-    printf(malloc_failed,num_sessions);
+    printf(malloc_failed1,num_sessions);
     fclose(fptr);
     return 4;
   }
@@ -190,21 +203,44 @@ int main(int argc,char **argv)
     n = m;
   }
 
+  condensed_ix = 0;
+
   for (n = 0; n < num_sessions; n++) {
     if (session_info[n].nobs != -1) {
-      printf("%10d ",session_info[n].sum);
+      if (condensed_ix != n)
+        session_info[condensed_ix] = session_info[n];
 
-      cpt = ctime(&session_info[n].start_date);
-      cpt[strlen(cpt) - 1] = 0;
-      printf("%s ",cpt);
-
-      cpt = ctime(&session_info[n].end_date);
-      cpt[strlen(cpt) - 1] = 0;
-      printf("%s (%3d)\n",cpt,session_info[n].nobs);
+      condensed_ix++;
     }
   }
 
+  if ((sort_ixs = (int *)malloc(
+    num_condensed_sessions * sizeof (int))) == NULL) {
+    printf(malloc_failed2,num_condensed_sessions);
+    fclose(fptr);
+    return 6;
+  }
+
+  for (n = 0; n < num_condensed_sessions; n++)
+    sort_ixs[n] = n;
+
+  if (bSort)
+    qsort(sort_ixs,num_condensed_sessions,sizeof (int),elem_compare);
+
+  for (n = 0; n < num_condensed_sessions; n++) {
+    printf("%10d ",session_info[sort_ixs[n]].sum);
+
+    cpt = ctime(&session_info[sort_ixs[n]].start_date);
+    cpt[strlen(cpt) - 1] = 0;
+    printf("%s ",cpt);
+
+    cpt = ctime(&session_info[sort_ixs[n]].end_date);
+    cpt[strlen(cpt) - 1] = 0;
+    printf("%s (%3d)\n",cpt,session_info[sort_ixs[n]].nobs);
+  }
+
   free(session_info);
+  free(sort_ixs);
 
   return 0;
 }
@@ -323,4 +359,21 @@ static time_t cvt_date(char *date_str)
   ret_tm = mktime(&tim);
 
   return ret_tm;
+}
+
+int elem_compare(const void *elem1,const void *elem2)
+{
+  int ix1;
+  int ix2;
+
+  ix1 = *(int *)elem1;
+  ix2 = *(int *)elem2;
+
+  if (session_info[ix1].sum == session_info[ix2].sum)
+    return session_info[ix2].end_date - session_info[ix1].end_date;
+
+  if (bAscending)
+    return session_info[ix1].sum - session_info[ix2].sum;
+  else
+    return session_info[ix2].sum - session_info[ix1].sum;
 }
