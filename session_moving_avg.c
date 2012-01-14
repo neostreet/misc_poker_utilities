@@ -144,7 +144,7 @@ int main(int argc,char **argv)
 
   if ((sort_ixs = (int *)malloc(
     num_avgs * sizeof (int))) == NULL) {
-    printf(malloc_failed2,set_size);
+    printf(malloc_failed2,num_avgs);
     fclose(fptr);
     return 6;
   }
@@ -196,11 +196,11 @@ int main(int argc,char **argv)
     qsort(sort_ixs,num_avgs,sizeof (int),elem_compare);
 
   for (n = 0; n < num_avgs; n++) {
-    printf("%10lf    ",session_info[sort_ixs[n]].avg);
+    printf("%10lf ",session_info[sort_ixs[n]].avg);
 
     cpt = ctime(&session_info[sort_ixs[n]].start_date);
     cpt[strlen(cpt) - 1] = 0;
-    printf("%s    ",cpt);
+    printf("%s ",cpt);
 
     cpt = ctime(&session_info[sort_ixs[n]].end_date);
     cpt[strlen(cpt) - 1] = 0;

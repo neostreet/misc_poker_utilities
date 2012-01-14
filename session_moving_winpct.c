@@ -140,7 +140,7 @@ int main(int argc,char **argv)
 
   if ((sort_ixs = (int *)malloc(
     num_winpcts * sizeof (int))) == NULL) {
-    printf(malloc_failed2,set_size);
+    printf(malloc_failed2,num_winpcts);
     fclose(fptr);
     return 6;
   }
@@ -194,12 +194,12 @@ int main(int argc,char **argv)
     qsort(sort_ixs,num_winpcts,sizeof (int),elem_compare);
 
   for (n = 0; n < num_winpcts; n++) {
-    printf("%10lf (%2d of %2d)    ",session_info[sort_ixs[n]].winpct,
+    printf("%10lf (%2d of %2d) ",session_info[sort_ixs[n]].winpct,
       session_info[sort_ixs[n]].wins,subset_size);
 
     cpt = ctime(&session_info[sort_ixs[n]].start_date);
     cpt[strlen(cpt) - 1] = 0;
-    printf("%s    ",cpt);
+    printf("%s ",cpt);
 
     cpt = ctime(&session_info[sort_ixs[n]].end_date);
     cpt[strlen(cpt) - 1] = 0;
