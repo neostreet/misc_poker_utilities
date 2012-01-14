@@ -143,7 +143,7 @@ int main(int argc,char **argv)
 
   if ((sort_ixs = (int *)malloc(
     num_sums * sizeof (int))) == NULL) {
-    printf(malloc_failed2,set_size);
+    printf(malloc_failed2,num_sums);
     fclose(fptr);
     return 6;
   }
