@@ -48,6 +48,7 @@ struct session_info_struct {
   time_t churn_start_date;
   time_t churn_end_date;
   double churn_avg;
+  int churn_ending_amount;
 };
 
 #define SORT_BY_CHURN_TOTAL  0
@@ -81,6 +82,7 @@ int main(int argc,char **argv)
   int min_diff;
   int work;
   int min_diff_ix;
+  int num_churns;
   int *sort_ixs;
   int ix;
   int retval;
@@ -142,13 +144,6 @@ int main(int argc,char **argv)
     return 4;
   }
 
-  if ((sort_ixs = (int *)malloc(
-    num_sessions * sizeof (int))) == NULL) {
-    printf(malloc_failed2,num_sessions);
-    fclose(fptr);
-    return 5;
-  }
-
   ix = 0;
 
   for ( ; ; ) {
@@ -182,32 +177,53 @@ int main(int argc,char **argv)
       }
     }
 
-    session_info[m].num_churn_sessions = min_diff_ix - m + 1;
+    if (min_diff_ix > m) {
+      session_info[m].num_churn_sessions = min_diff_ix - m + 1;
 
-    session_info[m].churn_amount = 0;
+      session_info[m].churn_amount = 0;
 
-    for (p = m; p <= min_diff_ix; p++) {
-      work = session_info[p].starting_amount - session_info[p].ending_amount;
+      for (p = m; p <= min_diff_ix; p++) {
+        work = session_info[p].starting_amount - session_info[p].ending_amount;
 
-      if (work < 0)
-        work *= - 1;
+        if (work < 0)
+          work *= - 1;
 
-      session_info[m].churn_amount += work;
+        session_info[m].churn_amount += work;
+      }
+
+      session_info[m].churn_avg = (double)session_info[m].churn_amount /
+        (double)session_info[m].num_churn_sessions;
+
+      session_info[m].churn_end_date = session_info[min_diff_ix].churn_start_date;
+      session_info[m].churn_ending_amount = session_info[min_diff_ix].ending_amount;
     }
-
-    session_info[m].churn_avg = (double)session_info[m].churn_amount /
-      (double)session_info[m].num_churn_sessions;
-
-    session_info[m].churn_end_date = session_info[min_diff_ix].churn_start_date;
   }
 
-  for (n = 0; n < num_sessions; n++)
+  num_churns = 0;
+
+  for (n = 0; n < num_sessions; n++) {
+    if (session_info[n].num_churn_sessions != -1) {
+      if (num_churns != n)
+        session_info[num_churns] = session_info[n];
+
+      num_churns++;
+    }
+  }
+
+  if ((sort_ixs = (int *)malloc(
+    num_churns * sizeof (int))) == NULL) {
+    printf(malloc_failed2,num_churns);
+    fclose(fptr);
+    return 5;
+  }
+
+  for (n = 0; n < num_churns; n++)
     sort_ixs[n] = n;
 
   if (!bNoSort)
-    qsort(sort_ixs,num_sessions,sizeof (int),elem_compare);
+    qsort(sort_ixs,num_churns,sizeof (int),elem_compare);
 
-  for (n = 0; n < num_sessions; n++) {
+  for (n = 0; n < num_churns; n++) {
     printf(fmt1,
       session_info[sort_ixs[n]].starting_amount,
       session_info[sort_ixs[n]].starting_ix);
@@ -217,8 +233,7 @@ int main(int argc,char **argv)
     printf("%s\n",cpt);
 
     printf(fmt1,
-      session_info[session_info[sort_ixs[n]].starting_ix +
-        session_info[sort_ixs[n]].num_churn_sessions - 1].ending_amount,
+      session_info[sort_ixs[n]].churn_ending_amount,
       session_info[sort_ixs[n]].starting_ix +
         session_info[sort_ixs[n]].num_churn_sessions - 1);
 
@@ -234,7 +249,7 @@ int main(int argc,char **argv)
     if (!bVerbose)
       break;
 
-    if (n < num_sessions - 1)
+    if (n < num_churns - 1)
       putchar(0x0a);
   }
 
@@ -243,7 +258,7 @@ int main(int argc,char **argv)
 
   if (bDebug) {
     printf("num_sessions = %4d\n",num_sessions);
-    printf("num_sessions   = %4d\n",num_sessions);
+    printf("num_churns   = %4d\n",num_churns);
   }
 
   return 0;
