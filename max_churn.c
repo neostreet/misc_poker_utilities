@@ -172,11 +172,13 @@ int main(int argc,char **argv)
 
     session_info[m].churn_amount = 0;
 
-    for (p = m; p < min_diff_ix; p++) {
+    for (p = m; p <= min_diff_ix; p++) {
       work = session_info[p].starting_amount - session_info[p].ending_amount;
 
-      if (work > 0)
-        session_info[m].churn_amount -= work;
+      if (work < 0)
+        work *= - 1;
+
+      session_info[m].churn_amount += work;
     }
 
     session_info[m].churn_end_date = session_info[min_diff_ix].churn_start_date;
@@ -370,8 +372,8 @@ int elem_compare(const void *elem1,const void *elem2)
 
   if (session_info[ix1].churn_amount !=
       session_info[ix2].churn_amount) {
-    return session_info[ix1].churn_amount -
-      session_info[ix2].churn_amount;
+    return session_info[ix2].churn_amount -
+      session_info[ix1].churn_amount;
   }
   else  {
     return session_info[ix2].churn_start_date -
