@@ -18,14 +18,15 @@ static char line[MAX_LINE_LEN];
 
 #define TAB 0x9
 
-static char usage[] = "usage: max_churn (-debug) (-verbose) (-no_sort) filename\n";
+static char usage[] =
+"usage: max_churn (-debug) (-verbose) (-no_sort) (-sort_by_length) (-sort_by_avg) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char malloc_failed1[] = "malloc of %d session info structures failed\n";
 static char malloc_failed2[] = "malloc of %d ints failed\n";
 
 static char fmt1[] = "%10d %4d ";
-static char fmt2[] = "%10d %4d\n";
+static char fmt2[] = "%10d %4d %13.2lf\n";
 
 struct digit_range {
   int lower;
@@ -46,7 +47,14 @@ struct session_info_struct {
   int num_churn_sessions;
   time_t churn_start_date;
   time_t churn_end_date;
+  double churn_avg;
 };
+
+#define SORT_BY_CHURN_TOTAL  0
+#define SORT_BY_CHURN_LENGTH 1
+#define SORT_BY_CHURN_AVG    2
+
+static int how_to_sort;
 
 static struct session_info_struct *session_info;
 
@@ -87,6 +95,8 @@ int main(int argc,char **argv)
   bVerbose = FALSE;
   bNoSort = FALSE;
 
+  how_to_sort = SORT_BY_CHURN_TOTAL;
+
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-debug"))
       bDebug = TRUE;
@@ -94,6 +104,10 @@ int main(int argc,char **argv)
       bVerbose = TRUE;
     else if (!strcmp(argv[curr_arg],"-no_sort"))
       bNoSort = TRUE;
+    else if (!strcmp(argv[curr_arg],"-sort_by_length"))
+      how_to_sort = SORT_BY_CHURN_LENGTH;
+    else if (!strcmp(argv[curr_arg],"-sort_by_avg"))
+      how_to_sort = SORT_BY_CHURN_AVG;
     else
       break;
   }
@@ -181,6 +195,9 @@ int main(int argc,char **argv)
       session_info[m].churn_amount += work;
     }
 
+    session_info[m].churn_avg = (double)session_info[m].churn_amount /
+      (double)session_info[m].num_churn_sessions;
+
     session_info[m].churn_end_date = session_info[min_diff_ix].churn_start_date;
   }
 
@@ -211,7 +228,8 @@ int main(int argc,char **argv)
 
     printf(fmt2,
       session_info[sort_ixs[n]].churn_amount,
-      session_info[sort_ixs[n]].num_churn_sessions);
+      session_info[sort_ixs[n]].num_churn_sessions,
+      session_info[sort_ixs[n]].churn_avg);
 
     if (!bVerbose)
       break;
@@ -370,13 +388,46 @@ int elem_compare(const void *elem1,const void *elem2)
   ix1 = *(int *)elem1;
   ix2 = *(int *)elem2;
 
-  if (session_info[ix1].churn_amount !=
-      session_info[ix2].churn_amount) {
-    return session_info[ix2].churn_amount -
-      session_info[ix1].churn_amount;
-  }
-  else  {
-    return session_info[ix2].churn_start_date -
-      session_info[ix1].churn_start_date;
+  switch (how_to_sort) {
+    default:
+    case SORT_BY_CHURN_TOTAL:
+      if (session_info[ix1].churn_amount !=
+          session_info[ix2].churn_amount) {
+        return session_info[ix2].churn_amount -
+          session_info[ix1].churn_amount;
+      }
+      else  {
+        return session_info[ix2].churn_start_date -
+          session_info[ix1].churn_start_date;
+      }
+
+      break;
+    case SORT_BY_CHURN_LENGTH:
+      if (session_info[ix1].num_churn_sessions !=
+          session_info[ix2].num_churn_sessions) {
+        return session_info[ix2].num_churn_sessions -
+          session_info[ix1].num_churn_sessions;
+      }
+      else  {
+        return session_info[ix2].churn_start_date -
+          session_info[ix1].churn_start_date;
+      }
+
+      break;
+    case SORT_BY_CHURN_AVG:
+      if (session_info[ix1].churn_avg !=
+          session_info[ix2].churn_avg) {
+        if (session_info[ix2].churn_avg >
+            session_info[ix1].churn_avg)
+          return 1;
+        else
+          return -1;
+      }
+      else  {
+        return session_info[ix2].churn_start_date -
+          session_info[ix1].churn_start_date;
+      }
+
+      break;
   }
 }
