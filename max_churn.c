@@ -19,7 +19,8 @@ static char line[MAX_LINE_LEN];
 #define TAB 0x9
 
 static char usage[] =
-"usage: max_churn (-debug) (-verbose) (-no_sort) (-sort_by_length) (-sort_by_avg) filename\n";
+"usage: max_churn (-debug) (-verbose) (-no_sort) (-sort_by_length)\n"
+"  (-sort_by_avg) within_value filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char malloc_failed1[] = "malloc of %d session info structures failed\n";
@@ -76,19 +77,19 @@ int main(int argc,char **argv)
   int bDebug;
   int bVerbose;
   int bNoSort;
+  int within_value;
   FILE *fptr;
   int line_len;
   int num_sessions;
-  int min_diff;
   int work;
-  int min_diff_ix;
+  int churn_end_ix;
   int num_churns;
   int *sort_ixs;
   int ix;
   int retval;
   char *cpt;
 
-  if ((argc < 2) || (argc > 5)) {
+  if ((argc < 3) || (argc > 8)) {
     printf(usage);
     return 1;
   }
@@ -114,13 +115,15 @@ int main(int argc,char **argv)
       break;
   }
 
-  if (argc - curr_arg != 1) {
+  if (argc - curr_arg != 2) {
     printf(usage);
     return 2;
   }
 
-  if ((fptr = fopen(argv[curr_arg],"r")) == NULL) {
-    printf(couldnt_open,argv[curr_arg]);
+  sscanf(argv[curr_arg],"%d",&within_value);
+
+  if ((fptr = fopen(argv[curr_arg+1],"r")) == NULL) {
+    printf(couldnt_open,argv[curr_arg+1]);
     return 3;
   }
 
@@ -163,7 +166,7 @@ int main(int argc,char **argv)
   fclose(fptr);
 
   for (m = 0; m < num_sessions; m++) {
-    min_diff = -1;
+    churn_end_ix = -1;
 
     for (n = m; n < num_sessions; n++) {
       work = session_info[m].starting_amount - session_info[n].ending_amount;
@@ -171,18 +174,16 @@ int main(int argc,char **argv)
       if (work < 0)
         work *= - 1;
 
-      if ((min_diff == -1) || (work < min_diff)) {
-        min_diff = work;
-        min_diff_ix = n;
-      }
+      if (work <= within_value)
+        churn_end_ix = n;
     }
 
-    if (min_diff_ix > m) {
-      session_info[m].num_churn_sessions = min_diff_ix - m + 1;
+    if ((churn_end_ix != -1) && (churn_end_ix > m)) {
+      session_info[m].num_churn_sessions = churn_end_ix - m + 1;
 
       session_info[m].churn_amount = 0;
 
-      for (p = m; p <= min_diff_ix; p++) {
+      for (p = m; p <= churn_end_ix; p++) {
         work = session_info[p].starting_amount - session_info[p].ending_amount;
 
         if (work < 0)
@@ -194,8 +195,8 @@ int main(int argc,char **argv)
       session_info[m].churn_avg = (double)session_info[m].churn_amount /
         (double)session_info[m].num_churn_sessions;
 
-      session_info[m].churn_end_date = session_info[min_diff_ix].churn_start_date;
-      session_info[m].churn_ending_amount = session_info[min_diff_ix].ending_amount;
+      session_info[m].churn_end_date = session_info[churn_end_ix].churn_start_date;
+      session_info[m].churn_ending_amount = session_info[churn_end_ix].ending_amount;
     }
   }
 
