@@ -25,7 +25,7 @@ static char malloc_failed1[] = "malloc of %d session info structures failed\n";
 static char malloc_failed2[] = "malloc of %d ints failed\n";
 
 static char fmt1[] = "%10d %4d ";
-static char fmt2[] = "%10d %4d\n";
+static char fmt2[] = "%10d %4d %10.2lf\n";
 
 struct digit_range {
   int lower;
@@ -77,6 +77,7 @@ int main(int argc,char **argv)
   int ix;
   int retval;
   char *cpt;
+  double avg_amount;
 
   if ((argc < 2) || (argc > 5)) {
     printf(usage);
@@ -191,9 +192,13 @@ int main(int argc,char **argv)
         cpt[strlen(cpt) - 1] = 0;
         printf("%s\n",cpt);
 
+        avg_amount = (double)session_info[n].loss_amount /
+          (double)session_info[n].num_loss_sessions;
+
         printf(fmt2,
           session_info[n].loss_amount,
-          session_info[n].num_loss_sessions);
+          session_info[n].num_loss_sessions,
+          avg_amount);
       }
 
       num_losses++;
@@ -235,9 +240,13 @@ int main(int argc,char **argv)
     cpt[strlen(cpt) - 1] = 0;
     printf("%s\n",cpt);
 
+    avg_amount = (double)session_info[sort_ixs[n]].loss_amount /
+      (double)session_info[sort_ixs[n]].num_loss_sessions;
+
     printf(fmt2,
       session_info[sort_ixs[n]].loss_amount,
-      session_info[sort_ixs[n]].num_loss_sessions);
+      session_info[sort_ixs[n]].num_loss_sessions,
+      avg_amount);
 
     if (!bVerbose)
       break;
