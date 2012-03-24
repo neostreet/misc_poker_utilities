@@ -21,6 +21,7 @@ struct session_info_struct {
   time_t end_date;
   int delta;
   int sum;
+  int num_winning_sessions;
 };
 
 #define TAB 0x9
@@ -71,6 +72,7 @@ int main(int argc,char **argv)
   int *sort_ixs;
   int num_sums;
   int sum;
+  int num_winning_sessions;
   int retval;
   char *cpt;
 
@@ -181,11 +183,17 @@ int main(int argc,char **argv)
 
   for (n = 0; n < num_sums; n++) {
     sum = 0;
+    num_winning_sessions = 0;
 
-    for (m = 0; m < subset_size; m++)
+    for (m = 0; m < subset_size; m++) {
       sum += session_info[n+m].delta;
 
+      if (session_info[n+m].delta > 0)
+        num_winning_sessions++;
+    }
+
     session_info[n].sum = sum;
+    session_info[n].num_winning_sessions = num_winning_sessions;
     session_info[n].end_date = session_info[n+subset_size-1].start_date;
     sort_ixs[n] = n;
   }
@@ -202,7 +210,9 @@ int main(int argc,char **argv)
 
     cpt = ctime(&session_info[sort_ixs[n]].end_date);
     cpt[strlen(cpt) - 1] = 0;
-    printf("%s\n",cpt);
+    printf("%s ",cpt);
+
+    printf("(%d)\n",session_info[sort_ixs[n]].num_winning_sessions);
   }
 
   fclose(fptr);

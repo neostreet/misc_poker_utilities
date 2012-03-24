@@ -27,7 +27,7 @@ static char malloc_failed1[] = "malloc of %d session info structures failed\n";
 static char malloc_failed2[] = "malloc of %d ints failed\n";
 
 static char fmt1[] = "%10d %4d ";
-static char fmt2[] = "%10d %4d %10.2lf\n";
+static char fmt2[] = "%10d %4d %10.2lf (%d)\n";
 
 struct digit_range {
   int lower;
@@ -46,6 +46,8 @@ struct session_info_struct {
   int ending_amount;
   int gain_amount;
   int num_gain_sessions;
+  int winning_session;
+  int num_winning_sessions;
   time_t gain_start_date;
   time_t gain_end_date;
 };
@@ -64,12 +66,14 @@ int main(int argc,char **argv)
 {
   int m;
   int n;
+  int p;
   int curr_arg;
   int bVerbose;
   int gain_threshold;
   FILE *fptr;
   int line_len;
   int num_sessions;
+  int num_winning_sessions;
   int num_gains;
   int *sort_ixs;
   int ix;
@@ -149,7 +153,13 @@ int main(int argc,char **argv)
       if (session_info[n].ending_amount - session_info[m].starting_amount
         >= gain_threshold) {
 
+        num_winning_sessions = 0;
+
+        for (p = m; p <= n; p++)
+          num_winning_sessions += session_info[p].winning_session;
+
         session_info[m].num_gain_sessions = n - m + 1;
+        session_info[m].num_winning_sessions = num_winning_sessions;
         session_info[m].gain_amount =
           session_info[n].ending_amount - session_info[m].starting_amount;
         session_info[m].gain_end_date = session_info[n].gain_start_date;
@@ -207,7 +217,8 @@ int main(int argc,char **argv)
     printf(fmt2,
       session_info[sort_ixs[n]].gain_amount,
       session_info[sort_ixs[n]].num_gain_sessions,
-      avg_amount);
+      avg_amount,
+      session_info[sort_ixs[n]].num_winning_sessions);
 
     if (!bVerbose)
       break;
@@ -284,6 +295,11 @@ static int get_session_info(
   sscanf(&line[n],"%d",&work);
 
   session_info->ending_amount = work;
+
+  if (session_info->ending_amount > session_info->starting_amount)
+    session_info->winning_session = 1;
+  else
+    session_info->winning_session = 0;
 
   return 0;
 }
