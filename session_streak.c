@@ -44,9 +44,11 @@ static time_t cvt_date(char *date_str);
 
 int main(int argc,char **argv)
 {
+  int m;
   int n;
   time_t *session_dates;
   int *datediffs;
+  int *streaks;
   int curr_arg;
   int bDebug;
   FILE *fptr;
@@ -112,6 +114,13 @@ int main(int argc,char **argv)
     return 5;
   }
 
+  if ((streaks = (int *)malloc(
+    num_sessions * sizeof (int))) == NULL) {
+    printf(malloc_failed2,num_sessions);
+    fclose(fptr);
+    return 6;
+  }
+
   session_ix = 0;
 
   for ( ; ; ) {
@@ -124,7 +133,7 @@ int main(int argc,char **argv)
 
     if (retval) {
       printf("get_session_date() failed on line %d: %d\n",session_ix+1,retval);
-      return 6;
+      return 7;
     }
 
     session_ix++;
@@ -140,13 +149,34 @@ int main(int argc,char **argv)
       (SECS_PER_DAY);
   }
 
+  for (n = 0; n < num_sessions; n++)
+    streaks[n] = -1;
+
+  for (n = 0; n < num_sessions; n++) {
+    for (m = n; m < num_sessions; m++) {
+      if (m == n)
+        curr_streak = 1;
+      else if (datediffs[m] == 1)
+        curr_streak++;
+      else
+        break;
+    }
+
+    streaks[n] = curr_streak;
+    n += curr_streak - 1;
+  }
+
   if (bDebug) {
     for (n = 0; n < num_sessions; n++) {
-      cpt = ctime(&session_dates[n]);
-      cpt[strlen(cpt)-1] = 0;
+      if (streaks[n] != -1) {
+        cpt = ctime(&session_dates[n]);
+        cpt[strlen(cpt)-1] = 0;
 
-      printf("%s %2d\n",cpt,datediffs[n]);
+        printf("%s %2d\n",cpt,streaks[n]);
+      }
     }
+
+    printf("===========================\n");
   }
 
   max_streak = 0;
