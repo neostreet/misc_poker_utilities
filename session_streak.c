@@ -16,10 +16,18 @@
 #define MAX_LINE_LEN 1024
 static char line[MAX_LINE_LEN];
 
-static char usage[] = "usage: session_streak (-debug) filename\n";
+static char usage[] = "usage: session_streak (-debug) (-sort) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
-static char malloc_failed1[] = "malloc of %d time_t structures failed\n";
+struct session_streak_info {
+  time_t session_date;
+  int datediff;
+  int streak;
+};
+
+static struct session_streak_info *streak_info;
+
+static char malloc_failed1[] = "malloc of %d session_streak_info structures failed\n";
 static char malloc_failed2[] = "malloc of %d ints failed\n";
 
 #define SECS_PER_MIN  60
@@ -41,38 +49,40 @@ static struct digit_range date_checks[3] = {
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
 static int get_session_date(char *line,time_t *session_date);
 static time_t cvt_date(char *date_str);
+int elem_compare(const void *elem1,const void *elem2);
 
 int main(int argc,char **argv)
 {
   int m;
   int n;
-  time_t *session_dates;
-  int *datediffs;
-  int *streaks;
   int curr_arg;
   int bDebug;
+  int bSort;
   FILE *fptr;
   int line_len;
   int num_sessions;
   int session_ix;
+  int *ixs;
   int retval;
-  time_t datediff;
   int curr_ix;
   int curr_streak;
   int max_streak;
   int max_ix;
   char *cpt;
 
-  if ((argc < 2) || (argc > 3)) {
+  if ((argc < 2) || (argc > 4)) {
     printf(usage);
     return 1;
   }
 
   bDebug = FALSE;
+  bSort = FALSE;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-debug"))
       bDebug = TRUE;
+    else if (!strcmp(argv[curr_arg],"-sort"))
+      bSort = TRUE;
     else
       break;
   }
@@ -100,25 +110,18 @@ int main(int argc,char **argv)
 
   fseek(fptr,0L,SEEK_SET);
 
-  if ((session_dates = (time_t *)malloc(
-    num_sessions * sizeof (time_t))) == NULL) {
+  if ((streak_info = (struct session_streak_info *)malloc(
+    num_sessions * sizeof (struct session_streak_info))) == NULL) {
     printf(malloc_failed1,num_sessions);
     fclose(fptr);
     return 4;
   }
 
-  if ((datediffs = (int *)malloc(
+  if ((ixs = (int *)malloc(
     num_sessions * sizeof (int))) == NULL) {
     printf(malloc_failed2,num_sessions);
     fclose(fptr);
     return 5;
-  }
-
-  if ((streaks = (int *)malloc(
-    num_sessions * sizeof (int))) == NULL) {
-    printf(malloc_failed2,num_sessions);
-    fclose(fptr);
-    return 6;
   }
 
   session_ix = 0;
@@ -129,11 +132,11 @@ int main(int argc,char **argv)
     if (feof(fptr))
       break;
 
-    retval = get_session_date(line,&session_dates[session_ix]);
+    retval = get_session_date(line,&streak_info[session_ix].session_date);
 
     if (retval) {
       printf("get_session_date() failed on line %d: %d\n",session_ix+1,retval);
-      return 7;
+      return 6;
     }
 
     session_ix++;
@@ -143,68 +146,77 @@ int main(int argc,char **argv)
 
   for (n = 0; n < num_sessions; n++) {
     if (!n)
-      datediffs[n] = 0;
+      streak_info[n].datediff = 0;
     else
-      datediffs[n] = (session_dates[n] - session_dates[n - 1]) /
+      streak_info[n].datediff = (streak_info[n].session_date - streak_info[n - 1].session_date) /
       (SECS_PER_DAY);
   }
 
   for (n = 0; n < num_sessions; n++)
-    streaks[n] = -1;
+    streak_info[n].streak = -1;
 
   for (n = 0; n < num_sessions; n++) {
     for (m = n; m < num_sessions; m++) {
       if (m == n)
         curr_streak = 1;
-      else if (datediffs[m] == 1)
+      else if (streak_info[m].datediff == 1)
         curr_streak++;
       else
         break;
     }
 
-    streaks[n] = curr_streak;
+    streak_info[n].streak = curr_streak;
     n += curr_streak - 1;
   }
 
   if (bDebug) {
+    for (n = 0; n < num_sessions; n++)
+      ixs[n] = n;
+
+    if (bSort)
+      qsort(ixs,num_sessions,sizeof (int),elem_compare);
+
     for (n = 0; n < num_sessions; n++) {
-      if (streaks[n] != -1) {
-        cpt = ctime(&session_dates[n]);
+      if (streak_info[ixs[n]].streak != -1) {
+        cpt = ctime(&streak_info[ixs[n]].session_date);
         cpt[strlen(cpt)-1] = 0;
 
-        printf("%s %2d\n",cpt,streaks[n]);
+        printf("%s %2d\n",cpt,streak_info[ixs[n]].streak);
       }
     }
 
-    printf("===========================\n");
+    if (!bSort)
+      printf("===========================\n");
   }
 
-  max_streak = 0;
-  curr_ix = 0;
-  curr_streak = 1;
+  if (!bDebug || !bSort) {
+    max_streak = 0;
+    curr_ix = 0;
+    curr_streak = 1;
 
-  for (n = 0; n < num_sessions; n++) {
-    if (datediffs[n] <= 1)
-      curr_streak++;
-    else {
-      if (curr_streak > max_streak) {
-        max_streak = curr_streak;
-        max_ix = curr_ix;
+    for (n = 0; n < num_sessions; n++) {
+      if (streak_info[n].datediff <= 1)
+        curr_streak++;
+      else {
+        if (curr_streak > max_streak) {
+          max_streak = curr_streak;
+          max_ix = curr_ix;
+        }
+
+        curr_ix = n;
+        curr_streak = 1;
       }
-
-      curr_ix = n;
-      curr_streak = 1;
     }
-  }
 
-  if (curr_streak > max_streak) {
-    max_streak = curr_streak;
-    max_ix = curr_ix;
-  }
+    if (curr_streak > max_streak) {
+      max_streak = curr_streak;
+      max_ix = curr_ix;
+    }
 
-  cpt = ctime(&session_dates[max_ix]);
-  cpt[strlen(cpt)-1] = 0;
-  printf("%2d (%s)\n",max_streak,cpt);
+    cpt = ctime(&streak_info[max_ix].session_date);
+    cpt[strlen(cpt)-1] = 0;
+    printf("%2d (%s)\n",max_streak,cpt);
+  }
 
   return 0;
 }
@@ -306,4 +318,18 @@ static time_t cvt_date(char *date_str)
   ret_tm = mktime(&tim);
 
   return ret_tm;
+}
+
+int elem_compare(const void *elem1,const void *elem2)
+{
+  int ix1;
+  int ix2;
+
+  ix1 = *(int *)elem1;
+  ix2 = *(int *)elem2;
+
+  if (streak_info[ix1].streak == streak_info[ix2].streak)
+    return streak_info[ix2].session_date - streak_info[ix1].session_date;
+
+  return streak_info[ix2].streak - streak_info[ix1].streak;
 }
