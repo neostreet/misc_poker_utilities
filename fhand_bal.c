@@ -353,9 +353,11 @@ int main(int argc,char **argv)
       printf("%10d num_street_markers\n",num_street_markers);
       printf("%10d streets\n",street);
 
-      if (collected_from_pot) {
+      if (collected_from_pot && (delta > 0)) {
         dwork = (double)delta / (double)collected_from_pot;
         printf("%10.2lf opm_percentage\n",dwork);
+        dwork = (double)ending_balance / (double)starting_balance;
+        printf("%10.2lf starting_balance_multiplier\n",dwork);
       }
     }
   }
