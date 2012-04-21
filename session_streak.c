@@ -20,7 +20,8 @@ static char usage[] = "usage: session_streak (-debug) (-sort) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 struct session_streak_info {
-  time_t session_date;
+  time_t start_date;
+  time_t end_date;
   int datediff;
   int streak;
 };
@@ -132,7 +133,7 @@ int main(int argc,char **argv)
     if (feof(fptr))
       break;
 
-    retval = get_session_date(line,&streak_info[session_ix].session_date);
+    retval = get_session_date(line,&streak_info[session_ix].start_date);
 
     if (retval) {
       printf("get_session_date() failed on line %d: %d\n",session_ix+1,retval);
@@ -148,12 +149,14 @@ int main(int argc,char **argv)
     if (!n)
       streak_info[n].datediff = 0;
     else
-      streak_info[n].datediff = (streak_info[n].session_date - streak_info[n - 1].session_date) /
-      (SECS_PER_DAY);
+      streak_info[n].datediff = (streak_info[n].start_date - streak_info[n - 1].start_date) /
+        (SECS_PER_DAY);
   }
 
-  for (n = 0; n < num_sessions; n++)
+  for (n = 0; n < num_sessions; n++) {
     streak_info[n].streak = -1;
+    streak_info[n].end_date = -1;
+  }
 
   for (n = 0; n < num_sessions; n++) {
     for (m = n; m < num_sessions; m++) {
@@ -161,9 +164,14 @@ int main(int argc,char **argv)
         curr_streak = 1;
       else if (streak_info[m].datediff == 1)
         curr_streak++;
-      else
+      else {
+        streak_info[n].end_date = streak_info[m-1].start_date;
         break;
+      }
     }
+
+    if ((m == num_sessions) && (streak_info[n].end_date == -1))
+      streak_info[n].end_date = streak_info[m-1].start_date;
 
     streak_info[n].streak = curr_streak;
     n += curr_streak - 1;
@@ -178,15 +186,20 @@ int main(int argc,char **argv)
 
     for (n = 0; n < num_sessions; n++) {
       if (streak_info[ixs[n]].streak != -1) {
-        cpt = ctime(&streak_info[ixs[n]].session_date);
+        cpt = ctime(&streak_info[ixs[n]].start_date);
         cpt[strlen(cpt)-1] = 0;
 
-        printf("%s %2d\n",cpt,streak_info[ixs[n]].streak);
+        printf("%2d %s ",streak_info[ixs[n]].streak,cpt);
+
+        cpt = ctime(&streak_info[ixs[n]].end_date);
+        cpt[strlen(cpt)-1] = 0;
+
+        printf("%s\n",cpt);
       }
     }
 
     if (!bSort)
-      printf("===========================\n");
+      printf("====================================================\n");
   }
 
   if (!bDebug || !bSort) {
@@ -213,9 +226,15 @@ int main(int argc,char **argv)
       max_ix = curr_ix;
     }
 
-    cpt = ctime(&streak_info[max_ix].session_date);
+    cpt = ctime(&streak_info[max_ix].start_date);
     cpt[strlen(cpt)-1] = 0;
-    printf("%2d (%s)\n",max_streak,cpt);
+
+    printf("%2d %s ",streak_info[max_ix].streak,cpt);
+
+    cpt = ctime(&streak_info[max_ix].end_date);
+    cpt[strlen(cpt)-1] = 0;
+
+    printf("%s\n",cpt);
   }
 
   return 0;
@@ -329,7 +348,7 @@ int elem_compare(const void *elem1,const void *elem2)
   ix2 = *(int *)elem2;
 
   if (streak_info[ix1].streak == streak_info[ix2].streak)
-    return streak_info[ix2].session_date - streak_info[ix1].session_date;
+    return streak_info[ix2].start_date - streak_info[ix1].start_date;
 
   return streak_info[ix2].streak - streak_info[ix1].streak;
 }
