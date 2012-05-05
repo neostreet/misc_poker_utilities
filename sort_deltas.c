@@ -165,7 +165,7 @@ int compare(const void *elem1,const void *elem2)
   int2 = *(int *)elem2;
 
   if (delta[int1] == delta[int2])
-    return strcmp(cppt[int1],cppt[int2]);
+    return strcmp(cppt[int2],cppt[int1]);
 
   if (!bReverse)
     return delta[int1] - delta[int2];

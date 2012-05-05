@@ -1,8 +1,12 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <direct.h>
 
 #define FALSE 0
 #define TRUE  1
+
+static char save_dir[_MAX_PATH];
 
 #define MAX_FILENAME_LEN 1024
 static char filename[MAX_FILENAME_LEN];
@@ -44,8 +48,10 @@ int main(int argc,char **argv)
   bDebug = FALSE;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
-    if (!strcmp(argv[curr_arg],"-debug"))
+    if (!strcmp(argv[curr_arg],"-debug")) {
       bDebug = TRUE;
+      getcwd(save_dir,_MAX_PATH);
+    }
     else
       break;
   }
@@ -109,7 +115,13 @@ int main(int argc,char **argv)
 
             if (m < line_len) {
               line[m] = 0;
-              printf("%s\n",&line[n]);
+
+              if (!bDebug)
+                printf("%s\n",&line[n]);
+              else
+                printf("%s %s\\%s\n",&line[n],save_dir,filename);
+
+              break;
             }
           }
         }
