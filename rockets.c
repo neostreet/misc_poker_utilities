@@ -70,7 +70,7 @@ int main(int argc,char **argv)
 
   rocket_pct = (double)rocket_count * (double)100 / (double)line_no;
 
-  printf("%10d of %10d hands (%6.3lf%%)\n",rocket_count,line_no,rocket_pct);
+  printf("%d of %d hands (%6.3lf%%)\n",rocket_count,line_no,rocket_pct);
 
   fclose(fptr);
 
