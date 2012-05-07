@@ -7,7 +7,8 @@
 #define MAX_LINE_LEN 1024
 static char line[MAX_LINE_LEN];
 
-static char usage[] = "usage: pair (-debug) denomintation filename\n";
+static char usage[] =
+"usage: pair (-debug) (-offsetoffset) denomination filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
@@ -16,22 +17,26 @@ int main(int argc,char **argv)
 {
   int curr_arg;
   int bDebug;
+  int offset;
   FILE *fptr;
   int line_len;
   int line_no;
   int pair_count;
   double pair_pct;
 
-  if ((argc < 3) || (argc > 4)) {
+  if ((argc < 3) || (argc > 5)) {
     printf(usage);
     return 1;
   }
 
   bDebug = FALSE;
+  offset = 0;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-debug"))
       bDebug = TRUE;
+    else if (!strncmp(argv[curr_arg],"-offset",7))
+      sscanf(&argv[curr_arg][7],"%d",&offset);
     else
       break;
   }
@@ -58,7 +63,8 @@ int main(int argc,char **argv)
     line_no++;
 
     if ((line_len >= 5) &&
-        (line[0] == argv[curr_arg][0]) && (line[3] == argv[curr_arg][0])) {
+        (line[offset + 0] == argv[curr_arg][0]) &&
+        (line[offset + 3] == argv[curr_arg][0])) {
       pair_count++;
 
       if (bDebug)
