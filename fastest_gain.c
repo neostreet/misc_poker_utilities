@@ -383,9 +383,14 @@ int elem_compare(const void *elem1,const void *elem2)
       return session_info[ix1].num_gain_sessions -
         session_info[ix2].num_gain_sessions;
     }
-    else  {
-      return session_info[ix2].gain_start_date -
-        session_info[ix1].gain_start_date;
+    else if (session_info[ix1].gain_amount !=
+        session_info[ix2].gain_amount) {
+      return session_info[ix2].gain_amount -
+        session_info[ix1].gain_amount;
+    }
+    else {
+      return session_info[ix2].gain_end_date -
+        session_info[ix1].gain_end_date;
     }
   }
   else {
@@ -394,9 +399,14 @@ int elem_compare(const void *elem1,const void *elem2)
       return session_info[ix2].num_gain_sessions -
         session_info[ix1].num_gain_sessions;
     }
-    else  {
-      return session_info[ix2].gain_start_date -
-        session_info[ix1].gain_start_date;
+    else if (session_info[ix1].gain_amount !=
+        session_info[ix2].gain_amount) {
+      return session_info[ix1].gain_amount -
+        session_info[ix2].gain_amount;
+    }
+    else {
+      return session_info[ix2].gain_end_date -
+        session_info[ix1].gain_end_date;
     }
   }
 }
