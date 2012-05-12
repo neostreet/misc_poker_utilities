@@ -15,7 +15,7 @@ static char filename[MAX_FILENAME_LEN];
 static char line[MAX_LINE_LEN];
 
 static char usage[] =
-"usage: fdelta (-debug) (-sum) (-absolute_value) (-winning_only)\n"
+"usage: fdelta (-debug) (-sum) (-absolute_value) (-winning_only) (-losing_only)\n"
 "  player_name filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
@@ -56,6 +56,7 @@ int main(int argc,char **argv)
   int bSum;
   int bAbsoluteValue;
   int bWinningOnly;
+  int bLosingOnly;
   int player_name_ix;
   int player_name_len;
   FILE *fptr0;
@@ -86,7 +87,7 @@ int main(int argc,char **argv)
   int sum_negative_deltas;
   int sum_absolute_value_deltas;
 
-  if ((argc < 3) || (argc > 7)) {
+  if ((argc < 3) || (argc > 8)) {
     printf(usage);
     return 1;
   }
@@ -95,6 +96,7 @@ int main(int argc,char **argv)
   bSum = FALSE;
   bAbsoluteValue = FALSE;
   bWinningOnly = FALSE;
+  bLosingOnly = FALSE;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-debug")) {
@@ -107,6 +109,8 @@ int main(int argc,char **argv)
       bAbsoluteValue = TRUE;
     else if (!strcmp(argv[curr_arg],"-winning_only"))
       bWinningOnly = TRUE;
+    else if (!strcmp(argv[curr_arg],"-losing_only"))
+      bLosingOnly = TRUE;
     else
       break;
   }
@@ -116,12 +120,18 @@ int main(int argc,char **argv)
     return 2;
   }
 
+  if (bWinningOnly && bLosingOnly) {
+    printf("only specify at most one of the flags -winning_only and "
+      "-losing_only\n");
+    return 3;
+  }
+
   player_name_ix = curr_arg++;
   player_name_len = strlen(argv[player_name_ix]);
 
   if ((fptr0 = fopen(argv[curr_arg],"r")) == NULL) {
     printf(couldnt_open,argv[curr_arg]);
-    return 3;
+    return 4;
   }
 
   ending_balance = -1;
@@ -326,6 +336,10 @@ int main(int argc,char **argv)
   if (bSum) {
     if (bWinningOnly) {
       if (sum_deltas < 0)
+        bSum = 0;
+    }
+    else if (bLosingOnly) {
+      if (sum_deltas > 0)
         bSum = 0;
     }
   }
