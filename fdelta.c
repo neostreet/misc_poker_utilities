@@ -14,7 +14,7 @@ static char filename[MAX_FILENAME_LEN];
 #define MAX_LINE_LEN 1024
 static char line[MAX_LINE_LEN];
 
-static char usage[] = "usage: fdelta (-debug) player_name filename\n";
+static char usage[] = "usage: fdelta (-debug) (-sum) player_name filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char in_chips[] = " in chips";
@@ -51,6 +51,7 @@ int main(int argc,char **argv)
   int p;
   int curr_arg;
   int bDebug;
+  int bSum;
   int player_name_ix;
   int player_name_len;
   FILE *fptr0;
@@ -76,19 +77,25 @@ int main(int argc,char **argv)
   int work;
   double dwork;
   char hole_cards[6];
+  int sum_deltas;
+  int sum_positive_deltas;
+  int sum_negative_deltas;
 
-  if ((argc < 3) || (argc > 8)) {
+  if ((argc < 3) || (argc > 5)) {
     printf(usage);
     return 1;
   }
 
   bDebug = FALSE;
+  bSum = FALSE;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-debug")) {
       bDebug = TRUE;
       getcwd(save_dir,_MAX_PATH);
     }
+    else if (!strcmp(argv[curr_arg],"-sum"))
+      bSum = TRUE;
     else
       break;
   }
@@ -112,6 +119,12 @@ int main(int argc,char **argv)
   dbg_file_no = -1;
 
   hole_cards[5] = 0;
+
+  if (bSum) {
+    sum_deltas = 0;
+    sum_positive_deltas = 0;
+    sum_negative_deltas = 0;
+  }
 
   for ( ; ; ) {
     GetLine(fptr0,filename,&filename_len,MAX_FILENAME_LEN);
@@ -270,10 +283,30 @@ int main(int argc,char **argv)
     ending_balance = starting_balance - spent_this_hand + collected_from_pot;
     delta = ending_balance - starting_balance;
 
+    if (bSum) {
+      sum_deltas += delta;
+
+      if (delta > 0)
+        sum_positive_deltas += delta;
+      else
+        sum_negative_deltas += delta;
+    }
+    else {
+      if (!bDebug)
+        printf("%d\n",delta);
+      else
+        printf("%10d %s %s\\%s\n",delta,hole_cards,save_dir,filename);
+    }
+  }
+
+  fclose(fptr0);
+
+  if (bSum) {
     if (!bDebug)
-      printf("%d\n",delta);
+      printf("%d %d %d\n",sum_deltas,sum_positive_deltas,sum_negative_deltas);
     else
-      printf("%10d %s %s\\%s\n",delta,hole_cards,save_dir,filename);
+      printf("%10d %10d %10d %s\n",
+        sum_deltas,sum_positive_deltas,sum_negative_deltas,save_dir);
   }
 
   return 0;
