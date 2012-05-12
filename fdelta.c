@@ -319,23 +319,30 @@ int main(int argc,char **argv)
   fclose(fptr0);
 
   if (bSum) {
+    if (bAbsoluteValue) {
+      if (!sum_deltas)
+        dwork = (double)0;
+      else
+        dwork = (double)sum_absolute_value_deltas / (double)sum_deltas;
+    }
+
     if (!bDebug) {
       if (!bAbsoluteValue)
         printf("%d %d %d\n",
           sum_deltas,sum_positive_deltas,sum_negative_deltas);
       else
-        printf("%d %d %d %d\n",
+        printf("%d %d %d %d %lf\n",
           sum_deltas,sum_positive_deltas,sum_negative_deltas,
-          sum_absolute_value_deltas);
+          sum_absolute_value_deltas,dwork);
     }
     else {
       if (!bAbsoluteValue)
         printf("%10d %10d %10d %s\n",
           sum_deltas,sum_positive_deltas,sum_negative_deltas,save_dir);
       else
-        printf("%10d %10d %10d %10d %s\n",
+        printf("%10d %10d %10d %10d %8.3lf %s\n",
           sum_deltas,sum_positive_deltas,sum_negative_deltas,
-          sum_absolute_value_deltas,save_dir);
+          sum_absolute_value_deltas,dwork,save_dir);
     }
   }
 
