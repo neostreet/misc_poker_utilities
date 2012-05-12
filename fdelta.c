@@ -15,7 +15,8 @@ static char filename[MAX_FILENAME_LEN];
 static char line[MAX_LINE_LEN];
 
 static char usage[] =
-"usage: fdelta (-debug) (-sum) (-absolute_value) player_name filename\n";
+"usage: fdelta (-debug) (-sum) (-absolute_value) (-winning_only)\n"
+"  player_name filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char in_chips[] = " in chips";
@@ -54,6 +55,7 @@ int main(int argc,char **argv)
   int bDebug;
   int bSum;
   int bAbsoluteValue;
+  int bWinningOnly;
   int player_name_ix;
   int player_name_len;
   FILE *fptr0;
@@ -84,7 +86,7 @@ int main(int argc,char **argv)
   int sum_negative_deltas;
   int sum_absolute_value_deltas;
 
-  if ((argc < 3) || (argc > 6)) {
+  if ((argc < 3) || (argc > 7)) {
     printf(usage);
     return 1;
   }
@@ -92,6 +94,7 @@ int main(int argc,char **argv)
   bDebug = FALSE;
   bSum = FALSE;
   bAbsoluteValue = FALSE;
+  bWinningOnly = FALSE;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-debug")) {
@@ -102,6 +105,8 @@ int main(int argc,char **argv)
       bSum = TRUE;
     else if (!strcmp(argv[curr_arg],"-absolute_value"))
       bAbsoluteValue = TRUE;
+    else if (!strcmp(argv[curr_arg],"-winning_only"))
+      bWinningOnly = TRUE;
     else
       break;
   }
@@ -317,6 +322,13 @@ int main(int argc,char **argv)
   }
 
   fclose(fptr0);
+
+  if (bSum) {
+    if (bWinningOnly) {
+      if (sum_deltas < 0)
+        bSum = 0;
+    }
+  }
 
   if (bSum) {
     if (bAbsoluteValue) {
