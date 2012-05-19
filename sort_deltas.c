@@ -11,7 +11,7 @@
 #define DELTA_STR_LEN 10
 
 static char usage[] =
-"usage: sort_deltas (-no_sort) (-reverse) (-offsetoffset) filename\n";
+"usage: sort_deltas (-no_sort) (-reverse) (-offsetoffset) (-lenlen) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static int bReverse;
@@ -32,6 +32,7 @@ int main(int argc,char **argv)
   int curr_arg;
   int bNoSort;
   int offset;
+  int delta_str_len;
   struct stat statbuf;
   int mem_amount;
   char *mempt;
@@ -43,7 +44,7 @@ int main(int argc,char **argv)
   int chara;
   char delta_buf[DELTA_STR_LEN+1];
 
-  if ((argc < 2) || (argc > 5)) {
+  if ((argc < 2) || (argc > 6)) {
     printf(usage);
     return 1;
   }
@@ -51,6 +52,7 @@ int main(int argc,char **argv)
   bNoSort = FALSE;
   bReverse = FALSE;
   offset = 0;
+  delta_str_len = DELTA_STR_LEN;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-no_sort"))
@@ -59,6 +61,8 @@ int main(int argc,char **argv)
       bReverse = TRUE;
     else if (!strncmp(argv[curr_arg],"-offset",7))
       sscanf(&argv[curr_arg][7],"%d",&offset);
+    else if (!strncmp(argv[curr_arg],"-len",4))
+      sscanf(&argv[curr_arg][4],"%d",&delta_str_len);
     else
       break;
   }
@@ -125,8 +129,6 @@ int main(int argc,char **argv)
     return 8;
   }
 
-  delta_buf[DELTA_STR_LEN] = 0;
-
   for (n = 0; n < num_lines; n++)
     ixs[n] = n;
 
@@ -138,8 +140,10 @@ int main(int argc,char **argv)
       cppt[file_ix] = &mempt[cppt_ix];
       cppt_ix = n + 1;
 
-      for (m = 0; m < DELTA_STR_LEN; m++)
+      for (m = 0; m < delta_str_len; m++)
         delta_buf[m] = cppt[file_ix][offset+m];
+
+      delta_buf[m] = 0;
 
       sscanf(delta_buf,"%d",&delta[file_ix]);
 
