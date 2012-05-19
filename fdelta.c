@@ -353,8 +353,12 @@ int main(int argc,char **argv)
     if (bAbsoluteValue) {
       if (!sum_deltas)
         dwork1 = (double)0;
-      else
+      else {
+        if (sum_deltas < 0)
+          sum_deltas *= -1;
+
         dwork1 = (double)sum_absolute_value_deltas / (double)sum_deltas;
+      }
 
       dwork2 = (double)sum_absolute_value_deltas / (double)num_hands;
     }
