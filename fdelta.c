@@ -78,9 +78,11 @@ int main(int argc,char **argv)
   int delta;
   int file_no;
   int dbg_file_no;
+  int num_hands;
   int dbg;
   int work;
-  double dwork;
+  double dwork1;
+  double dwork2;
   char hole_cards[6];
   int sum_deltas;
   int sum_positive_deltas;
@@ -138,6 +140,7 @@ int main(int argc,char **argv)
 
   file_no = 0;
   dbg_file_no = -1;
+  num_hands = 0;
 
   hole_cards[5] = 0;
 
@@ -165,6 +168,8 @@ int main(int argc,char **argv)
       printf(couldnt_open,filename);
       continue;
     }
+
+    num_hands++;
 
     line_no = 0;
     street = 0;
@@ -347,9 +352,11 @@ int main(int argc,char **argv)
   if (bSum) {
     if (bAbsoluteValue) {
       if (!sum_deltas)
-        dwork = (double)0;
+        dwork1 = (double)0;
       else
-        dwork = (double)sum_absolute_value_deltas / (double)sum_deltas;
+        dwork1 = (double)sum_absolute_value_deltas / (double)sum_deltas;
+
+      dwork2 = (double)sum_absolute_value_deltas / (double)num_hands;
     }
 
     if (!bDebug) {
@@ -357,18 +364,18 @@ int main(int argc,char **argv)
         printf("%d %d %d\n",
           sum_deltas,sum_positive_deltas,sum_negative_deltas);
       else
-        printf("%d %d %d %d %lf\n",
+        printf("%d %d %d %d %lf %lf\n",
           sum_deltas,sum_positive_deltas,sum_negative_deltas,
-          sum_absolute_value_deltas,dwork);
+          sum_absolute_value_deltas,dwork1,dwork2);
     }
     else {
       if (!bAbsoluteValue)
         printf("%10d %10d %10d %s\n",
           sum_deltas,sum_positive_deltas,sum_negative_deltas,save_dir);
       else
-        printf("%10d %10d %10d %10d %8.3lf %s\n",
+        printf("%10d %10d %10d %10d %8.3lf %8.2lf %s\n",
           sum_deltas,sum_positive_deltas,sum_negative_deltas,
-          sum_absolute_value_deltas,dwork,save_dir);
+          sum_absolute_value_deltas,dwork1,dwork2,save_dir);
     }
   }
 
