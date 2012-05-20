@@ -83,6 +83,7 @@ int main(int argc,char **argv)
   int work;
   double dwork1;
   double dwork2;
+  double sum_deltas_dwork;
   char hole_cards[6];
   int sum_deltas;
   int sum_positive_deltas;
@@ -355,9 +356,11 @@ int main(int argc,char **argv)
         dwork1 = (double)0;
       else {
         if (sum_deltas < 0)
-          sum_deltas *= -1;
+          sum_deltas_dwork = (double)sum_deltas * (double)-1;
+        else
+          sum_deltas_dwork = (double)sum_deltas;
 
-        dwork1 = (double)sum_absolute_value_deltas / (double)sum_deltas;
+        dwork1 = (double)sum_absolute_value_deltas / sum_deltas_dwork;
       }
 
       dwork2 = (double)sum_absolute_value_deltas / (double)num_hands;
@@ -365,20 +368,20 @@ int main(int argc,char **argv)
 
     if (!bDebug) {
       if (!bAbsoluteValue)
-        printf("%d %d %d\n",
-          sum_deltas,sum_positive_deltas,sum_negative_deltas);
+        printf("%d %d %d %d\n",
+          sum_deltas,sum_positive_deltas,sum_negative_deltas,num_hands);
       else
-        printf("%d %d %d %d %lf %lf\n",
-          sum_deltas,sum_positive_deltas,sum_negative_deltas,
+        printf("%d %d %d %d %d %lf %lf\n",
+          sum_deltas,sum_positive_deltas,sum_negative_deltas,num_hands,
           sum_absolute_value_deltas,dwork1,dwork2);
     }
     else {
       if (!bAbsoluteValue)
-        printf("%10d %10d %10d %s\n",
-          sum_deltas,sum_positive_deltas,sum_negative_deltas,save_dir);
+        printf("%10d %10d %10d %3d %s\n",
+          sum_deltas,sum_positive_deltas,sum_negative_deltas,num_hands,save_dir);
       else
-        printf("%10d %10d %10d %10d %8.3lf %8.2lf %s\n",
-          sum_deltas,sum_positive_deltas,sum_negative_deltas,
+        printf("%10d %10d %10d %3d %10d %8.3lf %8.2lf %s\n",
+          sum_deltas,sum_positive_deltas,sum_negative_deltas,num_hands,
           sum_absolute_value_deltas,dwork1,dwork2,save_dir);
     }
   }
