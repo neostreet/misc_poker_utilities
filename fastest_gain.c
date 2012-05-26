@@ -18,7 +18,8 @@ static char line[MAX_LINE_LEN];
 
 #define TAB 0x9
 
-static char usage[] = "usage: fastest_gain (-verbose) (-reverse) amount filename\n";
+static char usage[] =
+"usage: fastest_gain (-verbose) (-reverse) (-no_sort) amount filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static int bReverse;
@@ -39,6 +40,12 @@ static struct digit_range date_checks[3] = {
   1, 12,     /* month */
   1, 31     /* day */
 };
+
+static char *months[] = {
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+};
+#define NUM_MONTHS (sizeof months / sizeof (char *))
 
 struct session_info_struct {
   int starting_amount;
@@ -61,6 +68,7 @@ static int get_session_info(
   struct session_info_struct *session_info);
 static time_t cvt_date(char *date_str);
 int elem_compare(const void *elem1,const void *elem2);
+static char *format_date(char *cpt);
 
 int main(int argc,char **argv)
 {
@@ -69,6 +77,7 @@ int main(int argc,char **argv)
   int p;
   int curr_arg;
   int bVerbose;
+  int bNoSort;
   int gain_threshold;
   FILE *fptr;
   int line_len;
@@ -80,20 +89,25 @@ int main(int argc,char **argv)
   int retval;
   char *cpt;
   double avg_amount;
+  static int dbg_ix;
+  int dbg;
 
-  if ((argc < 3) || (argc > 5)) {
+  if ((argc < 3) || (argc > 6)) {
     printf(usage);
     return 1;
   }
 
   bVerbose = FALSE;
   bReverse = FALSE;
+  bNoSort = FALSE;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-verbose"))
       bVerbose = TRUE;
     else if (!strcmp(argv[curr_arg],"-reverse"))
       bReverse = TRUE;
+    else if (!strcmp(argv[curr_arg],"-no_sort"))
+      bNoSort = TRUE;
     else
       break;
   }
@@ -149,9 +163,15 @@ int main(int argc,char **argv)
   fclose(fptr);
 
   for (m = 0; m < num_sessions; m++) {
+    if (m == dbg_ix)
+      dbg = 1;
+
     for (n = m; n < num_sessions; n++) {
       if (session_info[n].ending_amount - session_info[m].starting_amount
         >= gain_threshold) {
+
+        if (m == dbg_ix)
+          dbg = 1;
 
         num_winning_sessions = 0;
 
@@ -172,6 +192,9 @@ int main(int argc,char **argv)
   num_gains = 0;
 
   for (n = 0; n < num_sessions; n++) {
+    if (n == dbg_ix)
+      dbg = 1;
+
     if (session_info[n].num_gain_sessions != -1) {
       if (num_gains != n)
         session_info[num_gains] = session_info[n];
@@ -190,7 +213,8 @@ int main(int argc,char **argv)
   for (n = 0; n < num_gains; n++)
     sort_ixs[n] = n;
 
-  qsort(sort_ixs,num_gains,sizeof (int),elem_compare);
+  if (!bNoSort)
+    qsort(sort_ixs,num_gains,sizeof (int),elem_compare);
 
   for (n = 0; n < num_gains; n++) {
     printf(fmt1,
@@ -198,8 +222,7 @@ int main(int argc,char **argv)
       session_info[sort_ixs[n]].starting_ix);
 
     cpt = ctime(&session_info[sort_ixs[n]].gain_start_date);
-    cpt[strlen(cpt) - 1] = 0;
-    printf("%s\n",cpt);
+    printf("%s\n",format_date(cpt));
 
     printf(fmt1,
       session_info[sort_ixs[n]].starting_amount +
@@ -208,8 +231,7 @@ int main(int argc,char **argv)
         session_info[sort_ixs[n]].num_gain_sessions - 1);
 
     cpt = ctime(&session_info[sort_ixs[n]].gain_end_date);
-    cpt[strlen(cpt) - 1] = 0;
-    printf("%s\n",cpt);
+    printf("%s\n",format_date(cpt));
 
     avg_amount = (double)session_info[sort_ixs[n]].gain_amount /
       (double)session_info[sort_ixs[n]].num_gain_sessions;
@@ -409,4 +431,26 @@ int elem_compare(const void *elem1,const void *elem2)
         session_info[ix1].gain_end_date;
     }
   }
+}
+
+static char *format_date(char *cpt)
+{
+  int month;
+  static char date_buf[11];
+
+  cpt[7] = 0;
+  cpt[10] = 0;
+  cpt[24] = 0;
+
+  for (month = 0; month < NUM_MONTHS; month++) {
+    if (!strcmp(&cpt[4],months[month]))
+      break;
+  }
+
+  if (month == NUM_MONTHS)
+    month = 0;
+
+  sprintf(date_buf,"%s-%02d-%s",&cpt[20],month+1,&cpt[8]);
+
+  return date_buf;
 }
