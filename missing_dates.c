@@ -52,7 +52,7 @@ static char *months[] = {
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
 static int get_session_date(char *line,time_t *session_date);
 static time_t cvt_date(char *date_str);
-static void print_date(char *cpt);
+static char *format_date(char *cpt);
 
 int main(int argc,char **argv)
 {
@@ -131,7 +131,7 @@ int main(int argc,char **argv)
       for (m = 0; m < missing_dates[n].datediff - 1; m++) {
         missing_date += SECS_PER_DAY;
         cpt = ctime(&missing_date);
-        print_date(cpt);
+        printf("%s\n",format_date(cpt));
       }
     }
   }
@@ -238,9 +238,10 @@ static time_t cvt_date(char *date_str)
   return ret_tm;
 }
 
-static void print_date(char *cpt)
+static char *format_date(char *cpt)
 {
   int month;
+  static char date_buf[11];
 
   cpt[7] = 0;
   cpt[10] = 0;
@@ -254,5 +255,7 @@ static void print_date(char *cpt)
   if (month == NUM_MONTHS)
     month = 0;
 
-  printf("%s-%02d-%s\n",&cpt[20],month+1,&cpt[8]);
+  sprintf(date_buf,"%s-%02d-%s",&cpt[20],month+1,&cpt[8]);
+
+  return date_buf;
 }
