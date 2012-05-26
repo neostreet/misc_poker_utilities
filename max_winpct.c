@@ -26,7 +26,7 @@ static char malloc_failed1[] = "malloc of %d session info structures failed\n";
 static char malloc_failed2[] = "malloc of %d ints failed\n";
 
 static char fmt1[] = "%4d ";
-static char fmt2[] = "%4d %10lf (%4d)\n";
+static char fmt2[] = "%4d %10lf (%d)\n";
 
 struct digit_range {
   int lower;
@@ -38,6 +38,12 @@ static struct digit_range date_checks[3] = {
   1, 12,     /* month */
   1, 31     /* day */
 };
+
+static char *months[] = {
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+};
+#define NUM_MONTHS (sizeof months / sizeof (char *))
 
 struct session_info_struct {
   int delta;
@@ -58,6 +64,7 @@ static int get_session_info(
   struct session_info_struct *session_info);
 static time_t cvt_date(char *date_str);
 int elem_compare(const void *elem1,const void *elem2);
+static char *format_date(char *cpt);
 
 int main(int argc,char **argv)
 {
@@ -205,16 +212,14 @@ int main(int argc,char **argv)
       session_info[sort_ixs[n]].starting_ix);
 
     cpt = ctime(&session_info[sort_ixs[n]].max_winpct_start_date);
-    cpt[strlen(cpt) - 1] = 0;
-    printf("%s\n",cpt);
+    printf("%s\n",format_date(cpt));
 
     printf(fmt1,
       session_info[sort_ixs[n]].starting_ix +
         session_info[sort_ixs[n]].num_max_winpct_sessions - 1);
 
     cpt = ctime(&session_info[sort_ixs[n]].max_winpct_end_date);
-    cpt[strlen(cpt) - 1] = 0;
-    printf("%s\n",cpt);
+    printf("%s\n",format_date(cpt));
 
     printf(fmt2,
       session_info[sort_ixs[n]].num_max_winpct_sessions,
@@ -375,4 +380,26 @@ int elem_compare(const void *elem1,const void *elem2)
     return -1;
   else
     return 1;
+}
+
+static char *format_date(char *cpt)
+{
+  int month;
+  static char date_buf[11];
+
+  cpt[7] = 0;
+  cpt[10] = 0;
+  cpt[24] = 0;
+
+  for (month = 0; month < NUM_MONTHS; month++) {
+    if (!strcmp(&cpt[4],months[month]))
+      break;
+  }
+
+  if (month == NUM_MONTHS)
+    month = 0;
+
+  sprintf(date_buf,"%s-%02d-%s",&cpt[20],month+1,&cpt[8]);
+
+  return date_buf;
 }
