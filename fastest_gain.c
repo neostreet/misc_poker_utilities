@@ -19,7 +19,7 @@ static char line[MAX_LINE_LEN];
 #define TAB 0x9
 
 static char usage[] =
-"usage: fastest_gain (-verbose) (-reverse) (-no_sort) amount filename\n";
+"usage: fastest_gain (-verbose) (-reverse) amount filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static int bReverse;
@@ -77,7 +77,6 @@ int main(int argc,char **argv)
   int p;
   int curr_arg;
   int bVerbose;
-  int bNoSort;
   int gain_threshold;
   FILE *fptr;
   int line_len;
@@ -89,25 +88,20 @@ int main(int argc,char **argv)
   int retval;
   char *cpt;
   double avg_amount;
-  static int dbg_ix;
-  int dbg;
 
-  if ((argc < 3) || (argc > 6)) {
+  if ((argc < 3) || (argc > 5)) {
     printf(usage);
     return 1;
   }
 
   bVerbose = FALSE;
   bReverse = FALSE;
-  bNoSort = FALSE;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-verbose"))
       bVerbose = TRUE;
     else if (!strcmp(argv[curr_arg],"-reverse"))
       bReverse = TRUE;
-    else if (!strcmp(argv[curr_arg],"-no_sort"))
-      bNoSort = TRUE;
     else
       break;
   }
@@ -163,15 +157,9 @@ int main(int argc,char **argv)
   fclose(fptr);
 
   for (m = 0; m < num_sessions; m++) {
-    if (m == dbg_ix)
-      dbg = 1;
-
     for (n = m; n < num_sessions; n++) {
       if (session_info[n].ending_amount - session_info[m].starting_amount
         >= gain_threshold) {
-
-        if (m == dbg_ix)
-          dbg = 1;
 
         num_winning_sessions = 0;
 
@@ -192,9 +180,6 @@ int main(int argc,char **argv)
   num_gains = 0;
 
   for (n = 0; n < num_sessions; n++) {
-    if (n == dbg_ix)
-      dbg = 1;
-
     if (session_info[n].num_gain_sessions != -1) {
       if (num_gains != n)
         session_info[num_gains] = session_info[n];
@@ -213,8 +198,7 @@ int main(int argc,char **argv)
   for (n = 0; n < num_gains; n++)
     sort_ixs[n] = n;
 
-  if (!bNoSort)
-    qsort(sort_ixs,num_gains,sizeof (int),elem_compare);
+  qsort(sort_ixs,num_gains,sizeof (int),elem_compare);
 
   for (n = 0; n < num_gains; n++) {
     printf(fmt1,
