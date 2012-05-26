@@ -198,8 +198,10 @@ int main(int argc,char **argv)
     if ((session_info[n].delta > 0) && ((n == 0) || (session_info[n-1].delta < 0))) {
       winning_streaks[winning_streak_ix].start_date = session_info[n].start_date;
 
+      winning_streaks[winning_streak_ix].sum = session_info[n].delta;
+
       for (m = n + 1; session_info[m].delta > 0; m++)
-        ;
+        winning_streaks[winning_streak_ix].sum += session_info[m].delta;
 
       winning_streaks[winning_streak_ix].end_date = session_info[m - 1].start_date;
       winning_streaks[winning_streak_ix].num_winning_sessions = m - n;
@@ -220,7 +222,9 @@ int main(int argc,char **argv)
 
     cpt = ctime(&winning_streaks[sort_ixs[n]].end_date);
     cpt[strlen(cpt) - 1] = 0;
-    printf("%s\n",cpt);
+    printf("%s ",cpt);
+
+    printf("%10d\n",winning_streaks[sort_ixs[n]].sum);
   }
 
   free(session_info);
