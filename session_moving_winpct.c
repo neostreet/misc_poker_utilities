@@ -44,6 +44,12 @@ static struct digit_range date_checks[3] = {
   1, 31     /* day */
 };
 
+static char *months[] = {
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+};
+#define NUM_MONTHS (sizeof months / sizeof (char *))
+
 static struct session_info_struct *session_info;
 static int bAscending;
 
@@ -54,6 +60,7 @@ static int get_session_info(
   struct session_info_struct *session_info);
 static time_t cvt_date(char *date_str);
 int elem_compare(const void *elem1,const void *elem2);
+static char *format_date(char *cpt);
 
 int main(int argc,char **argv)
 {
@@ -140,7 +147,7 @@ int main(int argc,char **argv)
 
   if ((sort_ixs = (int *)malloc(
     num_winpcts * sizeof (int))) == NULL) {
-    printf(malloc_failed2,num_winpcts);
+    printf(malloc_failed2,set_size);
     fclose(fptr);
     return 6;
   }
@@ -194,16 +201,14 @@ int main(int argc,char **argv)
     qsort(sort_ixs,num_winpcts,sizeof (int),elem_compare);
 
   for (n = 0; n < num_winpcts; n++) {
-    printf("%10lf (%2d of %2d) ",session_info[sort_ixs[n]].winpct,
+    printf("%10lf (%2d of %2d)    ",session_info[sort_ixs[n]].winpct,
       session_info[sort_ixs[n]].wins,subset_size);
 
     cpt = ctime(&session_info[sort_ixs[n]].start_date);
-    cpt[strlen(cpt) - 1] = 0;
-    printf("%s ",cpt);
+    printf("%s    ",format_date(cpt));
 
     cpt = ctime(&session_info[sort_ixs[n]].end_date);
-    cpt[strlen(cpt) - 1] = 0;
-    printf("%s\n",cpt);
+    printf("%s\n",format_date(cpt));
   }
 
   fclose(fptr);
@@ -352,4 +357,26 @@ int elem_compare(const void *elem1,const void *elem2)
     else
       return 1;
   }
+}
+
+static char *format_date(char *cpt)
+{
+  int month;
+  static char date_buf[11];
+
+  cpt[7] = 0;
+  cpt[10] = 0;
+  cpt[24] = 0;
+
+  for (month = 0; month < NUM_MONTHS; month++) {
+    if (!strcmp(&cpt[4],months[month]))
+      break;
+  }
+
+  if (month == NUM_MONTHS)
+    month = 0;
+
+  sprintf(date_buf,"%s-%02d-%s",&cpt[20],month+1,&cpt[8]);
+
+  return date_buf;
 }
