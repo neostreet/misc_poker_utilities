@@ -47,10 +47,17 @@ static struct digit_range date_checks[3] = {
   1, 31     /* day */
 };
 
+static char *months[] = {
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+};
+#define NUM_MONTHS (sizeof months / sizeof (char *))
+
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
 static int get_session_date(char *line,time_t *session_date);
 static time_t cvt_date(char *date_str);
 int elem_compare(const void *elem1,const void *elem2);
+static char *format_date(char *cpt);
 
 int main(int argc,char **argv)
 {
@@ -187,14 +194,12 @@ int main(int argc,char **argv)
     for (n = 0; n < num_sessions; n++) {
       if (streak_info[ixs[n]].streak != -1) {
         cpt = ctime(&streak_info[ixs[n]].start_date);
-        cpt[strlen(cpt)-1] = 0;
 
-        printf("%2d %s ",streak_info[ixs[n]].streak,cpt);
+        printf("%2d %s ",streak_info[ixs[n]].streak,format_date(cpt));
 
         cpt = ctime(&streak_info[ixs[n]].end_date);
-        cpt[strlen(cpt)-1] = 0;
 
-        printf("%s\n",cpt);
+        printf("%s\n",format_date(cpt));
       }
     }
 
@@ -227,14 +232,12 @@ int main(int argc,char **argv)
     }
 
     cpt = ctime(&streak_info[max_ix].start_date);
-    cpt[strlen(cpt)-1] = 0;
 
-    printf("%2d %s ",streak_info[max_ix].streak,cpt);
+    printf("%2d %s ",streak_info[max_ix].streak,format_date(cpt));
 
     cpt = ctime(&streak_info[max_ix].end_date);
-    cpt[strlen(cpt)-1] = 0;
 
-    printf("%s\n",cpt);
+    printf("%s\n",format_date(cpt));
   }
 
   return 0;
@@ -351,4 +354,26 @@ int elem_compare(const void *elem1,const void *elem2)
     return streak_info[ix2].start_date - streak_info[ix1].start_date;
 
   return streak_info[ix2].streak - streak_info[ix1].streak;
+}
+
+static char *format_date(char *cpt)
+{
+  int month;
+  static char date_buf[11];
+
+  cpt[7] = 0;
+  cpt[10] = 0;
+  cpt[24] = 0;
+
+  for (month = 0; month < NUM_MONTHS; month++) {
+    if (!strcmp(&cpt[4],months[month]))
+      break;
+  }
+
+  if (month == NUM_MONTHS)
+    month = 0;
+
+  sprintf(date_buf,"%s-%02d-%s",&cpt[20],month+1,&cpt[8]);
+
+  return date_buf;
 }
