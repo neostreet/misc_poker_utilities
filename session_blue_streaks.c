@@ -240,7 +240,7 @@ int main(int argc,char **argv)
 
       blue_streaks[blue_streak_ix].sum = session_info[n].delta;
 
-      for (m = n + 1; (session_info[m].session_is_blue == 1); m++)
+      for (m = n + 1; (m < num_sessions) && (session_info[m].session_is_blue == 1); m++)
         blue_streaks[blue_streak_ix].sum += session_info[m].delta;
 
       blue_streaks[blue_streak_ix].end_date = session_info[m - 1].start_date;
