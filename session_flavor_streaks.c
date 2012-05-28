@@ -28,7 +28,7 @@ struct session_info_struct {
 #define TAB 0x9
 
 static char usage[] =
-"usage: session_flavor_streaks (-no_sort) (-sort_by_start_date) (-ascending) filename\n";
+"usage: session_flavor_streaks (-no_sort) (-ascending) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char malloc_failed1[] = "malloc of %d session info structures failed\n";
@@ -53,7 +53,6 @@ static char *months[] = {
 
 static struct session_info_struct *session_info;
 static struct session_info_struct *flavor_streaks;
-static int bSortByStartDate;
 static int bAscending;
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
@@ -84,20 +83,17 @@ int main(int argc,char **argv)
   int retval;
   char *cpt;
 
-  if ((argc < 2) || (argc > 5)) {
+  if ((argc < 2) || (argc > 4)) {
     printf(usage);
     return 1;
   }
 
   bNoSort = FALSE;
-  bSortByStartDate = FALSE;
   bAscending = FALSE;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-no_sort"))
       bNoSort = TRUE;
-    else if (!strcmp(argv[curr_arg],"-sort_by_start_date"))
-      bSortByStartDate = TRUE;
     else if (!strcmp(argv[curr_arg],"-ascending"))
       bAscending = TRUE;
     else
@@ -386,9 +382,6 @@ int elem_compare(const void *elem1,const void *elem2)
 
   ix1 = *(int *)elem1;
   ix2 = *(int *)elem2;
-
-  if (bSortByStartDate)
-    return flavor_streaks[ix1].start_date - flavor_streaks[ix2].start_date;
 
   if (flavor_streaks[ix1].num_flavor_sessions == flavor_streaks[ix2].num_flavor_sessions)
     return flavor_streaks[ix2].end_date - flavor_streaks[ix1].end_date;
