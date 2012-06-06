@@ -46,6 +46,9 @@ int get_work_amount(char *line,int line_len);
 
 int main(int argc,char **argv)
 {
+  int m;
+  int n;
+  int p;
   int curr_arg;
   int bDebug;
   int player_name_ix;
@@ -70,7 +73,7 @@ int main(int argc,char **argv)
   int dbg_file_no;
   int dbg;
   int work;
-  double dwork;
+  char hole_cards[6];
 
   if ((argc < 3) || (argc > 8)) {
     printf(usage);
@@ -105,6 +108,8 @@ int main(int argc,char **argv)
 
   file_no = 0;
   dbg_file_no = -1;
+
+  hole_cards[5] = 0;
 
   for ( ; ; ) {
     GetLine(fptr0,filename,&filename_len,MAX_FILENAME_LEN);
@@ -165,8 +170,26 @@ int main(int argc,char **argv)
           spent_this_street += get_work_amount(line,line_len);
           continue;
         }
-        else if (!strncmp(line,dealt_to,DEALT_TO_LEN))
-          continue;
+        else if (!strncmp(line,dealt_to,DEALT_TO_LEN)) {
+          for (n = 0; n < line_len; n++) {
+            if (line[n] == '[')
+              break;
+          }
+
+          if (n < line_len) {
+            n++;
+
+            for (m = n; m < line_len; m++) {
+              if (line[m] == ']')
+                break;
+            }
+
+            if (m < line_len) {
+              for (p = 0; p < 5; p++)
+                hole_cards[p] = line[n+p];
+            }
+          }
+        }
         else if (Contains(TRUE,
           line,line_len,
           collected,COLLECTED_LEN,
@@ -247,8 +270,10 @@ int main(int argc,char **argv)
     if (!bDebug)
       printf("%d\n",ending_balance);
     else
-      printf("%10d %s\\%s\n",ending_balance,save_dir,filename);
+      printf("%10d %s %s\\%s\n",ending_balance,hole_cards,save_dir,filename);
   }
+
+  fclose(fptr0);
 
   return 0;
 }
