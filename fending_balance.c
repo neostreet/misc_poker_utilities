@@ -10,11 +10,13 @@ static char save_dir[_MAX_PATH];
 
 #define MAX_FILENAME_LEN 1024
 static char filename[MAX_FILENAME_LEN];
+static char save_filename[MAX_FILENAME_LEN];
 
 #define MAX_LINE_LEN 1024
 static char line[MAX_LINE_LEN];
 
-static char usage[] = "usage: fending_balance (-debug) player_name filename\n";
+static char usage[] =
+"usage: fending_balance (-debug) (-min) (-max) player_name filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char in_chips[] = " in chips";
@@ -51,6 +53,8 @@ int main(int argc,char **argv)
   int p;
   int curr_arg;
   int bDebug;
+  int bMin;
+  int bMax;
   int player_name_ix;
   int player_name_len;
   FILE *fptr0;
@@ -74,19 +78,26 @@ int main(int argc,char **argv)
   int dbg;
   int work;
   char hole_cards[6];
+  int save_ending_balance;
 
-  if ((argc < 3) || (argc > 8)) {
+  if ((argc < 3) || (argc > 6)) {
     printf(usage);
     return 1;
   }
 
   bDebug = FALSE;
+  bMin = FALSE;
+  bMax = FALSE;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-debug")) {
       bDebug = TRUE;
       getcwd(save_dir,_MAX_PATH);
     }
+    else if (!strcmp(argv[curr_arg],"-min"))
+      bMin = TRUE;
+    else if (!strcmp(argv[curr_arg],"-max"))
+      bMax = TRUE;
     else
       break;
   }
@@ -96,12 +107,17 @@ int main(int argc,char **argv)
     return 2;
   }
 
+  if (bMin && bMax) {
+    printf("only specify one of -min and -max\n");
+    return 3;
+  }
+
   player_name_ix = curr_arg++;
   player_name_len = strlen(argv[player_name_ix]);
 
   if ((fptr0 = fopen(argv[curr_arg],"r")) == NULL) {
     printf(couldnt_open,argv[curr_arg]);
-    return 3;
+    return 4;
   }
 
   ending_balance = -1;
@@ -267,13 +283,34 @@ int main(int argc,char **argv)
 
     ending_balance = starting_balance - spent_this_hand + collected_from_pot;
 
-    if (!bDebug)
-      printf("%d\n",ending_balance);
-    else
-      printf("%10d %s %s\\%s\n",ending_balance,hole_cards,save_dir,filename);
+    if (!bMin && !bMax) {
+      if (!bDebug)
+        printf("%d\n",ending_balance);
+      else
+        printf("%10d %s %s\\%s\n",ending_balance,hole_cards,save_dir,filename);
+    }
+    else if (bMin) {
+      if ((file_no == 1) || (ending_balance < save_ending_balance)) {
+        save_ending_balance = ending_balance;
+        strcpy(save_filename,filename);
+      }
+    }
+    else {
+      if ((file_no == 1) || (ending_balance > save_ending_balance)) {
+        save_ending_balance = ending_balance;
+        strcpy(save_filename,filename);
+      }
+    }
   }
 
   fclose(fptr0);
+
+  if (bMin || bMax) {
+    if (!bDebug)
+      printf("%d\n",save_ending_balance);
+    else
+      printf("%10d %s\\%s\n",save_ending_balance,save_dir,save_filename);
+  }
 
   return 0;
 }
