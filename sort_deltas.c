@@ -13,13 +13,13 @@
 #define TAB 0x09
 
 static char usage[] =
-"usage: sort_deltas (-no_sort) (-reverse) (-offsetoffset) filename\n";
+"usage: sort_deltas (-no_sort) (-reverse) (-offsetoffset) (-float) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static int bReverse;
+static int bFloat;
 
 static char **cppt;
-static int offset;
 
 static int *delta;
 static double *doubles;
@@ -35,8 +35,10 @@ int main(int argc,char **argv)
 {
   int m;
   int n;
+  int p;
   int curr_arg;
   int bNoSort;
+  int offset;
   struct stat statbuf;
   int mem_amount;
   char *mempt;
@@ -55,6 +57,7 @@ int main(int argc,char **argv)
 
   bNoSort = FALSE;
   bReverse = FALSE;
+  bFloat = FALSE;
   offset = 0;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
@@ -62,6 +65,8 @@ int main(int argc,char **argv)
       bNoSort = TRUE;
     else if (!strcmp(argv[curr_arg],"-reverse"))
       bReverse = TRUE;
+    else if (!strcmp(argv[curr_arg],"-float"))
+      bFloat = TRUE;
     else if (!strncmp(argv[curr_arg],"-offset",7))
       sscanf(&argv[curr_arg][7],"%d",&offset);
     else
@@ -115,7 +120,7 @@ int main(int argc,char **argv)
     return 6;
   }
 
-  if (!offset) {
+  if (!bFloat) {
     if ((delta = (int *)malloc(num_lines * sizeof (int))) == NULL) {
       printf(malloc_fail3,num_lines);
       free(cppt);
@@ -135,7 +140,7 @@ int main(int argc,char **argv)
   if ((ixs = (int *)malloc(num_lines * sizeof (int))) == NULL) {
     printf(malloc_fail3,num_lines);
 
-    if (!offset)
+    if (!bFloat)
       free(delta);
     else
       free(doubles);
@@ -156,8 +161,15 @@ int main(int argc,char **argv)
       cppt[file_ix] = &mempt[cppt_ix];
       cppt_ix = n + 1;
 
+      for (p = 0; ; p++) {
+        chara = cppt[file_ix][offset+p];
+
+        if (chara != ' ')
+          break;
+      }
+
       for (m = 0; m < MAX_DELTA_STR_LEN; m++) {
-        chara = cppt[file_ix][offset+m];
+        chara = cppt[file_ix][offset+p+m];
 
         if ((chara == ' ') || (chara == TAB))
           break;
@@ -167,7 +179,7 @@ int main(int argc,char **argv)
 
       delta_buf[m] = 0;
 
-      if (!offset)
+      if (!bFloat)
         sscanf(delta_buf,"%d",&delta[file_ix]);
       else
         sscanf(delta_buf,"%lf",&doubles[file_ix]);
@@ -184,7 +196,7 @@ int main(int argc,char **argv)
 
   free(ixs);
 
-  if (!offset)
+  if (!bFloat)
     free(delta);
   else
     free(doubles);
@@ -203,7 +215,7 @@ int compare(const void *elem1,const void *elem2)
   int1 = *(int *)elem1;
   int2 = *(int *)elem2;
 
-  if (!offset) {
+  if (!bFloat) {
     if (delta[int1] == delta[int2])
       return strcmp(cppt[int2],cppt[int1]);
 
