@@ -75,10 +75,10 @@ int main(int argc,char **argv)
       else {
         printf("%d %4d (%4d %4d)\n",last_val,contig_count,
           contig_start,contig_start + contig_count - 1);
+        contig_start += contig_count;
       }
 
       last_val = val;
-      contig_start += contig_count;
       contig_count = 1;
     }
   }
