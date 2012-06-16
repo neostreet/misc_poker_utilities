@@ -1,30 +1,51 @@
 #include <stdio.h>
+#include <string.h>
+
+#define FALSE 0
+#define TRUE  1
 
 #define MAX_LINE_LEN 1024
 static char line[MAX_LINE_LEN];
 
-static char usage[] = "usage: contig_count filename\n";
+static char usage[] = "usage: contig_count (-verbose) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
 
 int main(int argc,char **argv)
 {
+  int curr_arg;
+  int bVerbose;
   FILE *fptr;
   int line_len;
   int line_no;
   int val;
   int last_val;
   int contig_count;
+  int contig_start;
 
-  if (argc != 2) {
+  if ((argc < 2) || (argc > 3)) {
     printf(usage);
     return 1;
   }
 
-  if ((fptr = fopen(argv[1],"r")) == NULL) {
-    printf(couldnt_open,argv[1]);
+  bVerbose = FALSE;
+
+  for (curr_arg = 1; curr_arg < argc; curr_arg++) {
+    if (!strcmp(argv[curr_arg],"-verbose"))
+      bVerbose = TRUE;
+    else
+      break;
+  }
+
+  if (argc - curr_arg != 1) {
+    printf(usage);
     return 2;
+  }
+
+  if ((fptr = fopen(argv[curr_arg],"r")) == NULL) {
+    printf(couldnt_open,argv[curr_arg]);
+    return 3;
   }
 
   line_no = 0;
@@ -42,19 +63,34 @@ int main(int argc,char **argv)
     if (line_no == 1) {
       last_val = val;
       contig_count = 1;
+
+      if (bVerbose)
+        contig_start = 1;
     }
     else if (val == last_val)
       contig_count++;
     else {
-      printf("%d %3d\n",last_val,contig_count);
+      if (!bVerbose)
+        printf("%d %4d\n",last_val,contig_count);
+      else {
+        printf("%d %4d (%4d %4d)\n",last_val,contig_count,
+          contig_start,contig_start + contig_count - 1);
+      }
+
       last_val = val;
+      contig_start += contig_count;
       contig_count = 1;
     }
   }
 
   fclose(fptr);
 
-  printf("%d %3d\n",last_val,contig_count);
+  if (!bVerbose)
+    printf("%d %4d\n",last_val,contig_count);
+  else {
+    printf("%d %4d (%4d %4d)\n",last_val,contig_count,
+      contig_start,contig_start + contig_count - 1);
+  }
 
   return 0;
 }
