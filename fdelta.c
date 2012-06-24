@@ -16,7 +16,7 @@ static char line[MAX_LINE_LEN];
 
 static char usage[] =
 "usage: fdelta (-debug) (-sum) (-absolute_value) (-winning_only) (-losing_only)\n"
-"  player_name filename\n";
+"  (-pocket_pairs_only) player_name filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char in_chips[] = " in chips";
@@ -57,6 +57,7 @@ int main(int argc,char **argv)
   int bAbsoluteValue;
   int bWinningOnly;
   int bLosingOnly;
+  int bPocketPairsOnly;
   int player_name_ix;
   int player_name_len;
   FILE *fptr0;
@@ -90,7 +91,7 @@ int main(int argc,char **argv)
   int sum_negative_deltas;
   int sum_absolute_value_deltas;
 
-  if ((argc < 3) || (argc > 8)) {
+  if ((argc < 3) || (argc > 9)) {
     printf(usage);
     return 1;
   }
@@ -100,6 +101,7 @@ int main(int argc,char **argv)
   bAbsoluteValue = FALSE;
   bWinningOnly = FALSE;
   bLosingOnly = FALSE;
+  bPocketPairsOnly = FALSE;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-debug")) {
@@ -114,6 +116,8 @@ int main(int argc,char **argv)
       bWinningOnly = TRUE;
     else if (!strcmp(argv[curr_arg],"-losing_only"))
       bLosingOnly = TRUE;
+    else if (!strcmp(argv[curr_arg],"-pocket_pairs_only"))
+      bPocketPairsOnly = TRUE;
     else
       break;
   }
@@ -232,6 +236,12 @@ int main(int argc,char **argv)
             if (m < line_len) {
               for (p = 0; p < 5; p++)
                 hole_cards[p] = line[n+p];
+
+
+              if (bPocketPairsOnly) {
+                if (hole_cards[0] != hole_cards[3])
+                  break;
+              }
             }
           }
         }
@@ -309,6 +319,10 @@ int main(int argc,char **argv)
     }
 
     fclose(fptr);
+
+    if (bPocketPairsOnly)
+      if (hole_cards[0] != hole_cards[3])
+        continue;
 
     ending_balance = starting_balance - spent_this_hand + collected_from_pot;
     delta = ending_balance - starting_balance;
