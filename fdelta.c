@@ -15,8 +15,8 @@ static char filename[MAX_FILENAME_LEN];
 static char line[MAX_LINE_LEN];
 
 static char usage[] =
-"usage: fdelta (-debug) (-sum) (-absolute_value) (-winning_only) (-losing_only)\n"
-"  (-pocket_pairs_only) player_name filename\n";
+"usage: fdelta (-debug) (-sum) (-avg) (-absolute_value) (-winning_only)\n"
+"  (-losing_only) (-pocket_pairs_only) player_name filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char in_chips[] = " in chips";
@@ -54,6 +54,7 @@ int main(int argc,char **argv)
   int curr_arg;
   int bDebug;
   int bSum;
+  int bAvg;
   int bAbsoluteValue;
   int bWinningOnly;
   int bLosingOnly;
@@ -91,13 +92,14 @@ int main(int argc,char **argv)
   int sum_negative_deltas;
   int sum_absolute_value_deltas;
 
-  if ((argc < 3) || (argc > 9)) {
+  if ((argc < 3) || (argc > 10)) {
     printf(usage);
     return 1;
   }
 
   bDebug = FALSE;
   bSum = FALSE;
+  bAvg = FALSE;
   bAbsoluteValue = FALSE;
   bWinningOnly = FALSE;
   bLosingOnly = FALSE;
@@ -110,6 +112,8 @@ int main(int argc,char **argv)
     }
     else if (!strcmp(argv[curr_arg],"-sum"))
       bSum = TRUE;
+    else if (!strcmp(argv[curr_arg],"-avg"))
+      bAvg = TRUE;
     else if (!strcmp(argv[curr_arg],"-absolute_value"))
       bAbsoluteValue = TRUE;
     else if (!strcmp(argv[curr_arg],"-winning_only"))
@@ -149,7 +153,7 @@ int main(int argc,char **argv)
 
   hole_cards[5] = 0;
 
-  if (bSum) {
+  if (bSum || bAvg) {
     sum_deltas = 0;
     sum_positive_deltas = 0;
     sum_negative_deltas = 0;
@@ -327,7 +331,7 @@ int main(int argc,char **argv)
     ending_balance = starting_balance - spent_this_hand + collected_from_pot;
     delta = ending_balance - starting_balance;
 
-    if (bSum) {
+    if (bSum || bAvg) {
       sum_deltas += delta;
 
       if (delta > 0) {
@@ -397,6 +401,18 @@ int main(int argc,char **argv)
         printf("%10d %10d %10d %3d %10d %8.3lf %8.2lf %s\n",
           sum_deltas,sum_positive_deltas,sum_negative_deltas,num_hands,
           sum_absolute_value_deltas,dwork1,dwork2,save_dir);
+    }
+  }
+  else if (bAvg) {
+    dwork1 = (double)sum_deltas / (double)num_hands;
+
+    if (!bDebug) {
+      printf("%d %d %lf\n",
+        sum_deltas,num_hands,dwork1);
+    }
+    else {
+      printf("%10d %3d %8.2lf %s\n",
+        sum_deltas,num_hands,dwork1,save_dir);
     }
   }
 
