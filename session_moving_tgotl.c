@@ -20,13 +20,15 @@ struct session_info_struct {
   time_t start_date;
   time_t end_date;
   int delta;
+  int total_winning_delta;
+  int total_losing_delta;
   double tgotl;
 };
 
 #define TAB 0x9
 
 static char usage[] =
-"usage: session_moving_tgotl (-no_sort) (-ascending) subset_size filename\n";
+"usage: session_moving_tgotl (-debug) (-no_sort) (-ascending) subset_size filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char malloc_failed1[] = "malloc of %d session info structures failed\n";
@@ -65,6 +67,7 @@ int main(int argc,char **argv)
 {
   int m;
   int n;
+  int bDebug;
   int bNoSort;
   int curr_arg;
   int session_ix;
@@ -82,16 +85,19 @@ int main(int argc,char **argv)
   int retval;
   char *cpt;
 
-  if ((argc < 3) || (argc > 5)) {
+  if ((argc < 3) || (argc > 6)) {
     printf(usage);
     return 1;
   }
 
+  bDebug = FALSE;
   bNoSort = FALSE;
   bAscending = FALSE;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
-    if (!strcmp(argv[curr_arg],"-no_sort"))
+    if (!strcmp(argv[curr_arg],"-debug"))
+      bDebug = TRUE;
+    else if (!strcmp(argv[curr_arg],"-no_sort"))
       bNoSort = TRUE;
     else if (!strcmp(argv[curr_arg],"-ascending"))
       bAscending = TRUE;
@@ -206,6 +212,8 @@ int main(int argc,char **argv)
     else
       tgotl = (double)total_winning_delta / total_losing_delta;
 
+    session_info[n].total_winning_delta = total_winning_delta;
+    session_info[n].total_losing_delta = total_losing_delta;
     session_info[n].tgotl = tgotl;
     session_info[n].end_date = session_info[n+subset_size-1].start_date;
     sort_ixs[n] = n;
@@ -221,7 +229,15 @@ int main(int argc,char **argv)
     printf("%s    ",format_date(cpt));
 
     cpt = ctime(&session_info[sort_ixs[n]].end_date);
-    printf("%s\n",format_date(cpt));
+    printf("%s",format_date(cpt));
+
+    if (bDebug) {
+      printf(" %10d %10d\n",
+        session_info[sort_ixs[n]].total_winning_delta,
+        session_info[sort_ixs[n]].total_losing_delta);
+    }
+    else
+      printf("\n");
   }
 
   fclose(fptr);
