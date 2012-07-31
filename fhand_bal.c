@@ -1,8 +1,12 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <direct.h>
 
 #define FALSE 0
 #define TRUE  1
+
+static char save_dir[_MAX_PATH];
 
 #define MAX_FILENAME_LEN 1024
 static char filename[MAX_FILENAME_LEN];
@@ -96,8 +100,10 @@ int main(int argc,char **argv)
   bTerse = FALSE;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
-    if (!strcmp(argv[curr_arg],"-debug"))
+    if (!strcmp(argv[curr_arg],"-debug")) {
       bDebug = TRUE;
+      getcwd(save_dir,_MAX_PATH);
+    }
     else if (!strcmp(argv[curr_arg],"-consistency"))
       bConsistency = TRUE;
     else if (!strcmp(argv[curr_arg],"-delta"))
@@ -329,20 +335,20 @@ int main(int argc,char **argv)
 
     if (!bDebug) {
       if (bTerse) {
-        printf("%10d %10d %10d %s\n",
-          starting_balance,delta,ending_balance,filename);
+        printf("%10d %10d %10d %s\\%s\n",
+          starting_balance,delta,ending_balance,save_dir,filename);
       }
       else if (bDelta)
-        printf("%10d %s\n",delta,filename);
+        printf("%10d %s\\%s\n",delta,save_dir,filename);
       else if (bStartingBalance)
-        printf("%10d %s\n",starting_balance,filename);
+        printf("%10d %s\\%s\n",starting_balance,save_dir,filename);
       else
-        printf("%10d %s\n",ending_balance,filename);
+        printf("%10d %s\\%s\n",ending_balance,save_dir,filename);
     }
     else {
       wagered_amount = spent_this_hand + uncalled_bet_amount;
 
-      printf("%s\n",filename);
+      printf("%s\\%s\n",save_dir,filename);
       printf("%10d starting_balance\n",starting_balance);
       printf("%10d wagered_amount\n",wagered_amount);
       printf("%10d uncalled_bet_amount\n",uncalled_bet_amount);
