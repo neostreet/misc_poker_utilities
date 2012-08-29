@@ -1,11 +1,12 @@
 #include <stdio.h>
 
 static char usage[] =
-"usage: tournament_wif buy_in entry_fee first_place_prize second_place_prize\n"
+"usage: tournament_wif filename\n"
 "  num_first_places num_second_places num_tournaments\n";
 
 int main(int argc,char **argv)
 {
+  FILE *fptr;
   int buy_in;
   int entry_fee;
   int first_place_prize;
@@ -15,22 +16,30 @@ int main(int argc,char **argv)
   int num_tournaments;
   int delta;
 
-  if (argc != 8) {
+  if (argc != 5) {
     printf(usage);
     return 1;
   }
 
-  sscanf(argv[1],"%d",&buy_in);
-  sscanf(argv[2],"%d",&entry_fee);
-  sscanf(argv[3],"%d",&first_place_prize);
-  sscanf(argv[4],"%d",&second_place_prize);
-  sscanf(argv[5],"%d",&num_first_places);
-  sscanf(argv[6],"%d",&num_second_places);
-  sscanf(argv[7],"%d",&num_tournaments);
+  if ((fptr = fopen(argv[1],"r")) == NULL) {
+    printf("couldn't open %s\n",argv[1]);
+    return 2;
+  }
+
+  fscanf(fptr,"%d",&buy_in);
+  fscanf(fptr,"%d",&entry_fee);
+  fscanf(fptr,"%d",&first_place_prize);
+  fscanf(fptr,"%d",&second_place_prize);
+
+  fclose(fptr);
+
+  sscanf(argv[2],"%d",&num_first_places);
+  sscanf(argv[3],"%d",&num_second_places);
+  sscanf(argv[4],"%d",&num_tournaments);
 
   if (num_first_places + num_second_places > num_tournaments) {
     printf("num_first_places + num_second_places > num_tournaments\n");
-    return 2;
+    return 3;
   }
 
   delta = num_first_places * first_place_prize +
