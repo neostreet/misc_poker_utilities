@@ -1,20 +1,32 @@
 #include <stdio.h>
 
-static char usage[] =
-"usage: tournament_wif filename\n"
-"  num_first_places num_second_places num_tournaments\n";
-
-int main(int argc,char **argv)
-{
-  FILE *fptr;
+struct tournament_info {
   int buy_in;
   int entry_fee;
   int first_place_prize;
   int second_place_prize;
+};
+
+static char usage[] =
+"usage: tournament_wif tournament_info_file\n"
+"  num_first_places num_second_places num_tournaments\n";
+
+int tournament_wif(
+  struct tournament_info *tournament_ptr,
+  int num_first_places,
+  int num_second_places,
+  int num_tournaments,
+  int *delta);
+
+int main(int argc,char **argv)
+{
+  FILE *fptr;
+  struct tournament_info tournament;
   int num_first_places;
   int num_second_places;
   int num_tournaments;
   int delta;
+  int retval;
 
   if (argc != 5) {
     printf(usage);
@@ -26,10 +38,10 @@ int main(int argc,char **argv)
     return 2;
   }
 
-  fscanf(fptr,"%d",&buy_in);
-  fscanf(fptr,"%d",&entry_fee);
-  fscanf(fptr,"%d",&first_place_prize);
-  fscanf(fptr,"%d",&second_place_prize);
+  fscanf(fptr,"%d",&tournament.buy_in);
+  fscanf(fptr,"%d",&tournament.entry_fee);
+  fscanf(fptr,"%d",&tournament.first_place_prize);
+  fscanf(fptr,"%d",&tournament.second_place_prize);
 
   fclose(fptr);
 
@@ -37,16 +49,34 @@ int main(int argc,char **argv)
   sscanf(argv[3],"%d",&num_second_places);
   sscanf(argv[4],"%d",&num_tournaments);
 
-  if (num_first_places + num_second_places > num_tournaments) {
-    printf("num_first_places + num_second_places > num_tournaments\n");
+  retval = tournament_wif(&tournament,
+    num_first_places,num_second_places,num_tournaments,&delta);
+
+  if (retval) {
+    printf("tournament_wif failed: %d\n",retval);
     return 3;
   }
 
-  delta = num_first_places * first_place_prize +
-    num_second_places * second_place_prize -
-    num_tournaments * (buy_in + entry_fee);
-
   printf("%d\n",delta);
+
+  return 0;
+}
+
+int tournament_wif(
+  struct tournament_info *tourn_ptr,
+  int num_first_places,
+  int num_second_places,
+  int num_tournaments,
+  int *delta_ptr)
+{
+  if (num_first_places + num_second_places > num_tournaments) {
+    printf("num_first_places + num_second_places > num_tournaments\n");
+    return 1;
+  }
+
+  *delta_ptr = num_first_places * tourn_ptr->first_place_prize +
+    num_second_places * tourn_ptr->second_place_prize -
+    num_tournaments * (tourn_ptr->buy_in + tourn_ptr->entry_fee);
 
   return 0;
 }
