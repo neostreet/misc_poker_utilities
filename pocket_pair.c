@@ -20,6 +20,7 @@ int main(int argc,char **argv)
   int line_len;
   int line_no;
   int rocket_count;
+  int last_rocket_line;
   double rocket_pct;
 
   if ((argc < 3) || (argc > 4)) {
@@ -49,6 +50,9 @@ int main(int argc,char **argv)
   line_no = 0;
   rocket_count = 0;
 
+  if (bDebug)
+    last_rocket_line = -1;
+
   for ( ; ; ) {
     GetLine(fptr,line,&line_len,MAX_LINE_LEN);
 
@@ -60,8 +64,14 @@ int main(int argc,char **argv)
     if ((line_len >= 5) && (line[0] == argv[curr_arg][0]) && (line[3] == argv[curr_arg][0])) {
       rocket_count++;
 
-      if (bDebug)
-        printf("%10d %s\n",line_no,line);
+      if (bDebug) {
+        if (last_rocket_line == -1)
+          printf("%10d       %s\n",line_no,line);
+        else
+          printf("%10d (%3d) %s\n",line_no,line_no - last_rocket_line,line);
+
+        last_rocket_line = line_no;
+      }
     }
   }
 
