@@ -66,6 +66,7 @@ int main(int argc,char **argv)
   struct session_info_struct work_session;
   char *cpt;
   int ix;
+  int total_delta;
 
   if (argc != 2) {
     printf(usage);
@@ -109,8 +110,14 @@ int main(int argc,char **argv)
 
   fclose(fptr);
 
-  for (n = 0; n < NUM_WEEKDAYS; n++)
-    printf("%s: %5d\n",weekdays[n],weekday_stats[n].delta);
+  total_delta = 0;
+
+  for (n = 0; n < NUM_WEEKDAYS; n++) {
+    printf("%s %10d\n",weekdays[n],weekday_stats[n].delta);
+    total_delta += weekday_stats[n].delta;
+  }
+
+  printf("\n    %10d\n",total_delta);
 
   return 0;
 }
