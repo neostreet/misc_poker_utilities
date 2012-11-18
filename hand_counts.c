@@ -47,6 +47,7 @@ int main(int argc,char **argv)
   int card_ix2;
   int ix;
   char card_string[3];
+  int total_hands;
 
   if (argc != 2) {
     printf(usage);
@@ -123,6 +124,7 @@ int main(int argc,char **argv)
   fclose(fptr);
 
   card_string[2] = 0;
+  total_hands = 0;
 
   for (o = 0; o < POKER_52_2_PERMUTATIONS; o++) {
     get_permutation_instance(
@@ -130,11 +132,14 @@ int main(int argc,char **argv)
       &m,&n,o);
 
     printf("%10d ",hand_counts[o]);
+    total_hands += hand_counts[o];
     card_string_from_card_value(m,card_string);
     printf("%s ",card_string);
     card_string_from_card_value(n,card_string);
     printf("%s\n",card_string);
   }
+
+  printf("\n%10d hands\n",total_hands);
 
   return 0;
 }

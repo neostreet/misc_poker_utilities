@@ -7,7 +7,7 @@
 #define MAX_LINE_LEN 1024
 static char line[MAX_LINE_LEN];
 
-static char usage[] = "usage: rockets (-debug) filename\n";
+static char usage[] = "usage: pocket_pair (-debug) denomination filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
@@ -22,7 +22,7 @@ int main(int argc,char **argv)
   int rocket_count;
   double rocket_pct;
 
-  if ((argc < 2) || (argc > 3)) {
+  if ((argc < 3) || (argc > 4)) {
     printf(usage);
     return 1;
   }
@@ -36,13 +36,13 @@ int main(int argc,char **argv)
       break;
   }
 
-  if (argc - curr_arg != 1) {
+  if (argc - curr_arg != 2) {
     printf(usage);
     return 2;
   }
 
-  if ((fptr = fopen(argv[curr_arg],"r")) == NULL) {
-    printf(couldnt_open,argv[curr_arg]);
+  if ((fptr = fopen(argv[curr_arg+1],"r")) == NULL) {
+    printf(couldnt_open,argv[curr_arg+1]);
     return 3;
   }
 
@@ -57,7 +57,7 @@ int main(int argc,char **argv)
 
     line_no++;
 
-    if ((line_len >= 5) && (line[0] == 'A') && (line[3] == 'A')) {
+    if ((line_len >= 5) && (line[0] == argv[curr_arg][0]) && (line[3] == argv[curr_arg][0])) {
       rocket_count++;
 
       if (bDebug)
