@@ -18,7 +18,8 @@ static char line[MAX_LINE_LEN];
 
 #define TAB 0x9
 
-static char usage[] = "usage: max_gain (-debug) (-verbose) (-no_sort) filename\n";
+static char usage[] =
+"usage: max_calendar_year_gain (-debug) (-verbose) (-no_sort) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char malloc_failed1[] = "malloc of %d session info structures failed\n";
@@ -43,6 +44,11 @@ static char *months[] = {
   "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
 };
 #define NUM_MONTHS (sizeof months / sizeof (char *))
+
+#define SECS_PER_MIN  60
+#define MINS_PER_HOUR 60
+#define HOURS_PER_DAY 24
+#define SECS_PER_DAY (SECS_PER_MIN * MINS_PER_HOUR * HOURS_PER_DAY)
 
 struct session_info_struct {
   int starting_amount;
@@ -84,6 +90,7 @@ int main(int argc,char **argv)
   int ix;
   int retval;
   char *cpt;
+  time_t datediff;
 
   if ((argc < 2) || (argc > 5)) {
     printf(usage);
@@ -157,6 +164,14 @@ int main(int argc,char **argv)
     max_gain = 0;
 
     for (n = m; n < num_sessions; n++) {
+      datediff = session_info[n].gain_start_date -
+        session_info[m].gain_start_date;
+
+      datediff /= (SECS_PER_DAY);
+
+      if (datediff >= 365)
+        break;
+
       work = session_info[n].ending_amount - session_info[m].starting_amount;
 
       if (work > max_gain) {
