@@ -1,7 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#ifdef WIN32
 #include <direct.h>
+#else
+#define _MAX_PATH 4096
+#include <unistd.h>
+#endif
 
 #define FALSE 0
 #define TRUE  1
@@ -349,9 +354,9 @@ int main(int argc,char **argv)
     }
     else {
       if (!bDebug)
-        printf("%d\n",delta);
+        printf("%s %10d\n",hole_cards,delta);
       else
-        printf("%10d %s %s\\%s\n",delta,hole_cards,save_dir,filename);
+        printf("%s %10d %s\\%s\n",hole_cards,delta,save_dir,filename);
     }
   }
 
