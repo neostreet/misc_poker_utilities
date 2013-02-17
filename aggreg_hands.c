@@ -1,6 +1,10 @@
 #include <stdio.h>
+#include <string.h>
 
-static char usage[] = "usage: aggreg_hands filename\n";
+#define FALSE 0
+#define TRUE  1
+
+static char usage[] = "usage: aggreg_hands (-debug) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 #define MAX_LINE_LEN 1024
@@ -41,6 +45,8 @@ int card_string_from_card_value(int card_value,char *card_string);
 
 int main(int argc,char **argv)
 {
+  int curr_arg;
+  int bDebug;
   int m;
   int n;
   int o;
@@ -56,16 +62,34 @@ int main(int argc,char **argv)
   int delta;
   int ix;
   char card_string[3];
-  int total_hands;
+  int total_hand_count;
+  int total_sum_delta;
+  int total_num_wins;
+  int total_num_losses;
+  int total_num_washes;
 
-  if (argc != 2) {
+  if ((argc < 2) || (argc > 3)) {
     printf(usage);
     return 1;
   }
 
-  if ((fptr = fopen(argv[1],"r")) == NULL) {
-    printf(couldnt_open,argv[1]);
+  bDebug = FALSE;
+
+  for (curr_arg = 1; curr_arg < argc; curr_arg++) {
+    if (!strcmp(argv[curr_arg],"-debug"))
+      bDebug = TRUE;
+    else
+      break;
+  }
+
+  if (argc - curr_arg != 1) {
+    printf(usage);
     return 2;
+  }
+
+  if ((fptr = fopen(argv[curr_arg],"r")) == NULL) {
+    printf(couldnt_open,argv[curr_arg]);
+    return 3;
   }
 
   for (n = 0; n < POKER_52_2_PERMUTATIONS; n++) {
@@ -93,7 +117,7 @@ int main(int argc,char **argv)
 
     if (denom_ix1 == NUM_CARDS_IN_SUIT) {
       printf(bad_denom_in_line,line_no,line);
-      return 3;
+      return 4;
     }
 
     for (suit_ix1 = 0; suit_ix1 < NUM_SUITS; suit_ix1++) {
@@ -103,7 +127,7 @@ int main(int argc,char **argv)
 
     if (suit_ix1 == NUM_SUITS) {
       printf(bad_suit_in_line,line_no,line);
-      return 4;
+      return 5;
     }
 
     card_ix1 = suit_ix1 * NUM_CARDS_IN_SUIT + denom_ix1;
@@ -115,7 +139,7 @@ int main(int argc,char **argv)
 
     if (denom_ix2 == NUM_CARDS_IN_SUIT) {
       printf(bad_denom_in_line,line_no,line);
-      return 5;
+      return 6;
     }
 
     for (suit_ix2 = 0; suit_ix2 < NUM_SUITS; suit_ix2++) {
@@ -125,7 +149,7 @@ int main(int argc,char **argv)
 
     if (suit_ix2 == NUM_SUITS) {
       printf(bad_suit_in_line,line_no,line);
-      return 6;
+      return 7;
     }
 
     card_ix2 = suit_ix2 * NUM_CARDS_IN_SUIT + denom_ix2;
@@ -148,26 +172,44 @@ int main(int argc,char **argv)
   fclose(fptr);
 
   card_string[2] = 0;
-  total_hands = 0;
+
+  total_hand_count = 0;
+  total_sum_delta = 0;
+  total_num_wins = 0;
+  total_num_losses = 0;
+  total_num_washes = 0;
 
   for (o = 0; o < POKER_52_2_PERMUTATIONS; o++) {
     get_permutation_instance(
       NUM_CARDS_IN_DECK,NUM_HOLE_CARDS_IN_HOLDEM_HAND,
       &m,&n,o);
 
-    total_hands += aggreg[o].hand_count;
     card_string_from_card_value(m,card_string);
     printf("%s ",card_string);
     card_string_from_card_value(n,card_string);
-    printf("%s %10d %5d %5d %5d %5d\n",card_string,
+    printf("%s %10d %6d %6d %6d %6d\n",card_string,
       aggreg[o].sum_delta,
       aggreg[o].num_wins,
       aggreg[o].num_losses,
       aggreg[o].num_washes,
       aggreg[o].hand_count);
+    total_hand_count += aggreg[o].hand_count;
+    total_sum_delta += aggreg[o].sum_delta;
+    total_num_wins += aggreg[o].num_wins;
+
+    if (bDebug)
+      printf("debug: total_num_wins = %6d\n",total_num_wins);
+
+    total_num_losses += aggreg[o].num_losses;
+    total_num_washes += aggreg[o].num_washes;
   }
 
-  printf("\n%10d hands\n",total_hands);
+  printf("\n      %10d %6d %6d %6d %6d\n",
+    total_sum_delta,
+    total_num_wins,
+    total_num_losses,
+    total_num_washes,
+    total_hand_count);
 
   return 0;
 }
