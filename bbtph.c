@@ -53,7 +53,7 @@ int main(int argc,char **argv)
 
   bbtph = (double)traversed / (double)num_hands / (double)bb_amount;
 
-  printf("%lf\n",bbtph);
+  printf("%lf bbtph\n",bbtph);
 
   return 0;
 }
