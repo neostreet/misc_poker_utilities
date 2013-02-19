@@ -20,7 +20,7 @@ static char filename[MAX_FILENAME_LEN];
 static char line[MAX_LINE_LEN];
 
 static char usage[] =
-"usage: fdelta (-debug) (-sum) (-avg) (-absolute_value) (-winning_only)\n"
+"usage: fdelta (-terse) (-debug) (-sum) (-avg) (-absolute_value) (-winning_only)\n"
 "  (-losing_only) (-pocket_pairs_only) player_name filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
@@ -57,6 +57,7 @@ int main(int argc,char **argv)
   int n;
   int p;
   int curr_arg;
+  int bTerse;
   int bDebug;
   int bSum;
   int bAvg;
@@ -102,6 +103,7 @@ int main(int argc,char **argv)
     return 1;
   }
 
+  bTerse = FALSE;
   bDebug = FALSE;
   bSum = FALSE;
   bAvg = FALSE;
@@ -111,7 +113,9 @@ int main(int argc,char **argv)
   bPocketPairsOnly = FALSE;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
-    if (!strcmp(argv[curr_arg],"-debug")) {
+    if (!strcmp(argv[curr_arg],"-terse"))
+      bTerse = TRUE;
+    else if (!strcmp(argv[curr_arg],"-debug")) {
       bDebug = TRUE;
       getcwd(save_dir,_MAX_PATH);
     }
@@ -353,7 +357,9 @@ int main(int argc,char **argv)
       }
     }
     else {
-      if (!bDebug)
+      if (bTerse)
+        printf("%10d\n",delta);
+      else if (!bDebug)
         printf("%s %10d\n",hole_cards,delta);
       else
         printf("%s %10d %s\\%s\n",hole_cards,delta,save_dir,filename);
