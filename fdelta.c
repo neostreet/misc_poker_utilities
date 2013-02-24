@@ -27,6 +27,7 @@ static char couldnt_open[] = "couldn't open %s\n";
 static char in_chips[] = " in chips";
 #define IN_CHIPS_LEN (sizeof (in_chips) - 1)
 static char summary[] = "*** SUMMARY ***";
+#define SUMMARY_LEN (sizeof (summary) - 1)
 static char street_marker[] = "*** ";
 #define STREET_MARKER_LEN (sizeof (street_marker) - 1)
 static char posts[] = " posts ";
@@ -72,6 +73,7 @@ int main(int argc,char **argv)
   FILE *fptr;
   int line_len;
   int line_no;
+  int dbg_line_no;
   int ix;
   int street;
   int num_street_markers;
@@ -206,6 +208,12 @@ int main(int argc,char **argv)
 
       line_no++;
 
+      if (line_no == dbg_line_no)
+        dbg = 1;
+
+      if (bDebug)
+        printf("line %d %s\n",line_no,line);
+
       if (Contains(TRUE,
         line,line_len,
         argv[player_name_ix],player_name_len,
@@ -223,13 +231,23 @@ int main(int argc,char **argv)
 
           sscanf(&line[ix+1],"%d",&starting_balance);
 
+          if (bDebug)
+            printf("line %d starting_balance = %d\n",line_no,starting_balance);
+
           continue;
         }
         else if (Contains(TRUE,
           line,line_len,
           posts,POSTS_LEN,
           &ix)) {
-          spent_this_street += get_work_amount(line,line_len);
+          work = get_work_amount(line,line_len);
+          spent_this_street += work;
+
+          if (bDebug) {
+            printf("line %d street %d POSTS work = %d, spent_this_street = %d\n",
+              line_no,street,work,spent_this_street);
+          }
+
           continue;
         }
         else if (!strncmp(line,dealt_to,DEALT_TO_LEN)) {
@@ -249,7 +267,6 @@ int main(int argc,char **argv)
             if (m < line_len) {
               for (p = 0; p < 5; p++)
                 hole_cards[p] = line[n+p];
-
 
               if (bPocketPairsOnly) {
                 if (hole_cards[0] != hole_cards[3])
@@ -280,11 +297,22 @@ int main(int argc,char **argv)
           collected_from_pot += work;
           collected_from_pot_count++;
 
+          if (bDebug) {
+            printf("line %d street %d COLLECTED work = %d, collected_from_pot = %d\n",
+              line_no,street,work,collected_from_pot);
+          }
+
           continue;
         }
         else if (!strncmp(line,uncalled_bet,UNCALLED_BET_LEN)) {
           sscanf(&line[UNCALLED_BET_LEN],"%d",&uncalled_bet_amount);
           spent_this_street -= uncalled_bet_amount;
+
+          if (bDebug) {
+            printf("line %d street %d UNCALLED uncalled_bet_amount = %d, spent_this_street = %d\n",
+              line_no,street,uncalled_bet_amount,spent_this_street);
+          }
+
           continue;
         }
         else if (Contains(TRUE,
@@ -292,30 +320,58 @@ int main(int argc,char **argv)
           folds,FOLDS_LEN,
           &ix)) {
           spent_this_hand += spent_this_street;
+
+          if (bDebug) {
+            printf("line %d street %d FOLDS spent_this_street = %d, spent_this_hand = %d\n",
+              line_no,street,spent_this_street,spent_this_hand);
+          }
+
           break;
         }
         else if (Contains(TRUE,
           line,line_len,
           bets,BETS_LEN,
           &ix)) {
-          spent_this_street += get_work_amount(line,line_len);
+          work = get_work_amount(line,line_len);
+          spent_this_street += work;
+
+          if (bDebug) {
+            printf("line %d street %d BETS work = %d, spent_this_street = %d\n",
+              line_no,street,work,spent_this_street);
+          }
         }
         else if (Contains(TRUE,
           line,line_len,
           calls,CALLS_LEN,
           &ix)) {
-          spent_this_street += get_work_amount(line,line_len);
+          work = get_work_amount(line,line_len);
+          spent_this_street += work;
+
+          if (bDebug) {
+            printf("line %d street %d CALLS work = %d, spent_this_street = %d\n",
+              line_no,street,work,spent_this_street);
+          }
         }
         else if (Contains(TRUE,
           line,line_len,
           raises,RAISES_LEN,
           &ix)) {
-          spent_this_street = get_work_amount(line,line_len);
+          work = get_work_amount(line,line_len);
+          spent_this_street = work;
+
+          if (bDebug) {
+            printf("line %d street %d RAISES work = %d, spent_this_street = %d\n",
+              line_no,street,work,spent_this_street);
+          }
         }
       }
       else {
-        if (!strcmp(line,summary))
+        if (!strncmp(line,summary,SUMMARY_LEN)) {
+          if (bDebug)
+            printf("line %d SUMMARY line detected; breaking\n",line_no);
+
           break;
+        }
 
         if (!strncmp(line,street_marker,STREET_MARKER_LEN)) {
           num_street_markers++;
