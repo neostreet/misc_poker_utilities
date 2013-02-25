@@ -414,7 +414,7 @@ int main(int argc,char **argv)
     }
     else {
       if (bTerse)
-        printf("%10d\n",delta);
+        printf("%d\n",delta);
       else if (!bDebug)
         printf("%s %10d\n",hole_cards,delta);
       else
@@ -451,7 +451,9 @@ int main(int argc,char **argv)
       dwork2 = (double)sum_absolute_value_deltas / (double)num_hands;
     }
 
-    if (!bDebug) {
+    if (bTerse)
+      printf("%d\n",sum_deltas);
+    else if (!bDebug) {
       if (!bAbsoluteValue)
         printf("%d %d %d %d\n",
           sum_deltas,sum_positive_deltas,sum_negative_deltas,num_hands);
