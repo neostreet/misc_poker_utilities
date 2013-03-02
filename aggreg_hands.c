@@ -1,9 +1,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#define FALSE 0
-#define TRUE  1
-
 static char usage[] = "usage: aggreg_hands (-debug) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
@@ -19,6 +16,8 @@ static char line[MAX_LINE_LEN];
 struct aggreg_info {
   int hand_count;
   int sum_delta;
+  int sum_wins;
+  int sum_losses;
   int num_wins;
   int num_losses;
   int num_washes;
@@ -46,7 +45,7 @@ int card_string_from_card_value(int card_value,char *card_string);
 int main(int argc,char **argv)
 {
   int curr_arg;
-  int bDebug;
+  bool bDebug;
   int m;
   int n;
   int o;
@@ -64,6 +63,8 @@ int main(int argc,char **argv)
   char card_string[3];
   int total_hand_count;
   int total_sum_delta;
+  int total_sum_wins;
+  int total_sum_losses;
   int total_num_wins;
   int total_num_losses;
   int total_num_washes;
@@ -73,11 +74,11 @@ int main(int argc,char **argv)
     return 1;
   }
 
-  bDebug = FALSE;
+  bDebug = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-debug"))
-      bDebug = TRUE;
+      bDebug = true;
     else
       break;
   }
@@ -95,6 +96,8 @@ int main(int argc,char **argv)
   for (n = 0; n < POKER_52_2_PERMUTATIONS; n++) {
     aggreg[n].hand_count = 0;
     aggreg[n].sum_delta = 0;
+    aggreg[n].sum_wins = 0;
+    aggreg[n].sum_losses = 0;
     aggreg[n].num_wins = 0;
     aggreg[n].num_losses = 0;
     aggreg[n].num_washes = 0;
@@ -161,10 +164,14 @@ int main(int argc,char **argv)
     aggreg[ix].hand_count++;
     aggreg[ix].sum_delta += delta;
 
-    if (delta > 0)
+    if (delta > 0) {
+      aggreg[ix].sum_wins += delta;
       aggreg[ix].num_wins++;
-    else if (delta < 0)
+    }
+    else if (delta < 0) {
+      aggreg[ix].sum_losses += delta;
       aggreg[ix].num_losses++;
+    }
     else
       aggreg[ix].num_washes++;
   }
@@ -175,6 +182,8 @@ int main(int argc,char **argv)
 
   total_hand_count = 0;
   total_sum_delta = 0;
+  total_sum_wins = 0;
+  total_sum_losses = 0;
   total_num_wins = 0;
   total_num_losses = 0;
   total_num_washes = 0;
@@ -187,14 +196,18 @@ int main(int argc,char **argv)
     card_string_from_card_value(m,card_string);
     printf("%s ",card_string);
     card_string_from_card_value(n,card_string);
-    printf("%s %10d %6d %6d %6d %6d\n",card_string,
+    printf("%s %10d %10d %10d %6d %6d %6d %6d\n",card_string,
       aggreg[o].sum_delta,
+      aggreg[o].sum_wins,
+      aggreg[o].sum_losses,
       aggreg[o].num_wins,
       aggreg[o].num_losses,
       aggreg[o].num_washes,
       aggreg[o].hand_count);
     total_hand_count += aggreg[o].hand_count;
     total_sum_delta += aggreg[o].sum_delta;
+    total_sum_wins += aggreg[o].sum_wins;
+    total_sum_losses += aggreg[o].sum_losses;
     total_num_wins += aggreg[o].num_wins;
 
     if (bDebug)
@@ -204,8 +217,10 @@ int main(int argc,char **argv)
     total_num_washes += aggreg[o].num_washes;
   }
 
-  printf("\n      %10d %6d %6d %6d %6d\n",
+  printf("\n      %10d %10d %6d %6d %6d %6d\n",
     total_sum_delta,
+    total_sum_wins,
+    total_sum_losses,
     total_num_wins,
     total_num_losses,
     total_num_washes,
