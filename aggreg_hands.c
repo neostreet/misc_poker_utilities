@@ -217,7 +217,7 @@ int main(int argc,char **argv)
     total_num_washes += aggreg[o].num_washes;
   }
 
-  printf("\n      %10d %10d %6d %6d %6d %6d\n",
+  printf("\n      %10d %10d %10d %6d %6d %6d %6d\n",
     total_sum_delta,
     total_sum_wins,
     total_sum_losses,
