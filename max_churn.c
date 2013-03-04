@@ -6,9 +6,6 @@
 #include <time.h>
 #include <ctype.h>
 
-#define FALSE 0
-#define TRUE  1
-
 #define YEAR_IX  0
 #define MONTH_IX 1
 #define DAY_IX   2
@@ -74,9 +71,9 @@ int main(int argc,char **argv)
   int n;
   int p;
   int curr_arg;
-  int bDebug;
-  int bVerbose;
-  int bNoSort;
+  bool bDebug;
+  bool bVerbose;
+  bool bNoSort;
   int within_value;
   FILE *fptr;
   int line_len;
@@ -94,19 +91,19 @@ int main(int argc,char **argv)
     return 1;
   }
 
-  bDebug = FALSE;
-  bVerbose = FALSE;
-  bNoSort = FALSE;
+  bDebug = false;
+  bVerbose = false;
+  bNoSort = false;
 
   how_to_sort = SORT_BY_CHURN_TOTAL;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-debug"))
-      bDebug = TRUE;
+      bDebug = true;
     else if (!strcmp(argv[curr_arg],"-verbose"))
-      bVerbose = TRUE;
+      bVerbose = true;
     else if (!strcmp(argv[curr_arg],"-no_sort"))
-      bNoSort = TRUE;
+      bNoSort = true;
     else if (!strcmp(argv[curr_arg],"-sort_by_length"))
       how_to_sort = SORT_BY_CHURN_LENGTH;
     else if (!strcmp(argv[curr_arg],"-sort_by_avg"))

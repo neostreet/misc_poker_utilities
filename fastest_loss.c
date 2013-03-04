@@ -6,9 +6,6 @@
 #include <time.h>
 #include <ctype.h>
 
-#define FALSE 0
-#define TRUE  1
-
 #define YEAR_IX  0
 #define MONTH_IX 1
 #define DAY_IX   2
@@ -21,7 +18,7 @@ static char line[MAX_LINE_LEN];
 static char usage[] = "usage: fastest_loss (-verbose) (-reverse) amount filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
-static int bReverse;
+static bool bReverse;
 
 static char malloc_failed1[] = "malloc of %d session info structures failed\n";
 static char malloc_failed2[] = "malloc of %d ints failed\n";
@@ -72,7 +69,7 @@ int main(int argc,char **argv)
   int m;
   int n;
   int curr_arg;
-  int bVerbose;
+  bool bVerbose;
   int loss_threshold;
   FILE *fptr;
   int line_len;
@@ -88,14 +85,14 @@ int main(int argc,char **argv)
     return 1;
   }
 
-  bVerbose = FALSE;
-  bReverse = FALSE;
+  bVerbose = false;
+  bReverse = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-verbose"))
-      bVerbose = TRUE;
+      bVerbose = true;
     else if (!strcmp(argv[curr_arg],"-reverse"))
-      bReverse = TRUE;
+      bReverse = true;
     else
       break;
   }
@@ -401,6 +398,9 @@ static char *format_date(char *cpt)
 
   if (month == NUM_MONTHS)
     month = 0;
+
+  if (cpt[8] == ' ')
+    cpt[8] = '0';
 
   sprintf(date_buf,"%s-%02d-%s",&cpt[20],month+1,&cpt[8]);
 

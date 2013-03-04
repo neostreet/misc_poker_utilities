@@ -5,11 +5,11 @@ struct straight_translation {
  char *new_text;
 };
 
-int find_substring(char *buf,int *ixpt,char *substring,int bCaseSens,
-  int bWord);
+int find_substring(char *buf,int *ixpt,char *substring,bool bCaseSens,
+  bool bWord);
 int is_word_delim(int chara);
 int get_word(char *buf,int *ixpt,char *word,int max_word_len,int *word_len,
-  int bSkipToWhiteSpace);
+  bool bSkipToWhiteSpace);
 int my_strcmpi(char *str1,char *str2);
 int read_straight_translations(char *filename,char *line,int max_line_len,
   struct straight_translation **straight_transl_ptr,

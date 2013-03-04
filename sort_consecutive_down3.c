@@ -2,9 +2,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define FALSE 0
-#define TRUE  1
-
 #define SORT_NO_SORT                     0
 #define SORT_BY_LOSS                     1
 #define SORT_BY_SESSIONS                 2
@@ -30,7 +27,7 @@ struct loss_struct {
   double loss_pct;
 };
 
-static int bDescending;
+static bool bDescending;
 static int sort;
 static struct loss_struct *losses;
 
@@ -57,11 +54,11 @@ int main(int argc,char **argv)
     return 1;
   }
 
-  bDescending = FALSE;
+  bDescending = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-descending"))
-      bDescending = TRUE;
+      bDescending = true;
     else
       break;
   }

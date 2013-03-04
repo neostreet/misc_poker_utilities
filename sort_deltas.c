@@ -5,9 +5,6 @@
 #include <malloc.h>
 #include <string.h>
 
-#define FALSE 0
-#define TRUE  1
-
 #define MAX_DELTA_STR_LEN 10
 
 #define TAB 0x09
@@ -16,8 +13,8 @@ static char usage[] =
 "usage: sort_deltas (-no_sort) (-reverse) (-offsetoffset) (-float) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
-static int bReverse;
-static int bFloat;
+static bool bReverse;
+static bool bFloat;
 
 static char **cppt;
 
@@ -37,7 +34,7 @@ int main(int argc,char **argv)
   int n;
   int p;
   int curr_arg;
-  int bNoSort;
+  bool bNoSort;
   int offset;
   struct stat statbuf;
   int mem_amount;
@@ -55,18 +52,18 @@ int main(int argc,char **argv)
     return 1;
   }
 
-  bNoSort = FALSE;
-  bReverse = FALSE;
-  bFloat = FALSE;
+  bNoSort = false;
+  bReverse = false;
+  bFloat = false;
   offset = 0;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-no_sort"))
-      bNoSort = TRUE;
+      bNoSort = true;
     else if (!strcmp(argv[curr_arg],"-reverse"))
-      bReverse = TRUE;
+      bReverse = true;
     else if (!strcmp(argv[curr_arg],"-float"))
-      bFloat = TRUE;
+      bFloat = true;
     else if (!strncmp(argv[curr_arg],"-offset",7))
       sscanf(&argv[curr_arg][7],"%d",&offset);
     else

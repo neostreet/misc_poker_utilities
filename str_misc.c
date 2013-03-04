@@ -4,9 +4,6 @@
 #include <ctype.h>
 #include "str_misc.h"
 
-#define FALSE 0
-#define TRUE  1
-
 #define MAX_SUBSTR_LEN  80
 #define MAX_STR_LEN    512
 static char work_substr[MAX_SUBSTR_LEN];
@@ -29,8 +26,8 @@ void do_shift(char *line,int shift)
   }
 }
 
-int find_substring(char *buf,int *ixpt,char *substring,int bCaseSens,
-  int bWord)
+int find_substring(char *buf,int *ixpt,char *substring,bool bCaseSens,
+  bool bWord)
 {
   int ix;
   int str_len;
@@ -40,7 +37,7 @@ int find_substring(char *buf,int *ixpt,char *substring,int bCaseSens,
   int m;
   int n;
   int tries;
-  int bFound;
+  bool bFound;
 
   ix = *ixpt;
 
@@ -48,7 +45,7 @@ int find_substring(char *buf,int *ixpt,char *substring,int bCaseSens,
   substr_len = strlen(substring);
 
   if (substr_len > str_len)
-    return FALSE;
+    return false;
 
   if (bCaseSens) {
     str = &buf[ix];
@@ -56,7 +53,7 @@ int find_substring(char *buf,int *ixpt,char *substring,int bCaseSens,
   }
   else {
     if ((str_len > MAX_STR_LEN) || (substr_len > MAX_SUBSTR_LEN))
-      return FALSE;
+      return false;
 
     for (m = 0; m < str_len; m++)
       work_str[m] = tolower(buf[ix+m]);
@@ -77,25 +74,25 @@ int find_substring(char *buf,int *ixpt,char *substring,int bCaseSens,
     }
 
     if (m == substr_len) {
-      bFound = TRUE;
+      bFound = true;
 
       if (bWord) {
         /* make sure the substring is bounded by whitespace */
         if ((ix + n - 1) && !is_word_delim(buf[ix + n - 1]))
-          bFound = FALSE;
+          bFound = false;
         else if (!is_word_delim(buf[ix + n + substr_len]))
-          bFound = FALSE;
+          bFound = false;
       }
 
       if (bFound) {
         *ixpt = ix + n;
 
-        return TRUE;
+        return true;
       }
     }
   }
 
-  return FALSE;
+  return false;
 }
 
 int is_word_delim(int chara)
@@ -103,13 +100,13 @@ int is_word_delim(int chara)
   if (!chara || isspace(chara) || (chara == ',') || (chara == '(') ||
     (chara == ')') || (chara == '[') || (chara == ']') || (chara == '\'') ||
     (chara == '"') || (chara == ';') || (chara == '='))
-    return TRUE;
+    return true;
 
-  return FALSE;
+  return false;
 }
 
 int get_word(char *buf,int *ixpt,char *word,int max_word_len,int *word_len,
-  int bSkipToWhiteSpace)
+  bool bSkipToWhiteSpace)
 {
   int ix;
   int save_ix;
@@ -122,7 +119,7 @@ int get_word(char *buf,int *ixpt,char *word,int max_word_len,int *word_len,
       ;
 
     if (!buf[ix])
-      return FALSE;
+      return false;
   }
 
   /* skip to the first non-whitespace character after whitespace */
@@ -130,7 +127,7 @@ int get_word(char *buf,int *ixpt,char *word,int max_word_len,int *word_len,
     ;
 
   if (!buf[ix])
-    return FALSE;
+    return false;
 
   save_ix = ix;
 
@@ -142,13 +139,13 @@ int get_word(char *buf,int *ixpt,char *word,int max_word_len,int *word_len,
   }
 
   if (buf[ix] && !is_word_delim(buf[ix]))
-    return FALSE;
+    return false;
 
   word[m] = 0;
   *ixpt = save_ix;
   *word_len = ix - save_ix;
 
-  return TRUE;
+  return true;
 }
 
 int my_strcmpi(char *str1,char *str2)
@@ -184,11 +181,11 @@ int read_straight_translations(char *filename,char *line,int max_line_len,
   int num_nonblank_lines;
   int num_transl;
   int len;
-  int bError;
+  bool bError;
 
   /* go through the file once to determine the number of translations */
   if ((fptr = fopen(filename,"r")) == NULL)
-    return FALSE;
+    return false;
 
   num_nonblank_lines = 0;
 
@@ -204,17 +201,17 @@ int read_straight_translations(char *filename,char *line,int max_line_len,
 
   if (num_transl * LINES_PER_TRANSLATION != num_nonblank_lines) {
     fclose(fptr);
-    return FALSE;
+    return false;
   }
 
   if (((*straight_transl_ptr) = (struct straight_translation *)malloc(
     num_transl * sizeof (struct straight_translation))) == NULL) {
     fclose(fptr);
-    return FALSE;
+    return false;
   }
 
   rewind(fptr);
-  bError = FALSE;
+  bError = false;
 
   for (n = 0; n < num_transl; n++) {
     m = 0;
@@ -234,7 +231,7 @@ int read_straight_translations(char *filename,char *line,int max_line_len,
         case 0:
           if (((*straight_transl_ptr)[n].old_text = (char *)malloc(len))
             == NULL)
-            bError = TRUE;
+            bError = true;
           else
             strcpy((*straight_transl_ptr)[n].old_text,line);
 
@@ -242,7 +239,7 @@ int read_straight_translations(char *filename,char *line,int max_line_len,
         case 1:
           if (((*straight_transl_ptr)[n].new_text = (char *)malloc(len))
             == NULL)
-            bError = TRUE;
+            bError = true;
           else
             strcpy((*straight_transl_ptr)[n].new_text,line);
 
@@ -267,12 +264,12 @@ int read_straight_translations(char *filename,char *line,int max_line_len,
   if (bError) {
     free(*straight_transl_ptr);
 
-    return FALSE;
+    return false;
   }
 
   *num_straight_transl_ptr = num_transl;
 
-  return TRUE;
+  return true;
 }
 
 int do_straight_translations(char *line,int line_len,int max_line_len,
@@ -293,7 +290,7 @@ int do_straight_translations(char *line,int line_len,int max_line_len,
   int search_str_len;
   char *repl_str;
   int repl_str_len;
-  int bFound;
+  bool bFound;
   int shift;
   int retval;
 
@@ -337,7 +334,7 @@ int do_straight_translations(char *line,int line_len,int max_line_len,
           if (fragment_len - p < search_str_len)
             break;
 
-          bFound = FALSE;
+          bFound = false;
 
           for (q = 0; q < search_str_len; q++) {
             if (fragment[p+q] != search_str[q])
@@ -347,9 +344,9 @@ int do_straight_translations(char *line,int line_len,int max_line_len,
           if (q == search_str_len) {
             if (is_word_delim(fragment[p+q])) {
               if (!(uncommented_start[m] + p))
-                bFound = TRUE;
+                bFound = true;
               else if (is_word_delim(line[uncommented_start[m] + p - 1]))
-                bFound = TRUE;
+                bFound = true;
             }
           }
 

@@ -6,9 +6,6 @@
 #include <time.h>
 #include <ctype.h>
 
-#define FALSE 0
-#define TRUE  1
-
 #define YEAR_IX  0
 #define MONTH_IX 1
 #define DAY_IX   2
@@ -51,7 +48,7 @@ static char *months[] = {
 #define NUM_MONTHS (sizeof months / sizeof (char *))
 
 static struct session_info_struct *session_info;
-static int bAscending;
+static bool bAscending;
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
 static int get_session_info(
@@ -66,7 +63,7 @@ int main(int argc,char **argv)
 {
   int m;
   int n;
-  int bNoSort;
+  bool bNoSort;
   int curr_arg;
   int session_ix;
   int subset_size;
@@ -86,14 +83,14 @@ int main(int argc,char **argv)
     return 1;
   }
 
-  bNoSort = FALSE;
-  bAscending = FALSE;
+  bNoSort = false;
+  bAscending = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-no_sort"))
-      bNoSort = TRUE;
+      bNoSort = true;
     else if (!strcmp(argv[curr_arg],"-ascending"))
-      bAscending = TRUE;
+      bAscending = true;
     else
       break;
   }

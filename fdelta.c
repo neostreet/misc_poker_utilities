@@ -8,9 +8,6 @@
 #include <unistd.h>
 #endif
 
-#define FALSE 0
-#define TRUE  1
-
 static char save_dir[_MAX_PATH];
 
 #define MAX_FILENAME_LEN 1024
@@ -48,7 +45,7 @@ static char collected[] = " collected ";
 #define COLLECTED_LEN (sizeof (collected) - 1)
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
-static int Contains(int bCaseSens,char *line,int line_len,
+static int Contains(bool bCaseSens,char *line,int line_len,
   char *string,int string_len,int *index);
 int get_work_amount(char *line,int line_len);
 
@@ -58,14 +55,14 @@ int main(int argc,char **argv)
   int n;
   int p;
   int curr_arg;
-  int bTerse;
-  int bDebug;
-  int bSum;
-  int bAvg;
-  int bAbsoluteValue;
-  int bWinningOnly;
-  int bLosingOnly;
-  int bPocketPairsOnly;
+  bool bTerse;
+  bool bDebug;
+  bool bSum;
+  bool bAvg;
+  bool bAbsoluteValue;
+  bool bWinningOnly;
+  bool bLosingOnly;
+  bool bPocketPairsOnly;
   int player_name_ix;
   int player_name_len;
   FILE *fptr0;
@@ -105,34 +102,34 @@ int main(int argc,char **argv)
     return 1;
   }
 
-  bTerse = FALSE;
-  bDebug = FALSE;
-  bSum = FALSE;
-  bAvg = FALSE;
-  bAbsoluteValue = FALSE;
-  bWinningOnly = FALSE;
-  bLosingOnly = FALSE;
-  bPocketPairsOnly = FALSE;
+  bTerse = false;
+  bDebug = false;
+  bSum = false;
+  bAvg = false;
+  bAbsoluteValue = false;
+  bWinningOnly = false;
+  bLosingOnly = false;
+  bPocketPairsOnly = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-terse"))
-      bTerse = TRUE;
+      bTerse = true;
     else if (!strcmp(argv[curr_arg],"-debug")) {
-      bDebug = TRUE;
+      bDebug = true;
       getcwd(save_dir,_MAX_PATH);
     }
     else if (!strcmp(argv[curr_arg],"-sum"))
-      bSum = TRUE;
+      bSum = true;
     else if (!strcmp(argv[curr_arg],"-avg"))
-      bAvg = TRUE;
+      bAvg = true;
     else if (!strcmp(argv[curr_arg],"-absolute_value"))
-      bAbsoluteValue = TRUE;
+      bAbsoluteValue = true;
     else if (!strcmp(argv[curr_arg],"-winning_only"))
-      bWinningOnly = TRUE;
+      bWinningOnly = true;
     else if (!strcmp(argv[curr_arg],"-losing_only"))
-      bLosingOnly = TRUE;
+      bLosingOnly = true;
     else if (!strcmp(argv[curr_arg],"-pocket_pairs_only"))
-      bPocketPairsOnly = TRUE;
+      bPocketPairsOnly = true;
     else
       break;
   }
@@ -214,12 +211,12 @@ int main(int argc,char **argv)
       if (bDebug)
         printf("line %d %s\n",line_no,line);
 
-      if (Contains(TRUE,
+      if (Contains(true,
         line,line_len,
         argv[player_name_ix],player_name_len,
         &ix)) {
 
-        if (Contains(TRUE,
+        if (Contains(true,
           line,line_len,
           in_chips,IN_CHIPS_LEN,
           &ix)) {
@@ -236,7 +233,7 @@ int main(int argc,char **argv)
 
           continue;
         }
-        else if (Contains(TRUE,
+        else if (Contains(true,
           line,line_len,
           posts,POSTS_LEN,
           &ix)) {
@@ -275,7 +272,7 @@ int main(int argc,char **argv)
             }
           }
         }
-        else if (Contains(TRUE,
+        else if (Contains(true,
           line,line_len,
           collected,COLLECTED_LEN,
           &ix)) {
@@ -315,7 +312,7 @@ int main(int argc,char **argv)
 
           continue;
         }
-        else if (Contains(TRUE,
+        else if (Contains(true,
           line,line_len,
           folds,FOLDS_LEN,
           &ix)) {
@@ -328,7 +325,7 @@ int main(int argc,char **argv)
 
           break;
         }
-        else if (Contains(TRUE,
+        else if (Contains(true,
           line,line_len,
           bets,BETS_LEN,
           &ix)) {
@@ -340,7 +337,7 @@ int main(int argc,char **argv)
               line_no,street,work,spent_this_street);
           }
         }
-        else if (Contains(TRUE,
+        else if (Contains(true,
           line,line_len,
           calls,CALLS_LEN,
           &ix)) {
@@ -352,7 +349,7 @@ int main(int argc,char **argv)
               line_no,street,work,spent_this_street);
           }
         }
-        else if (Contains(TRUE,
+        else if (Contains(true,
           line,line_len,
           raises,RAISES_LEN,
           &ix)) {
@@ -512,7 +509,7 @@ static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen)
   *line_len = local_line_len;
 }
 
-static int Contains(int bCaseSens,char *line,int line_len,
+static int Contains(bool bCaseSens,char *line,int line_len,
   char *string,int string_len,int *index)
 {
   int m;
@@ -523,7 +520,7 @@ static int Contains(int bCaseSens,char *line,int line_len,
   tries = line_len - string_len + 1;
 
   if (tries <= 0)
-    return FALSE;
+    return false;
 
   for (m = 0; m < tries; m++) {
     for (n = 0; n < string_len; n++) {
@@ -540,11 +537,11 @@ static int Contains(int bCaseSens,char *line,int line_len,
 
     if (n == string_len) {
       *index = m;
-      return TRUE;
+      return true;
     }
   }
 
-  return FALSE;
+  return false;
 }
 
 int get_work_amount(char *line,int line_len)

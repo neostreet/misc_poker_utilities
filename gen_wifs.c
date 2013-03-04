@@ -1,9 +1,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#define FALSE 0
-#define TRUE  1
-
 #define NUM_PLACES 6
 
 static char usage[] =
@@ -12,7 +9,7 @@ static char usage[] =
 int main(int argc,char **argv)
 {
   int curr_arg;
-  int bSummary;
+  bool bSummary;
   int m;
   int n;
   int o;
@@ -25,11 +22,11 @@ int main(int argc,char **argv)
     return 1;
   }
 
-  bSummary = FALSE;
+  bSummary = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-summary"))
-      bSummary = TRUE;
+      bSummary = true;
     else
       break;
   }

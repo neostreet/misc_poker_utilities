@@ -1,9 +1,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#define FALSE 0
-#define TRUE  1
-
 #define MAX_LINE_LEN 1024
 static char line[MAX_LINE_LEN];
 
@@ -16,9 +13,9 @@ static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
 int main(int argc,char **argv)
 {
   int curr_arg;
-  int bDebug;
+  bool bDebug;
   int offset;
-  int bDelta;
+  bool bDelta;
   int delta_offset;
   FILE *fptr;
   int line_len;
@@ -33,18 +30,18 @@ int main(int argc,char **argv)
     return 1;
   }
 
-  bDebug = FALSE;
+  bDebug = false;
   offset = 0;
-  bDelta = FALSE;
+  bDelta = false;
 
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-debug"))
-      bDebug = TRUE;
+      bDebug = true;
     else if (!strncmp(argv[curr_arg],"-offset",7))
       sscanf(&argv[curr_arg][7],"%d",&offset);
     else if (!strncmp(argv[curr_arg],"-deltaoffset",12)) {
-      bDelta = TRUE;
+      bDelta = true;
       sscanf(&argv[curr_arg][12],"%d",&delta_offset);
     }
     else

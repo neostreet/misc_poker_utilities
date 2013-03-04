@@ -1,10 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#ifdef WIN32
 #include <direct.h>
-
-#define FALSE 0
-#define TRUE  1
+#else
+#define _MAX_PATH 4096
+#include <unistd.h>
+#endif
 
 static char save_dir[_MAX_PATH];
 
@@ -15,13 +17,13 @@ static char filename[MAX_FILENAME_LEN];
 static char line[MAX_LINE_LEN];
 
 static char usage[] =
-"usage: fcollected (-debug)\n"
-"  player_name filename\n";
+"usage: fcollected (-debug) player_name filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char in_chips[] = " in chips";
 #define IN_CHIPS_LEN (sizeof (in_chips) - 1)
-static char summary[] = "*** SUMMARY ***";
+static char summary_str[] = "*** SUMMARY ***";
+#define SUMMARY_STR_LEN (sizeof (summary_str) - 1)
 static char street_marker[] = "*** ";
 #define STREET_MARKER_LEN (sizeof (street_marker) - 1)
 static char posts[] = " posts ";
@@ -42,7 +44,7 @@ static char collected[] = " collected ";
 #define COLLECTED_LEN (sizeof (collected) - 1)
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
-static int Contains(int bCaseSens,char *line,int line_len,
+static int Contains(bool bCaseSens,char *line,int line_len,
   char *string,int string_len,int *index);
 int get_work_amount(char *line,int line_len);
 
@@ -52,7 +54,7 @@ int main(int argc,char **argv)
   int n;
   int p;
   int curr_arg;
-  int bDebug;
+  bool bDebug;
   int player_name_ix;
   int player_name_len;
   FILE *fptr0;
@@ -82,11 +84,11 @@ int main(int argc,char **argv)
     return 1;
   }
 
-  bDebug = FALSE;
+  bDebug = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-debug")) {
-      bDebug = TRUE;
+      bDebug = true;
       getcwd(save_dir,_MAX_PATH);
     }
     else
@@ -146,12 +148,12 @@ int main(int argc,char **argv)
 
       line_no++;
 
-      if (Contains(TRUE,
+      if (Contains(true,
         line,line_len,
         argv[player_name_ix],player_name_len,
         &ix)) {
 
-        if (Contains(TRUE,
+        if (Contains(true,
           line,line_len,
           in_chips,IN_CHIPS_LEN,
           &ix)) {
@@ -165,7 +167,7 @@ int main(int argc,char **argv)
 
           continue;
         }
-        else if (Contains(TRUE,
+        else if (Contains(true,
           line,line_len,
           posts,POSTS_LEN,
           &ix)) {
@@ -192,7 +194,7 @@ int main(int argc,char **argv)
             }
           }
         }
-        else if (Contains(TRUE,
+        else if (Contains(true,
           line,line_len,
           collected,COLLECTED_LEN,
           &ix)) {
@@ -221,26 +223,26 @@ int main(int argc,char **argv)
           spent_this_street -= uncalled_bet_amount;
           continue;
         }
-        else if (Contains(TRUE,
+        else if (Contains(true,
           line,line_len,
           folds,FOLDS_LEN,
           &ix)) {
           spent_this_hand += spent_this_street;
           break;
         }
-        else if (Contains(TRUE,
+        else if (Contains(true,
           line,line_len,
           bets,BETS_LEN,
           &ix)) {
           spent_this_street += get_work_amount(line,line_len);
         }
-        else if (Contains(TRUE,
+        else if (Contains(true,
           line,line_len,
           calls,CALLS_LEN,
           &ix)) {
           spent_this_street += get_work_amount(line,line_len);
         }
-        else if (Contains(TRUE,
+        else if (Contains(true,
           line,line_len,
           raises,RAISES_LEN,
           &ix)) {
@@ -248,7 +250,7 @@ int main(int argc,char **argv)
         }
       }
       else {
-        if (!strcmp(line,summary))
+        if (!strncmp(line,summary_str,SUMMARY_STR_LEN))
           break;
 
         if (!strncmp(line,street_marker,STREET_MARKER_LEN)) {
@@ -302,7 +304,7 @@ static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen)
   *line_len = local_line_len;
 }
 
-static int Contains(int bCaseSens,char *line,int line_len,
+static int Contains(bool bCaseSens,char *line,int line_len,
   char *string,int string_len,int *index)
 {
   int m;
@@ -313,7 +315,7 @@ static int Contains(int bCaseSens,char *line,int line_len,
   tries = line_len - string_len + 1;
 
   if (tries <= 0)
-    return FALSE;
+    return false;
 
   for (m = 0; m < tries; m++) {
     for (n = 0; n < string_len; n++) {
@@ -330,11 +332,11 @@ static int Contains(int bCaseSens,char *line,int line_len,
 
     if (n == string_len) {
       *index = m;
-      return TRUE;
+      return true;
     }
   }
 
-  return FALSE;
+  return false;
 }
 
 int get_work_amount(char *line,int line_len)

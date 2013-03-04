@@ -2,9 +2,6 @@
 #include <string.h>
 #include "str_misc.h"
 
-#define FALSE 0
-#define TRUE  1
-
 #define MAX_FILENAME_LEN 1024
 static char filename[MAX_FILENAME_LEN];
 
@@ -132,18 +129,18 @@ int main(int argc,char **argv)
 
       ix = 0;
 
-      player_found = find_substring(line,&ix,argv[1],TRUE,FALSE);
+      player_found = find_substring(line,&ix,argv[1],true,false);
 
       if ((player_found) && (saw_summary)) {
         ix = 0;
 
-        found = find_substring(line,&ix,showed_str,TRUE,FALSE);
+        found = find_substring(line,&ix,showed_str,true,false);
 
         if (found) {
           num_showdowns++;
           ix = 0;
 
-          found = find_substring(line,&ix,won_str,TRUE,FALSE);
+          found = find_substring(line,&ix,won_str,true,false);
 
           if (found)
             pots_won_at_showdown++;
@@ -151,21 +148,21 @@ int main(int argc,char **argv)
         else {
           ix = 0;
 
-          found = find_substring(line,&ix,folded_str,TRUE,FALSE);
+          found = find_substring(line,&ix,folded_str,true,false);
 
           if (found)
             num_folded++;
           else {
             ix = 0;
 
-            found = find_substring(line,&ix,collected_str,TRUE,FALSE);
+            found = find_substring(line,&ix,collected_str,true,false);
 
             if (found)
               pots_won_without_showdown++;
             else {
               ix = 0;
 
-              found = find_substring(line,&ix,mucked_str,TRUE,FALSE);
+              found = find_substring(line,&ix,mucked_str,true,false);
 
               if (found) {
                 num_mucked++;
@@ -182,7 +179,7 @@ int main(int argc,char **argv)
       if (line_no == 2) {
         ix = 0;
 
-        if (find_substring(line,&ix,is_the_button,TRUE,FALSE)) {
+        if (find_substring(line,&ix,is_the_button,true,false)) {
           line[ix] = 0;
           sscanf(&line[ix-1],"%d",&button_seat);
         }

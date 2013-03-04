@@ -1,10 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#ifdef WIN32
 #include <direct.h>
-
-#define FALSE 0
-#define TRUE  1
+#else
+#define _MAX_PATH 4096
+#include <unistd.h>
+#endif
 
 static char save_dir[_MAX_PATH];
 
@@ -23,13 +25,13 @@ static char in_chips[] = " in chips";
 #define IN_CHIPS_LEN (sizeof (in_chips) - 1)
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
-static int Contains(int bCaseSens,char *line,int line_len,
+static int Contains(bool bCaseSens,char *line,int line_len,
   char *string,int string_len,int *index);
 
 int main(int argc,char **argv)
 {
   int curr_arg;
-  int bVerbose;
+  bool bVerbose;
   FILE *fptr0;
   int filenamelen;
   FILE *fptr;
@@ -45,11 +47,11 @@ int main(int argc,char **argv)
     return 1;
   }
 
-  bVerbose = FALSE;
+  bVerbose = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-verbose")) {
-      bVerbose = TRUE;
+      bVerbose = true;
       getcwd(save_dir,_MAX_PATH);
     }
     else
@@ -91,7 +93,7 @@ int main(int argc,char **argv)
 
       line_no++;
 
-      if (Contains(TRUE,
+      if (Contains(true,
         line,line_len,
         in_chips,IN_CHIPS_LEN,
         &ix)) {
@@ -146,7 +148,7 @@ static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen)
   *line_len = local_line_len;
 }
 
-static int Contains(int bCaseSens,char *line,int line_len,
+static int Contains(bool bCaseSens,char *line,int line_len,
   char *string,int string_len,int *index)
 {
   int m;
@@ -157,7 +159,7 @@ static int Contains(int bCaseSens,char *line,int line_len,
   tries = line_len - string_len + 1;
 
   if (tries <= 0)
-    return FALSE;
+    return false;
 
   for (m = 0; m < tries; m++) {
     for (n = 0; n < string_len; n++) {
@@ -174,9 +176,9 @@ static int Contains(int bCaseSens,char *line,int line_len,
 
     if (n == string_len) {
       *index = m;
-      return TRUE;
+      return true;
     }
   }
 
-  return FALSE;
+  return false;
 }

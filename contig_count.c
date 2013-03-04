@@ -1,9 +1,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#define FALSE 0
-#define TRUE  1
-
 #define MAX_LINE_LEN 1024
 static char line[MAX_LINE_LEN];
 
@@ -15,7 +12,7 @@ static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
 int main(int argc,char **argv)
 {
   int curr_arg;
-  int bVerbose;
+  bool bVerbose;
   FILE *fptr;
   int line_len;
   int line_no;
@@ -29,11 +26,11 @@ int main(int argc,char **argv)
     return 1;
   }
 
-  bVerbose = FALSE;
+  bVerbose = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-verbose"))
-      bVerbose = TRUE;
+      bVerbose = true;
     else
       break;
   }

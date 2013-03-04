@@ -1,9 +1,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#define FALSE 0
-#define TRUE  1
-
 #define MAX_FILENAME_LEN 1024
 static char filename[MAX_FILENAME_LEN];
 
@@ -14,14 +11,14 @@ static char usage[] = "usage: all_in_pct (-debug) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
-static int Contains(int bCaseSens,char *line,int line_len,
+static int Contains(bool bCaseSens,char *line,int line_len,
   char *string,int string_len,int *index);
 int all_in(char *line,int line_len,int line_no);
 
 int main(int argc,char **argv)
 {
   int curr_arg;
-  int bDebug;
+  bool bDebug;
   FILE *fptr0;
   int filename_len;
   FILE *fptr;
@@ -36,11 +33,11 @@ int main(int argc,char **argv)
     return 1;
   }
 
-  bDebug = FALSE;
+  bDebug = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-debug"))
-      bDebug = TRUE;
+      bDebug = true;
     else
       break;
   }
@@ -123,7 +120,7 @@ static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen)
   *line_len = local_line_len;
 }
 
-static int Contains(int bCaseSens,char *line,int line_len,
+static int Contains(bool bCaseSens,char *line,int line_len,
   char *string,int string_len,int *index)
 {
   int m;
@@ -134,7 +131,7 @@ static int Contains(int bCaseSens,char *line,int line_len,
   tries = line_len - string_len + 1;
 
   if (tries <= 0)
-    return FALSE;
+    return false;
 
   for (m = 0; m < tries; m++) {
     for (n = 0; n < string_len; n++) {
@@ -151,23 +148,23 @@ static int Contains(int bCaseSens,char *line,int line_len,
 
     if (n == string_len) {
       *index = m;
-      return TRUE;
+      return true;
     }
   }
 
-  return FALSE;
+  return false;
 }
 
 int all_in(char *line,int line_len,int line_no)
 {
   int ix;
 
-  if (Contains(TRUE,
+  if (Contains(true,
     line,line_len,
     "neostreet",9,
     &ix)) {
 
-    if (Contains(TRUE,
+    if (Contains(true,
       line,line_len,
       "all-in",6,
       &ix)) {

@@ -2,9 +2,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define FALSE 0
-#define TRUE  1
-
 #define SORT_NO_SORT                     0
 #define SORT_BY_GAIN                     1
 #define SORT_BY_SESSIONS                 2
@@ -30,7 +27,7 @@ struct gain_struct {
   double gain_pct;
 };
 
-static int bAscending;
+static bool bAscending;
 static int sort;
 static struct gain_struct *gains;
 
@@ -57,11 +54,11 @@ int main(int argc,char **argv)
     return 1;
   }
 
-  bAscending = FALSE;
+  bAscending = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-ascending"))
-      bAscending = TRUE;
+      bAscending = true;
     else
       break;
   }

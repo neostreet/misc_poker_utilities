@@ -1,9 +1,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#define FALSE 0
-#define TRUE  1
-
 #define MAX_FILENAME_LEN 1024
 static char filename[MAX_FILENAME_LEN];
 
@@ -17,7 +14,7 @@ static char and_won[] = " and won ";
 #define AND_WON_LEN (sizeof (and_won) - 1)
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
-static int Contains(int bCaseSens,char *line,int line_len,
+static int Contains(bool bCaseSens,char *line,int line_len,
   char *string,int string_len,int *index);
 
 int main(int argc,char **argv)
@@ -25,7 +22,7 @@ int main(int argc,char **argv)
   int m;
   int n;
   int curr_arg;
-  int bDebug;
+  bool bDebug;
   FILE *fptr0;
   int filename_len;
   FILE *fptr;
@@ -39,11 +36,11 @@ int main(int argc,char **argv)
     return 1;
   }
 
-  bDebug = FALSE;
+  bDebug = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-debug"))
-      bDebug = TRUE;
+      bDebug = true;
     else
       break;
   }
@@ -83,7 +80,7 @@ int main(int argc,char **argv)
 
       line_no++;
 
-      if (Contains(TRUE,
+      if (Contains(true,
         line,line_len,
         and_won,AND_WON_LEN,
         &ix)) {
@@ -139,7 +136,7 @@ static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen)
   *line_len = local_line_len;
 }
 
-static int Contains(int bCaseSens,char *line,int line_len,
+static int Contains(bool bCaseSens,char *line,int line_len,
   char *string,int string_len,int *index)
 {
   int m;
@@ -150,7 +147,7 @@ static int Contains(int bCaseSens,char *line,int line_len,
   tries = line_len - string_len + 1;
 
   if (tries <= 0)
-    return FALSE;
+    return false;
 
   for (m = 0; m < tries; m++) {
     for (n = 0; n < string_len; n++) {
@@ -167,9 +164,9 @@ static int Contains(int bCaseSens,char *line,int line_len,
 
     if (n == string_len) {
       *index = m;
-      return TRUE;
+      return true;
     }
   }
 
-  return FALSE;
+  return false;
 }

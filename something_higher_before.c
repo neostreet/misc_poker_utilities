@@ -6,9 +6,6 @@
 #include <time.h>
 #include <ctype.h>
 
-#define FALSE 0
-#define TRUE  1
-
 #define YEAR_IX  0
 #define MONTH_IX 1
 #define DAY_IX   2
@@ -57,7 +54,7 @@ int main(int argc,char **argv)
   int m;
   int n;
   int curr_arg;
-  int bVerbose;
+  bool bVerbose;
   FILE *fptr;
   int line_len;
   int num_sessions;
@@ -71,11 +68,11 @@ int main(int argc,char **argv)
     return 1;
   }
 
-  bVerbose = FALSE;
+  bVerbose = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-verbose"))
-      bVerbose = TRUE;
+      bVerbose = true;
     else
       break;
   }

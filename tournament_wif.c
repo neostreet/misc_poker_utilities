@@ -1,9 +1,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#define FALSE 0
-#define TRUE  1
-
 struct tournament_info {
   int buy_in;
   int entry_fee;
@@ -25,7 +22,7 @@ int tournament_wif(
 int main(int argc,char **argv)
 {
   int curr_arg;
-  int bRightJustify;
+  bool bRightJustify;
   FILE *fptr;
   struct tournament_info tournament;
   int num_first_places;
@@ -39,11 +36,11 @@ int main(int argc,char **argv)
     return 1;
   }
 
-  bRightJustify = FALSE;
+  bRightJustify = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-right_justify"))
-      bRightJustify = TRUE;
+      bRightJustify = true;
     else
       break;
   }

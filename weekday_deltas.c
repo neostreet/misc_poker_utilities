@@ -6,9 +6,6 @@
 #include <time.h>
 #include <ctype.h>
 
-#define FALSE 0
-#define TRUE  1
-
 #define YEAR_IX  0
 #define MONTH_IX 1
 #define DAY_IX   2
@@ -57,8 +54,8 @@ static int get_weekday(char *cpt,int *ix);
 int main(int argc,char **argv)
 {
   int curr_arg;
-  int bBalance;
-  int bVerbose;
+  bool bBalance;
+  bool bVerbose;
   int balance;
   int which_weekday;
   FILE *fptr;
@@ -74,14 +71,14 @@ int main(int argc,char **argv)
     return 1;
   }
 
-  bBalance = FALSE;
-  bVerbose = FALSE;
+  bBalance = false;
+  bVerbose = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-balance"))
-      bBalance = TRUE;
+      bBalance = true;
     else if (!strcmp(argv[curr_arg],"-verbose"))
-      bVerbose = TRUE;
+      bVerbose = true;
     else
       break;
   }
