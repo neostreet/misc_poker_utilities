@@ -25,7 +25,8 @@ static char couldnt_open[] = "couldn't open %s\n";
 
 static char in_chips[] = " in chips";
 #define IN_CHIPS_LEN (sizeof (in_chips) - 1)
-static char summary[] = "*** SUMMARY ***";
+static char summary_str[] = "*** SUMMARY ***";
+#define SUMMARY_STR_LEN (sizeof (summary_str) - 1)
 static char street_marker[] = "*** ";
 #define STREET_MARKER_LEN (sizeof (street_marker) - 1)
 static char posts[] = " posts ";
@@ -279,7 +280,7 @@ int main(int argc,char **argv)
         }
       }
       else {
-        if (!strcmp(line,summary))
+        if (!strncmp(line,summary_str,SUMMARY_STR_LEN))
           break;
 
         if (!strncmp(line,street_marker,STREET_MARKER_LEN)) {
