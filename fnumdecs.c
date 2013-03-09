@@ -23,6 +23,7 @@ static char couldnt_open[] = "couldn't open %s\n";
 static char in_chips[] = " in chips";
 #define IN_CHIPS_LEN (sizeof (in_chips) - 1)
 static char summary[] = "*** SUMMARY ***";
+#define SUMMARY_LEN (sizeof (summary) - 1)
 static char dealt_to[] = "Dealt to ";
 #define DEALT_TO_LEN (sizeof (dealt_to) - 1)
 static char folds[] = " folds ";
@@ -185,7 +186,7 @@ int main(int argc,char **argv)
         }
       }
       else {
-        if (!strcmp(line,summary))
+        if (!strncmp(line,summary,SUMMARY_LEN))
           break;
       }
     }
