@@ -1,7 +1,8 @@
 #include <stdio.h>
 #include <string.h>
 
-static char usage[] = "usage: aggreg_hands (-debug) filename\n";
+static char usage[] =
+"usage: aggreg_hands (-debug) (-reverse) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 #define MAX_LINE_LEN 1024
@@ -11,7 +12,8 @@ static char line[MAX_LINE_LEN];
 #define NUM_SUITS 4
 
 #define NUM_CARDS_IN_DECK (NUM_SUITS * NUM_CARDS_IN_SUIT)
-#define NUM_HOLE_CARDS_IN_HOLDEM_HAND 2
+
+#define rank_of(card) (card % NUM_CARDS_IN_SUIT)
 
 struct aggreg_info {
   int hand_count;
@@ -33,10 +35,18 @@ char rank_chars[] = "23456789TJQKA";
 
 static char bad_suit_in_line[] = "bad suit in line %d: %s\n";
 
+static char fmt[] = "%s %s ";
+
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
 static int index_of_hand(int card_index1,int card_index2);
 static void get_permutation_instance(
-  int set_size,int subset_size,
+  int set_size,
+  int *m,int *n,
+  int instance_ix
+);
+
+static void get_permutation_instance_reverse(
+  int set_size,
   int *m,int *n,
   int instance_ix
 );
@@ -46,6 +56,7 @@ int main(int argc,char **argv)
 {
   int curr_arg;
   bool bDebug;
+  bool bReverse;
   int m;
   int n;
   int o;
@@ -60,7 +71,7 @@ int main(int argc,char **argv)
   int card_ix2;
   int delta;
   int ix;
-  char card_string[3];
+  char card_string[2][3];
   int total_hand_count;
   int total_sum_delta;
   int total_sum_wins;
@@ -69,16 +80,19 @@ int main(int argc,char **argv)
   int total_num_losses;
   int total_num_washes;
 
-  if ((argc < 2) || (argc > 3)) {
+  if ((argc < 2) || (argc > 4)) {
     printf(usage);
     return 1;
   }
 
   bDebug = false;
+  bReverse = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-debug"))
       bDebug = true;
+    else if (!strcmp(argv[curr_arg],"-reverse"))
+      bReverse = true;
     else
       break;
   }
@@ -178,8 +192,6 @@ int main(int argc,char **argv)
 
   fclose(fptr);
 
-  card_string[2] = 0;
-
   total_hand_count = 0;
   total_sum_delta = 0;
   total_sum_wins = 0;
@@ -188,15 +200,30 @@ int main(int argc,char **argv)
   total_num_losses = 0;
   total_num_washes = 0;
 
-  for (o = 0; o < POKER_52_2_PERMUTATIONS; o++) {
-    get_permutation_instance(
-      NUM_CARDS_IN_DECK,NUM_HOLE_CARDS_IN_HOLDEM_HAND,
-      &m,&n,o);
+  for (n = 0; n < 2; n++)
+    card_string[n][2] = 0;
 
-    card_string_from_card_value(m,card_string);
-    printf("%s ",card_string);
-    card_string_from_card_value(n,card_string);
-    printf("%s %10d %10d %10d %6d %6d %6d %6d\n",card_string,
+  for (o = 0; o < POKER_52_2_PERMUTATIONS; o++) {
+    if (!bReverse) {
+      get_permutation_instance(
+        NUM_CARDS_IN_DECK,
+        &m,&n,o);
+    }
+    else {
+      get_permutation_instance_reverse(
+        NUM_CARDS_IN_DECK,
+        &m,&n,o);
+    }
+
+    card_string_from_card_value(m,card_string[0]);
+    card_string_from_card_value(n,card_string[1]);
+
+    if (rank_of(m) >= rank_of(n))
+      printf(fmt,card_string[0],card_string[1]);
+    else
+      printf(fmt,card_string[1],card_string[0]);
+
+    printf("%10d %10d %10d %6d %6d %6d %6d\n",
       aggreg[o].sum_delta,
       aggreg[o].sum_wins,
       aggreg[o].sum_losses,
@@ -280,7 +307,7 @@ static int index_of_hand(int card_index1,int card_index2)
 }
 
 static void get_permutation_instance(
-  int set_size,int subset_size,
+  int set_size,
   int *m,int *n,
   int instance_ix
 )
@@ -288,8 +315,27 @@ static void get_permutation_instance(
   if (instance_ix)
     goto after_return_point;
 
-  for (*m = 0; *m < set_size - subset_size + 1; (*m)++) {
-    for (*n = *m + 1; *n < set_size - subset_size + 2; (*n)++) {
+  for (*m = 0; *m < set_size - 1; (*m)++) {
+    for (*n = *m + 1; *n < set_size; (*n)++) {
+      return;
+
+      after_return_point:
+      ;
+    }
+  }
+}
+
+static void get_permutation_instance_reverse(
+  int set_size,
+  int *m,int *n,
+  int instance_ix
+)
+{
+  if (instance_ix)
+    goto after_return_point;
+
+  for (*m = set_size - 1; *m > 0; (*m)--) {
+    for (*n = *m - 1; *n >= 0; (*n)--) {
       return;
 
       after_return_point:
