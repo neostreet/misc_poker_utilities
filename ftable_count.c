@@ -1,7 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#ifdef WIN32
 #include <direct.h>
+#else
+#define _MAX_PATH 4096
+#include <unistd.h>
+#endif
 
 static char save_dir[_MAX_PATH];
 
@@ -11,13 +16,17 @@ static char filename[MAX_FILENAME_LEN];
 #define MAX_LINE_LEN 1024
 static char line[MAX_LINE_LEN];
 
-static char usage[] = "usage: ftable_count filename\n";
+static char usage[] = "usage: ftable_count (-genum) (-not) (-terse) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
 
 int main(int argc,char **argv)
 {
+  int curr_arg;
+  int ge_num;
+  bool bNot;
+  bool bTerse;
   FILE *fptr0;
   int filename_len;
   int num_files;
@@ -26,14 +35,34 @@ int main(int argc,char **argv)
   int table_count;
   int sum_table_counts;
 
-  if (argc != 2) {
+  if ((argc < 2) || (argc > 5)) {
     printf(usage);
     return 1;
   }
 
-  if ((fptr0 = fopen(argv[1],"r")) == NULL) {
-    printf(couldnt_open,argv[1]);
+  ge_num = -1;
+  bNot = false;
+  bTerse = false;
+
+  for (curr_arg = 1; curr_arg < argc; curr_arg++) {
+    if (!strncmp(argv[curr_arg],"-ge",3))
+      sscanf(&argv[curr_arg][3],"%d",&ge_num);
+    else if (!strcmp(argv[curr_arg],"-not"))
+      bNot = true;
+    else if (!strcmp(argv[curr_arg],"-terse"))
+      bTerse = true;
+    else
+      break;
+  }
+
+  if (argc - curr_arg != 1) {
+    printf(usage);
     return 2;
+  }
+
+  if ((fptr0 = fopen(argv[curr_arg],"r")) == NULL) {
+    printf(couldnt_open,argv[curr_arg]);
+    return 3;
   }
 
   getcwd(save_dir,_MAX_PATH);
@@ -83,7 +112,21 @@ int main(int argc,char **argv)
 
     sum_table_counts += table_count;
 
-    printf("%d %s\\%s\n",table_count,save_dir,filename);
+    if (ge_num != -1) {
+      if (!bNot) {
+        if (table_count < ge_num)
+          continue;
+      }
+      else {
+        if (table_count >= ge_num)
+          continue;
+      }
+    }
+
+    if (bTerse)
+      printf("%s\n",filename);
+    else
+      printf("%d %s\\%s\n",table_count,save_dir,filename);
   }
 
   return 0;
