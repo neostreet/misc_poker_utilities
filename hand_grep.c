@@ -4,7 +4,8 @@
 #define MAX_LINE_LEN 1024
 static char line[MAX_LINE_LEN];
 
-static char usage[] = "usage: hand_grep (-debug) rank1 rank2 filename\n";
+static char usage[] =
+"usage: hand_grep (-debug) (-suited) (-offsuit) rank1 rank2 filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
@@ -13,20 +14,30 @@ int main(int argc,char **argv)
 {
   int curr_arg;
   bool bDebug;
+  bool bSuited;
+  bool bOffsuit;
   FILE *fptr;
   int line_len;
   int line_no;
+  static int debug_line_no;
+  int dbg;
 
-  if ((argc < 4) || (argc > 5)) {
+  if ((argc < 4) || (argc > 7)) {
     printf(usage);
     return 1;
   }
 
   bDebug = false;
+  bSuited = false;
+  bOffsuit = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-debug"))
       bDebug = true;
+    else if (!strcmp(argv[curr_arg],"-suited"))
+      bSuited = true;
+    else if (!strcmp(argv[curr_arg],"-offsuit"))
+      bOffsuit = true;
     else
       break;
   }
@@ -34,6 +45,11 @@ int main(int argc,char **argv)
   if (argc - curr_arg != 3) {
     printf(usage);
     return 2;
+  }
+
+  if (bSuited && bOffsuit) {
+    printf("can't specify both -suited and -offsuit\n");
+    return 3;
   }
 
   if ((fptr = fopen(argv[curr_arg+2],"r")) == NULL) {
@@ -50,6 +66,18 @@ int main(int argc,char **argv)
       break;
 
     line_no++;
+
+    if (line_no == debug_line_no)
+      dbg = 1;
+
+    if (bSuited) {
+      if (line[1] != line[4])
+        continue;
+    }
+    else if (bOffsuit) {
+      if (line[1] == line[4])
+        continue;
+    }
 
     if (((line[0] == argv[curr_arg][0]) && (line[3] == argv[curr_arg+1][0])) ||
         ((line[0] == argv[curr_arg+1][0]) && (line[3] == argv[curr_arg][0]))) {
