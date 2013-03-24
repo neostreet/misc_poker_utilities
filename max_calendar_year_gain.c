@@ -80,6 +80,7 @@ int main(int argc,char **argv)
   int line_len;
   int num_sessions;
   int max_gain;
+  int max_gain_datediff;
   int work;
   int max_gain_ix;
   int num_gains;
@@ -174,10 +175,11 @@ int main(int argc,char **argv)
       if (work > max_gain) {
         max_gain = work;
         max_gain_ix = n;
+        max_gain_datediff = datediff;
       }
     }
 
-    if (max_gain) {
+    if (max_gain && (max_gain_datediff >= 360)) {
       session_info[m].num_gain_sessions = max_gain_ix - m + 1;
       session_info[m].gain_amount = max_gain;
       session_info[m].gain_end_date = session_info[max_gain_ix].gain_start_date;
