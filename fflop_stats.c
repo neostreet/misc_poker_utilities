@@ -13,7 +13,7 @@ static char couldnt_open[] = "couldn't open %s\n";
 static char is_the_button[] = " is the button";
 static char seat_str[] = "Seat ";
 #define SEAT_STR_LEN (sizeof (seat_str) - 1)
-static char player_folds_str[80];
+static char player_folds_str[128];
 static char flop_str[] = "*** FLOP ***";
 #define FLOP_STR_LEN (sizeof (flop_str) - 1)
 static char summary_str[] = "*** SUMMARY ***";
@@ -68,6 +68,7 @@ int main(int argc,char **argv)
   int num_folded;
   int num_mucked;
   int pots_won_without_showdown;
+  int player_folds_str_len;
 
   if (argc != 3) {
     printf(usage);
@@ -75,6 +76,7 @@ int main(int argc,char **argv)
   }
 
   sprintf(player_folds_str,"%s: folds ",argv[1]);
+  player_folds_str_len = strlen(player_folds_str);
 
   if ((fptr0 = fopen(argv[2],"r")) == NULL) {
     printf(couldnt_open,argv[2]);
@@ -200,7 +202,7 @@ int main(int argc,char **argv)
 
         seat_count++;
       }
-      else if (!strcmp(line,player_folds_str)) {
+      else if (!strncmp(line,player_folds_str,player_folds_str_len)) {
         if (!saw_flop)
           player_folded_before_flop = 1;
       }
