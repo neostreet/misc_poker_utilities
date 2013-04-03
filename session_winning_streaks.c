@@ -386,6 +386,9 @@ static char *format_date(char *cpt)
   if (month == NUM_MONTHS)
     month = 0;
 
+  if (cpt[8] == ' ')
+    cpt[8] = '0';
+
   sprintf(date_buf,"%s-%02d-%s",&cpt[20],month+1,&cpt[8]);
 
   return date_buf;
