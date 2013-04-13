@@ -230,8 +230,14 @@ int main(int argc,char **argv)
       NUM_CARDS_IN_SUIT,
       &m,&n,o);
 
-    card_string[0] = rank_chars[m];
-    card_string[1] = rank_chars[n];
+    if (m > n) {
+      card_string[0] = rank_chars[m];
+      card_string[1] = rank_chars[n];
+    }
+    else {
+      card_string[0] = rank_chars[n];
+      card_string[1] = rank_chars[m];
+    }
 
     printf("%-3s %10d %10d %10d %6d %6d %6d %6d\n",card_string,
       aggreg[NUM_CARDS_IN_SUIT+o].sum_delta,
@@ -257,8 +263,14 @@ int main(int argc,char **argv)
       NUM_CARDS_IN_SUIT,
       &m,&n,o);
 
-    card_string[0] = rank_chars[m];
-    card_string[1] = rank_chars[n];
+    if (m > n) {
+      card_string[0] = rank_chars[m];
+      card_string[1] = rank_chars[n];
+    }
+    else {
+      card_string[0] = rank_chars[n];
+      card_string[1] = rank_chars[m];
+    }
 
     printf("%-3s %10d %10d %10d %6d %6d %6d %6d\n",card_string,
       aggreg[NUM_CARDS_IN_SUIT+NUM_SUITED_NONPAIRS+o].sum_delta,
