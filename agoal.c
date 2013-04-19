@@ -1,10 +1,18 @@
 #include <stdio.h>
 #include <string.h>
+#ifdef WIN32
+#include <direct.h>
+#else
+#define _MAX_PATH 4096
+#include <unistd.h>
+#endif
+
+static char save_dir[_MAX_PATH];
 
 #define MAX_LINE_LEN 1024
 static char line[MAX_LINE_LEN];
 
-static char usage[] = "usage: agoal (-debug) filename\n";
+static char usage[] = "usage: agoal (-debug) (-verbose) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
@@ -13,6 +21,7 @@ int main(int argc,char **argv)
 {
   int curr_arg;
   bool bDebug;
+  bool bVerbose;
   FILE *fptr;
   int work;
   int num_winning_hands;
@@ -25,16 +34,21 @@ int main(int argc,char **argv)
   int line_len;
   int line_no;
 
-  if ((argc != 2) && (argc != 3)) {
+  if ((argc < 2) || (argc > 4)) {
     printf(usage);
     return 1;
   }
 
   bDebug = false;
+  bVerbose = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
-    if (!strcmp(argv[curr_arg],"-debug"))
+    if (!strcmp(argv[curr_arg],"-debug")) {
       bDebug = true;
+      getcwd(save_dir,_MAX_PATH);
+    }
+    else if (!strcmp(argv[curr_arg],"-verbose"))
+      bVerbose = true;
     else
       break;
   }
@@ -94,8 +108,12 @@ int main(int argc,char **argv)
 
   agoal = avg_gain / avg_loss;
 
-  if (!bDebug)
-    printf("%lf\n",agoal);
+  if (!bVerbose) {
+    if (!bDebug)
+      printf("%lf\n",agoal);
+    else
+      printf("%s %lf\n",save_dir,agoal);
+  }
   else {
     printf("   %7d total_winning_delta\n",total_winning_delta);
     printf("   %7d num_winning_hands\n",num_winning_hands);
