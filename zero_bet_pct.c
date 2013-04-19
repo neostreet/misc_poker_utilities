@@ -79,15 +79,18 @@ int main(int argc,char **argv)
 
   zero_bet_pct = (double)num_zero_bets / (double)line_no;
 
-  if (!bDebug)
-    printf("%lf",zero_bet_pct);
-  else
-    printf("%lf %s",zero_bet_pct,save_dir);
-
-  if (!bVerbose)
-    putchar(0x0a);
-  else
-    printf(" (%d %d)\n",num_zero_bets,line_no);
+  if (!bDebug) {
+    if (!bVerbose)
+      printf("%lf\n",zero_bet_pct);
+    else
+      printf("%lf (%d %d)\n",zero_bet_pct,num_zero_bets,line_no);
+  }
+  else {
+    if (!bVerbose)
+      printf("%lf %s\n",zero_bet_pct,save_dir);
+    else
+      printf("%lf (%d %d) %s\n",zero_bet_pct,num_zero_bets,line_no,save_dir);
+  }
 
   return 0;
 }
