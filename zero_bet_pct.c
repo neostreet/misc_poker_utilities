@@ -82,7 +82,7 @@ int main(int argc,char **argv)
   if (!bDebug)
     printf("%lf",zero_bet_pct);
   else
-    printf("%s %lf",save_dir,zero_bet_pct);
+    printf("%lf %s",zero_bet_pct,save_dir);
 
   if (!bVerbose)
     putchar(0x0a);
