@@ -76,6 +76,7 @@ int main(int argc,char **argv)
   int num_hands;
   int dbg;
   int work;
+  char hole_cards[6];
   double dwork1;
   double dwork2;
 
@@ -89,12 +90,12 @@ int main(int argc,char **argv)
   bSum = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
-    if (!strcmp(argv[curr_arg],"-debug")) {
+    if (!strcmp(argv[curr_arg],"-debug"))
       bDebug = true;
+    else if (!strcmp(argv[curr_arg],"-verbose")) {
+      bVerbose = true;
       getcwd(save_dir,_MAX_PATH);
     }
-    else if (!strcmp(argv[curr_arg],"-verbose"))
-      bVerbose = true;
     else if (!strcmp(argv[curr_arg],"-sum"))
       bSum = true;
     else
@@ -118,6 +119,7 @@ int main(int argc,char **argv)
   dbg_file_no = -1;
   num_hands = 0;
 
+  hole_cards[5] = 0;
   total_delta = 0;
 
   for ( ; ; ) {
@@ -154,7 +156,7 @@ int main(int argc,char **argv)
       if (line_no == dbg_line_no)
         dbg = 1;
 
-      if (bVerbose)
+      if (bDebug)
         printf("line %d %s\n",line_no,line);
 
       if (Contains(true,
@@ -174,7 +176,7 @@ int main(int argc,char **argv)
 
           sscanf(&line[ix+1],"%d",&starting_balance);
 
-          if (bVerbose)
+          if (bDebug)
             printf("line %d starting_balance = %d\n",line_no,starting_balance);
 
           continue;
@@ -186,7 +188,7 @@ int main(int argc,char **argv)
           work = get_work_amount(line,line_len);
           spent_this_street += work;
 
-          if (bVerbose) {
+          if (bDebug) {
             printf("line %d POSTS work = %d, spent_this_street = %d\n",
               line_no,work,spent_this_street);
           }
@@ -206,13 +208,18 @@ int main(int argc,char **argv)
               if (line[m] == ']')
                 break;
             }
+
+            if (m < line_len) {
+              for (p = 0; p < 5; p++)
+                hole_cards[p] = line[n+p];
+            }
           }
         }
         else if (!strncmp(line,uncalled_bet,UNCALLED_BET_LEN)) {
           sscanf(&line[UNCALLED_BET_LEN],"%d",&uncalled_bet_amount);
           spent_this_street -= uncalled_bet_amount;
 
-          if (bVerbose) {
+          if (bDebug) {
             printf("line %d UNCALLED uncalled_bet_amount = %d, spent_this_street = %d\n",
               line_no,uncalled_bet_amount,spent_this_street);
           }
@@ -224,7 +231,7 @@ int main(int argc,char **argv)
           folds,FOLDS_LEN,
           &ix)) {
 
-          if (bVerbose) {
+          if (bDebug) {
             printf("line %d FOLDS spent_this_street = %d\n",
               line_no,spent_this_street);
           }
@@ -238,7 +245,7 @@ int main(int argc,char **argv)
           work = get_work_amount(line,line_len);
           spent_this_street += work;
 
-          if (bVerbose) {
+          if (bDebug) {
             printf("line %d BETS work = %d, spent_this_street = %d\n",
               line_no,work,spent_this_street);
           }
@@ -250,7 +257,7 @@ int main(int argc,char **argv)
           work = get_work_amount(line,line_len);
           spent_this_street += work;
 
-          if (bVerbose) {
+          if (bDebug) {
             printf("line %d CALLS work = %d, spent_this_street = %d\n",
               line_no,work,spent_this_street);
           }
@@ -262,7 +269,7 @@ int main(int argc,char **argv)
           work = get_work_amount(line,line_len);
           spent_this_street = work;
 
-          if (bVerbose) {
+          if (bDebug) {
             printf("line %d RAISES work = %d, spent_this_street = %d\n",
               line_no,work,spent_this_street);
           }
@@ -280,8 +287,13 @@ int main(int argc,char **argv)
 
     fclose(fptr);
 
-    if (!bSum)
-      printf("%d\n",spent_this_street);
+    if (!bSum) {
+      if (!bVerbose)
+        printf("%d\n",spent_this_street);
+      else
+        printf("%10d %s %s\\%s\n",
+          spent_this_street,hole_cards,save_dir,filename);
+    }
 
     total_delta += spent_this_street;
   }
