@@ -1,8 +1,10 @@
 #include <stdio.h>
 #include <string.h>
 
-static char usage[] = "usage: aggreg_hands2 (-debug) (-dbg_ixix) filename\n";
+static char usage[] =
+"usage: aggreg_hands2 (-debug) (-dbg_ixix) (-avgs) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
+static char avg_fmt[] = " %9.2lf %9.2lf\n";
 
 #define MAX_LINE_LEN 1024
 static char line[MAX_LINE_LEN];
@@ -47,6 +49,7 @@ int main(int argc,char **argv)
 {
   int curr_arg;
   bool bDebug;
+  bool bAvgs;
   int dbg_ix;
   int dbg;
   int m;
@@ -69,18 +72,23 @@ int main(int argc,char **argv)
   int total_num_wins;
   int total_num_losses;
   int total_num_washes;
+  double win_avg;
+  double loss_avg;
 
-  if ((argc < 2) || (argc > 4)) {
+  if ((argc < 2) || (argc > 5)) {
     printf(usage);
     return 1;
   }
 
   bDebug = false;
+  bAvgs = false;
   dbg_ix = -1;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-debug"))
       bDebug = true;
+    else if (!strcmp(argv[curr_arg],"-avgs"))
+      bAvgs = true;
     else if (!strncmp(argv[curr_arg],"-dbg_ix",7))
       sscanf(&argv[curr_arg][7],"%d",&dbg_ix);
     else
@@ -206,7 +214,7 @@ int main(int argc,char **argv)
 
     card_string[n] = ' ';
 
-    printf("%-3s %10d %10d %10d %6d %6d %6d %6d\n",card_string,
+    printf("%-3s %10d %10d %10d %6d %6d %6d %6d",card_string,
       aggreg[o].sum_delta,
       aggreg[o].sum_wins,
       aggreg[o].sum_losses,
@@ -221,6 +229,22 @@ int main(int argc,char **argv)
     total_num_losses += aggreg[o].num_losses;
     total_num_washes += aggreg[o].num_washes;
     total_hand_count += aggreg[o].hand_count;
+
+    if (bAvgs) {
+      if (!aggreg[o].num_wins)
+        win_avg = (double)0;
+      else
+        win_avg = (double)aggreg[o].sum_wins / (double)aggreg[o].num_wins;
+
+      if (!aggreg[o].num_losses)
+        loss_avg = (double)0;
+      else
+        loss_avg = (double)aggreg[o].sum_losses / (double)aggreg[o].num_losses;
+
+      printf(avg_fmt,win_avg,loss_avg);
+    }
+    else
+      putchar(0x0a);
   }
 
   card_string[2] = 's';
@@ -239,7 +263,7 @@ int main(int argc,char **argv)
       card_string[1] = rank_chars[m];
     }
 
-    printf("%-3s %10d %10d %10d %6d %6d %6d %6d\n",card_string,
+    printf("%-3s %10d %10d %10d %6d %6d %6d %6d",card_string,
       aggreg[NUM_CARDS_IN_SUIT+o].sum_delta,
       aggreg[NUM_CARDS_IN_SUIT+o].sum_wins,
       aggreg[NUM_CARDS_IN_SUIT+o].sum_losses,
@@ -254,6 +278,22 @@ int main(int argc,char **argv)
     total_num_losses += aggreg[NUM_CARDS_IN_SUIT+o].num_losses;
     total_num_washes += aggreg[NUM_CARDS_IN_SUIT+o].num_washes;
     total_hand_count += aggreg[NUM_CARDS_IN_SUIT+o].hand_count;
+
+    if (bAvgs) {
+      if (!aggreg[NUM_CARDS_IN_SUIT+o].num_wins)
+        win_avg = (double)0;
+      else
+        win_avg = (double)aggreg[NUM_CARDS_IN_SUIT+o].sum_wins / (double)aggreg[NUM_CARDS_IN_SUIT+o].num_wins;
+
+      if (!aggreg[NUM_CARDS_IN_SUIT+o].num_losses)
+        loss_avg = (double)0;
+      else
+        loss_avg = (double)aggreg[NUM_CARDS_IN_SUIT+o].sum_losses / (double)aggreg[NUM_CARDS_IN_SUIT+o].num_losses;
+
+      printf(avg_fmt,win_avg,loss_avg);
+    }
+    else
+      putchar(0x0a);
   }
 
   card_string[2] = 'o';
@@ -272,7 +312,7 @@ int main(int argc,char **argv)
       card_string[1] = rank_chars[m];
     }
 
-    printf("%-3s %10d %10d %10d %6d %6d %6d %6d\n",card_string,
+    printf("%-3s %10d %10d %10d %6d %6d %6d %6d",card_string,
       aggreg[NUM_CARDS_IN_SUIT+NUM_SUITED_NONPAIRS+o].sum_delta,
       aggreg[NUM_CARDS_IN_SUIT+NUM_SUITED_NONPAIRS+o].sum_wins,
       aggreg[NUM_CARDS_IN_SUIT+NUM_SUITED_NONPAIRS+o].sum_losses,
@@ -287,9 +327,25 @@ int main(int argc,char **argv)
     total_num_losses += aggreg[NUM_CARDS_IN_SUIT+NUM_SUITED_NONPAIRS+o].num_losses;
     total_num_washes += aggreg[NUM_CARDS_IN_SUIT+NUM_SUITED_NONPAIRS+o].num_washes;
     total_hand_count += aggreg[NUM_CARDS_IN_SUIT+NUM_SUITED_NONPAIRS+o].hand_count;
+
+    if (bAvgs) {
+      if (!aggreg[NUM_CARDS_IN_SUIT+NUM_SUITED_NONPAIRS+o].num_wins)
+        win_avg = (double)0;
+      else
+        win_avg = (double)aggreg[NUM_CARDS_IN_SUIT+NUM_SUITED_NONPAIRS+o].sum_wins / (double)aggreg[NUM_CARDS_IN_SUIT+NUM_SUITED_NONPAIRS+o].num_wins;
+
+      if (!aggreg[NUM_CARDS_IN_SUIT+NUM_SUITED_NONPAIRS+o].num_losses)
+        loss_avg = (double)0;
+      else
+        loss_avg = (double)aggreg[NUM_CARDS_IN_SUIT+NUM_SUITED_NONPAIRS+o].sum_losses / (double)aggreg[NUM_CARDS_IN_SUIT+NUM_SUITED_NONPAIRS+o].num_losses;
+
+      printf(avg_fmt,win_avg,loss_avg);
+    }
+    else
+      putchar(0x0a);
   }
 
-  printf("\n    %10d %10d %10d %6d %6d %6d %6d\n",
+  printf("\n    %10d %10d %10d %6d %6d %6d %6d",
     total_sum_delta,
     total_sum_wins,
     total_sum_losses,
@@ -297,6 +353,22 @@ int main(int argc,char **argv)
     total_num_losses,
     total_num_washes,
     total_hand_count);
+
+    if (bAvgs) {
+      if (!total_num_wins)
+        win_avg = (double)0;
+      else
+        win_avg = (double)total_sum_wins / (double)total_num_wins;
+
+      if (!total_num_losses)
+        loss_avg = (double)0;
+      else
+        loss_avg = (double)total_sum_losses / (double)total_num_losses;
+
+      printf(avg_fmt,win_avg,loss_avg);
+    }
+    else
+      putchar(0x0a);
 
   return 0;
 }
