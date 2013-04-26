@@ -8,8 +8,6 @@
 #include <unistd.h>
 #endif
 
-static char save_dir[_MAX_PATH];
-
 #define MAX_FILENAME_LEN 1024
 static char filename[MAX_FILENAME_LEN];
 
@@ -17,7 +15,8 @@ static char filename[MAX_FILENAME_LEN];
 static char line[MAX_LINE_LEN];
 
 static char usage[] =
-"usage: fdelta3 (-terse) (-debug) (-absolute_value) player_name filename\n";
+"usage: fdelta3 (-terse) (-verbose) (-debug) (-absolute_value) (-handhand)\n"
+"  (-folded) player_name filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char in_chips[] = " in chips";
@@ -55,6 +54,7 @@ int main(int argc,char **argv)
   int p;
   int curr_arg;
   bool bTerse;
+  bool bVerbose;
   bool bDebug;
   bool bAbsoluteValue;
   int player_name_ix;
@@ -85,26 +85,44 @@ int main(int argc,char **argv)
   double dwork1;
   double dwork2;
   char hole_cards[6];
+  bool bHandSpecified;
+  bool bFolded;
+  bool bSuited;
+  char *hand;
   bool bSkipping;
 
-  if ((argc < 3) || (argc > 6)) {
+  if ((argc < 3) || (argc > 9)) {
     printf(usage);
     return 1;
   }
 
   bTerse = false;
+  bVerbose = false;
   bDebug = false;
   bAbsoluteValue = false;
+  bHandSpecified = false;
+  bFolded = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-terse"))
       bTerse = true;
-    else if (!strcmp(argv[curr_arg],"-debug")) {
+    else if (!strcmp(argv[curr_arg],"-verbose"))
+      bVerbose = true;
+    else if (!strcmp(argv[curr_arg],"-debug"))
       bDebug = true;
-      getcwd(save_dir,_MAX_PATH);
-    }
     else if (!strcmp(argv[curr_arg],"-absolute_value"))
       bAbsoluteValue = true;
+    else if (!strncmp(argv[curr_arg],"-hand",5)) {
+      hand = &argv[curr_arg][5];
+      bHandSpecified = true;
+
+      if ((strlen(&argv[curr_arg][5]) == 3) && (argv[curr_arg][7] == 's'))
+        bSuited = true;
+      else
+        bSuited = false;
+    }
+    else if (!strcmp(argv[curr_arg],"-folded"))
+      bFolded = true;
     else
       break;
   }
@@ -114,12 +132,17 @@ int main(int argc,char **argv)
     return 2;
   }
 
+  if (bTerse && bVerbose) {
+    printf("can't specify both -terse and -verbose\n");
+    return 3;
+  }
+
   player_name_ix = curr_arg++;
   player_name_len = strlen(argv[player_name_ix]);
 
   if ((fptr0 = fopen(argv[curr_arg],"r")) == NULL) {
     printf(couldnt_open,argv[curr_arg]);
-    return 3;
+    return 4;
   }
 
   ending_balance = -1;
@@ -230,6 +253,17 @@ int main(int argc,char **argv)
               for (p = 0; p < 5; p++)
                 hole_cards[p] = line[n+p];
             }
+
+            if (bHandSpecified) {
+              if (bSuited) {
+                if (hole_cards[1] != hole_cards[4])
+                  bSkipping = true;
+              }
+
+              if (((hole_cards[0] != hand[0]) || (hole_cards[3] != hand[1])) &&
+                  ((hole_cards[0] != hand[1]) || (hole_cards[3] != hand[0])))
+                bSkipping = true;
+            }
           }
         }
         else if (Contains(true,
@@ -290,10 +324,10 @@ int main(int argc,char **argv)
 
           if (bTerse)
             printf("%d\n",delta);
-          else if (!bDebug)
-            printf("%s %10d\n",hole_cards,delta);
+          else if (bVerbose)
+            printf("%s %10d %s\n",hole_cards,delta,filename);
           else
-            printf("%s %10d %s\\%s\n",hole_cards,delta,save_dir,filename);
+            printf("%s %10d\n",hole_cards,delta);
 
           continue;
         }
@@ -338,20 +372,22 @@ int main(int argc,char **argv)
         continue;
       else {
         if (!strncmp(line,summary,SUMMARY_LEN)) {
-          if (bDebug)
-            printf("line %d SUMMARY line detected; skipping\n",line_no);
+          if (!bHandSpecified || !bFolded) {
+            if (bDebug)
+              printf("line %d SUMMARY line detected; skipping\n",line_no);
 
-          bSkipping = true;
+            bSkipping = true;
 
-          ending_balance = starting_balance - spent_this_hand + collected_from_pot;
-          delta = ending_balance - starting_balance;
+            ending_balance = starting_balance - spent_this_hand + collected_from_pot;
+            delta = ending_balance - starting_balance;
 
-          if (bTerse)
-            printf("%d\n",delta);
-          else if (!bDebug)
-            printf("%s %10d\n",hole_cards,delta);
-          else
-            printf("%s %10d %s\\%s\n",hole_cards,delta,save_dir,filename);
+            if (bTerse)
+              printf("%d\n",delta);
+            else if (bVerbose)
+              printf("%s %10d %s\n",hole_cards,delta,filename);
+            else
+              printf("%s %10d\n",hole_cards,delta);
+          }
 
           continue;
         }
