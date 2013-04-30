@@ -272,17 +272,33 @@ int main(int argc,char **argv)
 
   total_flops_seen = big_blind_flops_seen + small_blind_flops_seen + other_flops_seen;
 
-  dwork = (double)big_blind_flops_seen / (double)big_blinds * (double)100;
-  big_blind_flops_seen_pct = (int)dwork;
+  if (!big_blinds)
+    big_blind_flops_seen_pct = 0;
+  else {
+    dwork = (double)big_blind_flops_seen / (double)big_blinds * (double)100;
+    big_blind_flops_seen_pct = (int)dwork;
+  }
 
-  dwork = (double)small_blind_flops_seen / (double)small_blinds * (double)100;
-  small_blind_flops_seen_pct = (int)dwork;
+  if (!small_blinds)
+    small_blind_flops_seen_pct = 0;
+  else {
+    dwork = (double)small_blind_flops_seen / (double)small_blinds * (double)100;
+    small_blind_flops_seen_pct = (int)dwork;
+  }
 
-  dwork = (double)other_flops_seen / (double)others * (double)100;
-  other_flops_seen_pct = (int)dwork;
+  if (!others)
+    other_flops_seen_pct = 0;
+  else {
+    dwork = (double)other_flops_seen / (double)others * (double)100;
+    other_flops_seen_pct = (int)dwork;
+  }
 
-  dwork = (double)total_flops_seen / (double)total_hands * (double)100;
-  total_flops_seen_pct = (int)dwork;
+  if (!total_hands)
+    total_flops_seen_pct = 0;
+  else {
+    dwork = (double)total_flops_seen / (double)total_hands * (double)100;
+    total_flops_seen_pct = (int)dwork;
+  }
 
   if (!num_showdowns)
     pots_won_at_showdown_pct = 0;
