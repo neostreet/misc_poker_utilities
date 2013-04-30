@@ -52,6 +52,7 @@ int main(int argc,char **argv)
   int curr_arg;
   bool bDebug;
   bool bVerbose;
+  bool bHaveHoleCards;
   int player_name_ix;
   int player_name_len;
   FILE *fptr;
@@ -129,6 +130,7 @@ int main(int argc,char **argv)
   uncalled_bet_amount = 0;
   collected_from_pot = 0;
   collected_from_pot_count = 0;
+  bHaveHoleCards = false;
 
   for ( ; ; ) {
     GetLine(fptr,line,&line_len,MAX_LINE_LEN);
@@ -197,6 +199,8 @@ int main(int argc,char **argv)
           if (m < line_len) {
             for (p = 0; p < 5; p++)
               hole_cards[p] = line[n+p];
+
+            bHaveHoleCards = true;
           }
         }
       }
@@ -317,10 +321,18 @@ int main(int argc,char **argv)
   ending_balance = starting_balance - spent_this_hand + collected_from_pot;
   delta = ending_balance - starting_balance;
 
-  if (!bVerbose)
-    printf("%s %10d\n",hole_cards,delta);
-  else
-    printf("%s %10d %s/%s\n",hole_cards,delta,save_dir,argv[curr_arg]);
+  if (!bVerbose) {
+    if (!bHaveHoleCards)
+      printf("%10d\n",delta);
+    else
+      printf("%s %10d\n",hole_cards,delta);
+  }
+  else {
+    if (!bHaveHoleCards)
+      printf("%10d %s/%s\n",delta,save_dir,argv[curr_arg]);
+    else
+      printf("%s %10d %s/%s\n",hole_cards,delta,save_dir,argv[curr_arg]);
+  }
 
   return 0;
 }
