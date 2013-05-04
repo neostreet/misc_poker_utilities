@@ -16,6 +16,9 @@ static char filename[MAX_FILENAME_LEN];
 #define MAX_LINE_LEN 1024
 static char line[MAX_LINE_LEN];
 
+#define MAX_PLAYER_NAME_LEN 128
+static char player_name[MAX_PLAYER_NAME_LEN+1];
+
 static char usage[] =
 "usage: fpot (-verbose) (-debug) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
@@ -31,6 +34,7 @@ static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
 static int Contains(bool bCaseSens,char *line,int line_len,
   char *string,int string_len,int *index);
 int get_work_amount(char *line,int line_len);
+void get_player_name(char *line,int line_len,char *player_name,int max_player_name_len);
 
 int main(int argc,char **argv)
 {
@@ -139,8 +143,12 @@ int main(int argc,char **argv)
             &ix)) {
             work = get_work_amount(line,line_len);
 
-            if (work > maxval)
+            if (work > maxval) {
               maxval = work;
+
+              if (bVerbose)
+                get_player_name(line,line_len,player_name,MAX_PLAYER_NAME_LEN);
+            }
           }
           else if (Contains(true,
             line,line_len,
@@ -148,15 +156,19 @@ int main(int argc,char **argv)
             &ix)) {
             work = get_work_amount(line,line_len);
 
-            if (work > maxval)
+            if (work > maxval) {
               maxval = work;
+
+              if (bVerbose)
+                get_player_name(line,line_len,player_name,MAX_PLAYER_NAME_LEN);
+            }
           }
         }
 
         if (!bVerbose)
           printf("%d\n",maxval);
         else
-          printf("%10d %s\\%s\n",maxval,save_dir,filename);
+          printf("%10d %s\\%s %s\n",maxval,save_dir,filename,player_name);
 
         break;
       }
@@ -257,4 +269,18 @@ int get_work_amount(char *line,int line_len)
   sscanf(&line[ix+1],"%d",&work_amount);
 
   return work_amount;
+}
+
+void get_player_name(char *line,int line_len,char *player_name,int max_player_name_len)
+{
+  int n;
+
+  for (n = 0; n < max_player_name_len; n++) {
+    if (line[8+n] == ' ')
+      break;
+
+    player_name[n] = line[8+n];
+  }
+
+  player_name[n] = 0;
 }
