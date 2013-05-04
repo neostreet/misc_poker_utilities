@@ -15,7 +15,7 @@ static char filename[MAX_FILENAME_LEN];
 static char line[MAX_LINE_LEN];
 
 static char usage[] =
-"usage: fdelta3 (-terse) (-verbose) (-debug) (-handhand)\n"
+"usage: fcollected3 (-terse) (-verbose) (-debug) (-handhand)\n"
 "  (-folded) player_name filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
@@ -74,8 +74,6 @@ int main(int argc,char **argv)
   int uncalled_bet_amount;
   int collected_from_pot;
   int collected_from_pot_count;
-  int ending_balance;
-  int delta;
   int file_no;
   int dbg_file_no;
   int num_hands;
@@ -140,8 +138,6 @@ int main(int argc,char **argv)
     printf(couldnt_open,argv[curr_arg]);
     return 4;
   }
-
-  ending_balance = -1;
 
   file_no = 0;
   dbg_file_no = -1;
@@ -315,15 +311,12 @@ int main(int argc,char **argv)
 
           bSkipping = true;
 
-          ending_balance = starting_balance - spent_this_hand + collected_from_pot;
-          delta = ending_balance - starting_balance;
-
           if (bTerse)
-            printf("%d\n",delta);
+            printf("%d\n",collected_from_pot);
           else if (bVerbose)
-            printf("%s %10d %s\n",hole_cards,delta,filename);
+            printf("%s %10d %s\n",hole_cards,collected_from_pot,filename);
           else
-            printf("%s %10d\n",hole_cards,delta);
+            printf("%s %10d\n",hole_cards,collected_from_pot);
 
           continue;
         }
@@ -374,15 +367,12 @@ int main(int argc,char **argv)
 
             bSkipping = true;
 
-            ending_balance = starting_balance - spent_this_hand + collected_from_pot;
-            delta = ending_balance - starting_balance;
-
             if (bTerse)
-              printf("%d\n",delta);
+              printf("%d\n",collected_from_pot);
             else if (bVerbose)
-              printf("%s %10d %s\n",hole_cards,delta,filename);
+              printf("%s %10d %s\n",hole_cards,collected_from_pot,filename);
             else
-              printf("%s %10d\n",hole_cards,delta);
+              printf("%s %10d\n",hole_cards,collected_from_pot);
           }
 
           continue;

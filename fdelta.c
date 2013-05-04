@@ -17,7 +17,7 @@ static char filename[MAX_FILENAME_LEN];
 static char line[MAX_LINE_LEN];
 
 static char usage[] =
-"usage: fdelta (-terse) (-debug) (-sum) (-avg) (-absolute_value) (-winning_only)\n"
+"usage: fdelta (-terse) (-verbose) (-debug) (-sum) (-avg) (-absolute_value) (-winning_only)\n"
 "  (-losing_only) (-pocket_pairs_only) player_name filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
@@ -56,6 +56,7 @@ int main(int argc,char **argv)
   int p;
   int curr_arg;
   bool bTerse;
+  bool bVerbose;
   bool bDebug;
   bool bSum;
   bool bAvg;
@@ -97,12 +98,13 @@ int main(int argc,char **argv)
   int sum_negative_deltas;
   int sum_absolute_value_deltas;
 
-  if ((argc < 3) || (argc > 10)) {
+  if ((argc < 3) || (argc > 12)) {
     printf(usage);
     return 1;
   }
 
   bTerse = false;
+  bVerbose = false;
   bDebug = false;
   bSum = false;
   bAvg = false;
@@ -114,10 +116,12 @@ int main(int argc,char **argv)
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-terse"))
       bTerse = true;
-    else if (!strcmp(argv[curr_arg],"-debug")) {
-      bDebug = true;
+    else if (!strcmp(argv[curr_arg],"-verbose")) {
+      bVerbose = true;
       getcwd(save_dir,_MAX_PATH);
     }
+    else if (!strcmp(argv[curr_arg],"-debug"))
+      bDebug = true;
     else if (!strcmp(argv[curr_arg],"-sum"))
       bSum = true;
     else if (!strcmp(argv[curr_arg],"-avg"))
@@ -139,10 +143,15 @@ int main(int argc,char **argv)
     return 2;
   }
 
+  if (bTerse && bVerbose) {
+    printf("can't specify both -terse and -verbose\n");
+    return 3;
+  }
+
   if (bWinningOnly && bLosingOnly) {
     printf("only specify at most one of the flags -winning_only and "
       "-losing_only\n");
-    return 3;
+    return 4;
   }
 
   player_name_ix = curr_arg++;
@@ -150,7 +159,7 @@ int main(int argc,char **argv)
 
   if ((fptr0 = fopen(argv[curr_arg],"r")) == NULL) {
     printf(couldnt_open,argv[curr_arg]);
-    return 4;
+    return 5;
   }
 
   ending_balance = -1;
@@ -412,7 +421,7 @@ int main(int argc,char **argv)
     else {
       if (bTerse)
         printf("%d\n",delta);
-      else if (!bDebug)
+      else if (!bVerbose)
         printf("%s %10d\n",hole_cards,delta);
       else
         printf("%s %10d %s\\%s\n",hole_cards,delta,save_dir,filename);

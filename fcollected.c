@@ -17,7 +17,7 @@ static char filename[MAX_FILENAME_LEN];
 static char line[MAX_LINE_LEN];
 
 static char usage[] =
-"usage: fcollected (-debug) player_name filename\n";
+"usage: fcollected (-terse) (-verbose) (-debug) player_name filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char in_chips[] = " in chips";
@@ -54,6 +54,8 @@ int main(int argc,char **argv)
   int n;
   int p;
   int curr_arg;
+  bool bTerse;
+  bool bVerbose;
   bool bDebug;
   int player_name_ix;
   int player_name_len;
@@ -62,6 +64,7 @@ int main(int argc,char **argv)
   FILE *fptr;
   int line_len;
   int line_no;
+  int dbg_line_no;
   int ix;
   int street;
   int num_street_markers;
@@ -72,25 +75,31 @@ int main(int argc,char **argv)
   int uncalled_bet_amount;
   int collected_from_pot;
   int collected_from_pot_count;
-  int ending_balance;
   int file_no;
   int dbg_file_no;
+  int num_hands;
   int dbg;
   int work;
   char hole_cards[6];
 
-  if ((argc < 3) || (argc > 8)) {
+  if ((argc < 3) || (argc > 6)) {
     printf(usage);
     return 1;
   }
 
+  bTerse = false;
+  bVerbose = false;
   bDebug = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
-    if (!strcmp(argv[curr_arg],"-debug")) {
-      bDebug = true;
+    if (!strcmp(argv[curr_arg],"-terse"))
+      bTerse = true;
+    else if (!strcmp(argv[curr_arg],"-verbose")) {
+      bVerbose = true;
       getcwd(save_dir,_MAX_PATH);
     }
+    else if (!strcmp(argv[curr_arg],"-debug"))
+      bDebug = true;
     else
       break;
   }
@@ -100,18 +109,22 @@ int main(int argc,char **argv)
     return 2;
   }
 
+  if (bTerse && bVerbose) {
+    printf("can't specify both -terse and -verbose\n");
+    return 3;
+  }
+
   player_name_ix = curr_arg++;
   player_name_len = strlen(argv[player_name_ix]);
 
   if ((fptr0 = fopen(argv[curr_arg],"r")) == NULL) {
     printf(couldnt_open,argv[curr_arg]);
-    return 3;
+    return 4;
   }
-
-  ending_balance = -1;
 
   file_no = 0;
   dbg_file_no = -1;
+  num_hands = 0;
 
   hole_cards[5] = 0;
 
@@ -131,6 +144,8 @@ int main(int argc,char **argv)
       continue;
     }
 
+    num_hands++;
+
     line_no = 0;
     street = 0;
     num_street_markers = 0;
@@ -147,6 +162,12 @@ int main(int argc,char **argv)
         break;
 
       line_no++;
+
+      if (line_no == dbg_line_no)
+        dbg = 1;
+
+      if (bDebug)
+        printf("line %d %s\n",line_no,line);
 
       if (Contains(true,
         line,line_len,
@@ -165,13 +186,23 @@ int main(int argc,char **argv)
 
           sscanf(&line[ix+1],"%d",&starting_balance);
 
+          if (bDebug)
+            printf("line %d starting_balance = %d\n",line_no,starting_balance);
+
           continue;
         }
         else if (Contains(true,
           line,line_len,
           posts,POSTS_LEN,
           &ix)) {
-          spent_this_street += get_work_amount(line,line_len);
+          work = get_work_amount(line,line_len);
+          spent_this_street += work;
+
+          if (bDebug) {
+            printf("line %d street %d POSTS work = %d, spent_this_street = %d\n",
+              line_no,street,work,spent_this_street);
+          }
+
           continue;
         }
         else if (!strncmp(line,dealt_to,DEALT_TO_LEN)) {
@@ -216,11 +247,22 @@ int main(int argc,char **argv)
           collected_from_pot += work;
           collected_from_pot_count++;
 
+          if (bDebug) {
+            printf("line %d street %d COLLECTED work = %d, collected_from_pot = %d\n",
+              line_no,street,work,collected_from_pot);
+          }
+
           continue;
         }
         else if (!strncmp(line,uncalled_bet,UNCALLED_BET_LEN)) {
           sscanf(&line[UNCALLED_BET_LEN],"%d",&uncalled_bet_amount);
           spent_this_street -= uncalled_bet_amount;
+
+          if (bDebug) {
+            printf("line %d street %d UNCALLED uncalled_bet_amount = %d, spent_this_street = %d\n",
+              line_no,street,uncalled_bet_amount,spent_this_street);
+          }
+
           continue;
         }
         else if (Contains(true,
@@ -228,30 +270,58 @@ int main(int argc,char **argv)
           folds,FOLDS_LEN,
           &ix)) {
           spent_this_hand += spent_this_street;
+
+          if (bDebug) {
+            printf("line %d street %d FOLDS spent_this_street = %d, spent_this_hand = %d\n",
+              line_no,street,spent_this_street,spent_this_hand);
+          }
+
           break;
         }
         else if (Contains(true,
           line,line_len,
           bets,BETS_LEN,
           &ix)) {
-          spent_this_street += get_work_amount(line,line_len);
+          work = get_work_amount(line,line_len);
+          spent_this_street += work;
+
+          if (bDebug) {
+            printf("line %d street %d BETS work = %d, spent_this_street = %d\n",
+              line_no,street,work,spent_this_street);
+          }
         }
         else if (Contains(true,
           line,line_len,
           calls,CALLS_LEN,
           &ix)) {
-          spent_this_street += get_work_amount(line,line_len);
+          work = get_work_amount(line,line_len);
+          spent_this_street += work;
+
+          if (bDebug) {
+            printf("line %d street %d CALLS work = %d, spent_this_street = %d\n",
+              line_no,street,work,spent_this_street);
+          }
         }
         else if (Contains(true,
           line,line_len,
           raises,RAISES_LEN,
           &ix)) {
-          spent_this_street = get_work_amount(line,line_len);
+          work = get_work_amount(line,line_len);
+          spent_this_street = work;
+
+          if (bDebug) {
+            printf("line %d street %d RAISES work = %d, spent_this_street = %d\n",
+              line_no,street,work,spent_this_street);
+          }
         }
       }
       else {
-        if (!strncmp(line,summary,SUMMARY_LEN))
+        if (!strncmp(line,summary,SUMMARY_LEN)) {
+          if (bDebug)
+            printf("line %d SUMMARY line detected; breaking\n",line_no);
+
           break;
+        }
 
         if (!strncmp(line,street_marker,STREET_MARKER_LEN)) {
           num_street_markers++;
@@ -269,10 +339,12 @@ int main(int argc,char **argv)
 
     fclose(fptr);
 
-    if (!bDebug)
+    if (bTerse)
       printf("%d\n",collected_from_pot);
+    else if (!bVerbose)
+      printf("%s %10d\n",hole_cards,collected_from_pot);
     else
-      printf("%10d %s %s\\%s\n",collected_from_pot,hole_cards,save_dir,filename);
+      printf("%s %10d %s\\%s\n",hole_cards,collected_from_pot,save_dir,filename);
   }
 
   fclose(fptr0);
