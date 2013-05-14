@@ -16,7 +16,7 @@ static char line[MAX_LINE_LEN];
 
 static char usage[] =
 "usage: fdelta3 (-terse) (-verbose) (-debug) (-handhand)\n"
-"  (-folded) player_name filename\n";
+"  (-folded) (-abbrev) player_name filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char in_chips[] = " in chips";
@@ -41,6 +41,10 @@ static char uncalled_bet[] = "Uncalled bet (";
 #define UNCALLED_BET_LEN (sizeof (uncalled_bet) - 1)
 static char collected[] = " collected ";
 #define COLLECTED_LEN (sizeof (collected) - 1)
+
+#define NUM_CARDS_IN_SUIT 13
+
+static char rank_chars[] = "23456789TJQKA";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
 static int Contains(bool bCaseSens,char *line,int line_len,
@@ -86,11 +90,14 @@ int main(int argc,char **argv)
   char hole_cards[6];
   bool bHandSpecified;
   bool bFolded;
+  bool bAbbrev;
   bool bSuited;
   char *hand;
   bool bSkipping;
+  int rank_ix1;
+  int rank_ix2;
 
-  if ((argc < 3) || (argc > 8)) {
+  if ((argc < 3) || (argc > 9)) {
     printf(usage);
     return 1;
   }
@@ -100,6 +107,7 @@ int main(int argc,char **argv)
   bDebug = false;
   bHandSpecified = false;
   bFolded = false;
+  bAbbrev = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-terse"))
@@ -119,6 +127,8 @@ int main(int argc,char **argv)
     }
     else if (!strcmp(argv[curr_arg],"-folded"))
       bFolded = true;
+    else if (!strcmp(argv[curr_arg],"-abbrev"))
+      bAbbrev = true;
     else
       break;
   }
@@ -145,9 +155,11 @@ int main(int argc,char **argv)
 
   file_no = 0;
   dbg_file_no = -1;
-  num_hands = 0;
 
-  hole_cards[5] = 0;
+  if (!bAbbrev)
+    hole_cards[5] = 0;
+  else
+    hole_cards[3] = 0;
 
   for ( ; ; ) {
     GetLine(fptr0,filename,&filename_len,MAX_FILENAME_LEN);
@@ -167,6 +179,7 @@ int main(int argc,char **argv)
 
     line_no = 0;
     bSkipping = false;
+    num_hands = 0;
 
     for ( ; ; ) {
       GetLine(fptr,line,&line_len,MAX_LINE_LEN);
@@ -246,8 +259,45 @@ int main(int argc,char **argv)
             }
 
             if (m < line_len) {
-              for (p = 0; p < 5; p++)
-                hole_cards[p] = line[n+p];
+              if (!bAbbrev) {
+                for (p = 0; p < 5; p++)
+                  hole_cards[p] = line[n+p];
+              }
+              else {
+                for (rank_ix1 = 0; rank_ix1 < NUM_CARDS_IN_SUIT; rank_ix1++) {
+                  if (line[n] == rank_chars[rank_ix1])
+                    break;
+                }
+
+                if (rank_ix1 == NUM_CARDS_IN_SUIT)
+                  rank_ix1 = 0;
+
+                for (rank_ix2 = 0; rank_ix2 < NUM_CARDS_IN_SUIT; rank_ix2++) {
+                  if (line[n+3] == rank_chars[rank_ix2])
+                    break;
+                }
+
+                if (rank_ix2 == NUM_CARDS_IN_SUIT)
+                  rank_ix2 = 0;
+
+                if (rank_ix1 >= rank_ix2) {
+                  hole_cards[0] = line[n];
+                  hole_cards[1] = line[n+3];
+                }
+                else {
+                  hole_cards[0] = line[n+3];
+                  hole_cards[1] = line[n];
+                }
+
+                if (hole_cards[0] == hole_cards[1])
+                  hole_cards[2] = ' ';
+                else {
+                  if (line[n+1] == line[n+4])
+                    hole_cards[2] = 's';
+                  else
+                    hole_cards[2] = 'o';
+                }
+              }
             }
 
             if (bHandSpecified) {
@@ -321,7 +371,7 @@ int main(int argc,char **argv)
           if (bTerse)
             printf("%d\n",delta);
           else if (bVerbose)
-            printf("%s %10d %s\n",hole_cards,delta,filename);
+            printf("%s %10d %s %3d\n",hole_cards,delta,filename,num_hands);
           else
             printf("%s %10d\n",hole_cards,delta);
 
@@ -380,7 +430,7 @@ int main(int argc,char **argv)
             if (bTerse)
               printf("%d\n",delta);
             else if (bVerbose)
-              printf("%s %10d %s\n",hole_cards,delta,filename);
+              printf("%s %10d %s %3d\n",hole_cards,delta,filename,num_hands);
             else
               printf("%s %10d\n",hole_cards,delta);
           }
