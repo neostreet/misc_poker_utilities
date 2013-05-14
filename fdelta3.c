@@ -305,6 +305,10 @@ int main(int argc,char **argv)
                 if (hole_cards[1] != hole_cards[4])
                   bSkipping = true;
               }
+              else {
+                if (hole_cards[1] == hole_cards[4])
+                  bSkipping = true;
+              }
 
               if (((hole_cards[0] != hand[0]) || (hole_cards[3] != hand[1])) &&
                   ((hole_cards[0] != hand[1]) || (hole_cards[3] != hand[0])))
