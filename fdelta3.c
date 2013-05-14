@@ -16,7 +16,7 @@ static char line[MAX_LINE_LEN];
 
 static char usage[] =
 "usage: fdelta3 (-terse) (-verbose) (-debug) (-handhand)\n"
-"  (-folded) (-abbrev) player_name filename\n";
+"  (-folded) (-abbrev) (-skip_zero) player_name filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char in_chips[] = " in chips";
@@ -91,13 +91,14 @@ int main(int argc,char **argv)
   bool bHandSpecified;
   bool bFolded;
   bool bAbbrev;
+  bool bSkipZero;
   bool bSuited;
   char *hand;
   bool bSkipping;
   int rank_ix1;
   int rank_ix2;
 
-  if ((argc < 3) || (argc > 9)) {
+  if ((argc < 3) || (argc > 10)) {
     printf(usage);
     return 1;
   }
@@ -108,6 +109,7 @@ int main(int argc,char **argv)
   bHandSpecified = false;
   bFolded = false;
   bAbbrev = false;
+  bSkipZero = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-terse"))
@@ -129,6 +131,8 @@ int main(int argc,char **argv)
       bFolded = true;
     else if (!strcmp(argv[curr_arg],"-abbrev"))
       bAbbrev = true;
+    else if (!strcmp(argv[curr_arg],"-skip_zero"))
+      bSkipZero = true;
     else
       break;
   }
@@ -372,12 +376,14 @@ int main(int argc,char **argv)
           ending_balance = starting_balance - spent_this_hand + collected_from_pot;
           delta = ending_balance - starting_balance;
 
-          if (bTerse)
-            printf("%d\n",delta);
-          else if (bVerbose)
-            printf("%s %10d %s %3d\n",hole_cards,delta,filename,num_hands);
-          else
-            printf("%s %10d\n",hole_cards,delta);
+          if (!bSkipZero || (delta != 0)) {
+            if (bTerse)
+              printf("%d\n",delta);
+            else if (bVerbose)
+              printf("%s %10d %s %3d\n",hole_cards,delta,filename,num_hands);
+            else
+              printf("%s %10d\n",hole_cards,delta);
+          }
 
           continue;
         }
@@ -431,12 +437,14 @@ int main(int argc,char **argv)
             ending_balance = starting_balance - spent_this_hand + collected_from_pot;
             delta = ending_balance - starting_balance;
 
-            if (bTerse)
-              printf("%d\n",delta);
-            else if (bVerbose)
-              printf("%s %10d %s %3d\n",hole_cards,delta,filename,num_hands);
-            else
-              printf("%s %10d\n",hole_cards,delta);
+            if (!bSkipZero || (delta != 0)) {
+              if (bTerse)
+                printf("%d\n",delta);
+              else if (bVerbose)
+                printf("%s %10d %s %3d\n",hole_cards,delta,filename,num_hands);
+              else
+                printf("%s %10d\n",hole_cards,delta);
+            }
           }
 
           continue;
