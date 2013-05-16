@@ -24,7 +24,8 @@ struct session_info_struct {
 #define TAB 0x9
 
 static char usage[] =
-"usage: session_losing_streaks (-no_sort) (-ascending) (-sort_by_sum_delta) filename\n";
+"usage: session_losing_streaks (-no_sort) (-ascending) (-sort_by_sum_delta)\n"
+"  (-total) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char malloc_failed1[] = "malloc of %d session info structures failed\n";
@@ -66,6 +67,7 @@ int main(int argc,char **argv)
   int m;
   int n;
   bool bNoSort;
+  bool bTotal;
   int curr_arg;
   FILE *fptr;
   int line_len;
@@ -79,8 +81,10 @@ int main(int argc,char **argv)
   int losing_streak_ix;
   int retval;
   char *cpt;
+  int total_losing_sessions;
+  int total_losing_session_deltas;
 
-  if ((argc < 2) || (argc > 5)) {
+  if ((argc < 2) || (argc > 6)) {
     printf(usage);
     return 1;
   }
@@ -88,6 +92,7 @@ int main(int argc,char **argv)
   bNoSort = false;
   bAscending = false;
   bSortBySumDelta = false;
+  bAscending = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-no_sort"))
@@ -96,6 +101,8 @@ int main(int argc,char **argv)
       bAscending = true;
     else if (!strcmp(argv[curr_arg],"-sort_by_sum_delta"))
       bSortBySumDelta = true;
+    else if (!strcmp(argv[curr_arg],"-total"))
+      bTotal = true;
     else
       break;
   }
@@ -221,6 +228,11 @@ int main(int argc,char **argv)
   if (!bNoSort)
     qsort(sort_ixs,num_losing_streaks,sizeof (int),elem_compare);
 
+  if (bTotal) {
+    total_losing_sessions = 0;
+    total_losing_session_deltas = 0;
+  }
+
   for (n = 0; n < num_losing_streaks; n++) {
     printf("%3d ",losing_streaks[sort_ixs[n]].num_losing_sessions);
 
@@ -231,11 +243,21 @@ int main(int argc,char **argv)
     printf("%s ",format_date(cpt));
 
     printf("%10d\n",losing_streaks[sort_ixs[n]].sum);
+
+    if (bTotal) {
+      total_losing_sessions += losing_streaks[sort_ixs[n]].num_losing_sessions;
+      total_losing_session_deltas += losing_streaks[sort_ixs[n]].sum;
+    }
   }
 
   free(session_info);
   free(losing_streaks);
   free(sort_ixs);
+
+  if (bTotal) {
+    printf("\n%3d                       %10d\n",
+      total_losing_sessions,total_losing_session_deltas);
+  }
 
   return 0;
 }
