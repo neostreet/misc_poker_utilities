@@ -24,7 +24,7 @@ struct session_info_struct {
 #define TAB 0x9
 
 static char usage[] =
-"usage: session_winning_streaks (-no_sort) (-ascending) filename\n";
+"usage: session_winning_streaks (-no_sort) (-ascending) (-sort_by_sum_delta) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char malloc_failed1[] = "malloc of %d session info structures failed\n";
@@ -50,6 +50,7 @@ static char *months[] = {
 static struct session_info_struct *session_info;
 static struct session_info_struct *winning_streaks;
 static bool bAscending;
+static bool bSortBySumDelta;
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
 static int get_session_info(
@@ -79,19 +80,22 @@ int main(int argc,char **argv)
   int retval;
   char *cpt;
 
-  if ((argc < 2) || (argc > 4)) {
+  if ((argc < 2) || (argc > 5)) {
     printf(usage);
     return 1;
   }
 
   bNoSort = false;
   bAscending = false;
+  bSortBySumDelta = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-no_sort"))
       bNoSort = true;
     else if (!strcmp(argv[curr_arg],"-ascending"))
       bAscending = true;
+    else if (!strcmp(argv[curr_arg],"-sort_by_sum_delta"))
+      bSortBySumDelta = true;
     else
       break;
   }
@@ -360,13 +364,24 @@ int elem_compare(const void *elem1,const void *elem2)
   ix1 = *(int *)elem1;
   ix2 = *(int *)elem2;
 
-  if (winning_streaks[ix1].num_winning_sessions == winning_streaks[ix2].num_winning_sessions)
-    return winning_streaks[ix2].end_date - winning_streaks[ix1].end_date;
+  if (!bSortBySumDelta) {
+    if (winning_streaks[ix1].num_winning_sessions == winning_streaks[ix2].num_winning_sessions)
+      return winning_streaks[ix2].end_date - winning_streaks[ix1].end_date;
 
-  if (bAscending)
-    return winning_streaks[ix1].num_winning_sessions - winning_streaks[ix2].num_winning_sessions;
-  else
-    return winning_streaks[ix2].num_winning_sessions - winning_streaks[ix1].num_winning_sessions;
+    if (bAscending)
+      return winning_streaks[ix1].num_winning_sessions - winning_streaks[ix2].num_winning_sessions;
+    else
+      return winning_streaks[ix2].num_winning_sessions - winning_streaks[ix1].num_winning_sessions;
+  }
+  else {
+    if (winning_streaks[ix1].sum == winning_streaks[ix2].sum)
+      return winning_streaks[ix2].end_date - winning_streaks[ix1].end_date;
+
+    if (bAscending)
+      return winning_streaks[ix1].sum - winning_streaks[ix2].sum;
+    else
+      return winning_streaks[ix2].sum - winning_streaks[ix1].sum;
+  }
 }
 
 static char *format_date(char *cpt)
