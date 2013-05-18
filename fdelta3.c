@@ -16,13 +16,15 @@ static char line[MAX_LINE_LEN];
 
 static char usage[] =
 "usage: fdelta3 (-terse) (-verbose) (-debug) (-handhand)\n"
-"  (-skip_folded) (-abbrev) (-skip_zero) player_name filename\n";
+"  (-skip_folded) (-abbrev) (-skip_zero) (-show_board) player_name filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char in_chips[] = " in chips";
 #define IN_CHIPS_LEN (sizeof (in_chips) - 1)
 static char summary[] = "*** SUMMARY ***";
 #define SUMMARY_LEN (sizeof (summary) - 1)
+static char river[] = "*** RIVER *** [";
+#define RIVER_LEN (sizeof (river) - 1)
 static char street_marker[] = "*** ";
 #define STREET_MARKER_LEN (sizeof (street_marker) - 1)
 static char posts[] = " posts ";
@@ -88,17 +90,20 @@ int main(int argc,char **argv)
   double dwork1;
   double dwork2;
   char hole_cards[6];
+  char board_cards[15];
   bool bHandSpecified;
   bool bSkipFolded;
   bool bAbbrev;
   bool bSkipZero;
+  bool bShowBoard;
   bool bSuited;
+  bool bHaveRiver;
   char *hand;
   bool bSkipping;
   int rank_ix1;
   int rank_ix2;
 
-  if ((argc < 3) || (argc > 10)) {
+  if ((argc < 3) || (argc > 11)) {
     printf(usage);
     return 1;
   }
@@ -110,6 +115,7 @@ int main(int argc,char **argv)
   bSkipFolded = false;
   bAbbrev = false;
   bSkipZero = false;
+  bShowBoard = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-terse"))
@@ -133,6 +139,8 @@ int main(int argc,char **argv)
       bAbbrev = true;
     else if (!strcmp(argv[curr_arg],"-skip_zero"))
       bSkipZero = true;
+    else if (!strcmp(argv[curr_arg],"-show_board"))
+      bShowBoard = true;
     else
       break;
   }
@@ -184,6 +192,7 @@ int main(int argc,char **argv)
     line_no = 0;
     bSkipping = false;
     num_hands = 0;
+    bHaveRiver = false;
 
     for ( ; ; ) {
       GetLine(fptr,line,&line_len,MAX_LINE_LEN);
@@ -211,6 +220,7 @@ int main(int argc,char **argv)
 
           num_hands++;
           bSkipping = false;
+          bHaveRiver = false;
 
           street = 0;
           num_street_markers = 0;
@@ -379,10 +389,17 @@ int main(int argc,char **argv)
           if ((!bSkipZero || (delta != 0)) && !bSkipFolded) {
             if (bTerse)
               printf("%d\n",delta);
-            else if (bVerbose)
-              printf("%s %10d %s %3d\n",hole_cards,delta,filename,num_hands);
-            else
-              printf("%s %10d\n",hole_cards,delta);
+            else {
+              printf("%s %10d",hole_cards,delta);
+
+              if (bShowBoard && bHaveRiver)
+                printf(" %s",board_cards);
+
+              if (bVerbose)
+                printf(" %s %3d\n",filename,num_hands);
+              else
+                putchar(0x0a);
+            }
           }
 
           continue;
@@ -424,10 +441,38 @@ int main(int argc,char **argv)
           }
         }
       }
-      else if (bSkipping)
+      else if (bSkipping) {
+        if (!strncmp(line,river,RIVER_LEN)) {
+          for (n = 0; n < 11; n++)
+            board_cards[n] = line[RIVER_LEN+n];
+
+          board_cards[n++] = ' ';
+
+          for (m = 0; m < 2; m++,n++)
+            board_cards[n] = line[RIVER_LEN+14+m];
+
+          board_cards[n] = 0;
+
+          bHaveRiver = true;
+        }
+
         continue;
+      }
       else {
-        if (!strncmp(line,summary,SUMMARY_LEN)) {
+        if (!strncmp(line,river,RIVER_LEN)) {
+          for (n = 0; n < 11; n++)
+            board_cards[n] = line[RIVER_LEN+n];
+
+          board_cards[n++] = ' ';
+
+          for (m = 0; m < 2; m++,n++)
+            board_cards[n] = line[RIVER_LEN+14+m];
+
+          board_cards[n] = 0;
+
+          bHaveRiver = true;
+        }
+        else if (!strncmp(line,summary,SUMMARY_LEN)) {
           if (bDebug)
             printf("line %d SUMMARY line detected; skipping\n",line_no);
 
@@ -439,10 +484,17 @@ int main(int argc,char **argv)
           if (!bSkipZero || (delta != 0)) {
             if (bTerse)
               printf("%d\n",delta);
-            else if (bVerbose)
-              printf("%s %10d %s %3d\n",hole_cards,delta,filename,num_hands);
-            else
-              printf("%s %10d\n",hole_cards,delta);
+            else {
+              printf("%s %10d",hole_cards,delta);
+
+              if (bShowBoard && bHaveRiver)
+                printf(" %s",board_cards);
+
+              if (bVerbose)
+                printf(" %s %3d\n",filename,num_hands);
+              else
+                putchar(0x0a);
+            }
           }
 
           continue;
