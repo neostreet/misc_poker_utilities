@@ -1,15 +1,17 @@
 #include <stdio.h>
+#include <string.h>
 
 #define MAX_LINE_LEN 1024
 static char line[MAX_LINE_LEN];
 
-static char usage[] = "usage: max_balance filename\n";
+static char usage[] = "usage: max_balance (-initial_balbal) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
 
 int main(int argc,char **argv)
 {
+  int curr_arg;
   FILE *fptr;
   int line_len;
   int line_no;
@@ -17,18 +19,31 @@ int main(int argc,char **argv)
   int balance;
   int max_balance;
 
-  if (argc != 2) {
+  if ((argc < 2) || (argc > 3)) {
     printf(usage);
     return 1;
   }
 
-  if ((fptr = fopen(argv[1],"r")) == NULL) {
-    printf(couldnt_open,argv[1]);
+  balance = 0;
+
+  for (curr_arg = 1; curr_arg < argc; curr_arg++) {
+    if (!strncmp(argv[curr_arg],"-initial_bal",12))
+      sscanf(&argv[curr_arg][12],"%d",&balance);
+    else
+      break;
+  }
+
+  if (argc - curr_arg != 1) {
+    printf(usage);
     return 2;
   }
 
+  if ((fptr = fopen(argv[curr_arg],"r")) == NULL) {
+    printf(couldnt_open,argv[curr_arg]);
+    return 3;
+  }
+
   line_no = 0;
-  balance = 0;
 
   for ( ; ; ) {
     GetLine(fptr,line,&line_len,MAX_LINE_LEN);
