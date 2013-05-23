@@ -4,7 +4,7 @@
 #define MAX_LINE_LEN 1024
 static char line[MAX_LINE_LEN];
 
-static char usage[] = "usage: blue_distance (-initial_balbal) filename\n";
+static char usage[] = "usage: blue_distance (-verbose) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
@@ -12,6 +12,7 @@ static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
 int main(int argc,char **argv)
 {
   int curr_arg;
+  int bVerbose;
   FILE *fptr;
   int line_len;
   int line_no;
@@ -24,11 +25,11 @@ int main(int argc,char **argv)
     return 1;
   }
 
-  balance = 0;
+  bVerbose = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
-    if (!strncmp(argv[curr_arg],"-initial_bal",12))
-      sscanf(&argv[curr_arg][12],"%d",&balance);
+    if (!strcmp(argv[curr_arg],"-verbose"))
+      bVerbose = true;
     else
       break;
   }
@@ -44,6 +45,7 @@ int main(int argc,char **argv)
   }
 
   line_no = 0;
+  balance = 0;
 
   for ( ; ; ) {
     GetLine(fptr,line,&line_len,MAX_LINE_LEN);
@@ -59,11 +61,15 @@ int main(int argc,char **argv)
 
     if ((line_no == 1) || (balance > max_balance))
       max_balance = balance;
+
+    if (bVerbose)
+      printf("%d\n",max_balance - balance);
   }
 
   fclose(fptr);
 
-  printf("%d\n",max_balance - balance);
+  if (!bVerbose)
+    printf("%d\n",max_balance - balance);
 
   return 0;
 }
