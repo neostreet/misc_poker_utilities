@@ -3,11 +3,13 @@
 
 #define MAX_STR_LEN 256
 
-static char usage[] = "usage: blue_distance2 filename\n";
+static char usage[] = "usage: blue_distance2 (-terse) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 int main(int argc,char **argv)
 {
+  int curr_arg;
+  int bTerse;
   FILE *fptr;
   int line_len;
   int line_no;
@@ -16,14 +18,28 @@ int main(int argc,char **argv)
   int balance;
   int max_balance;
 
-  if (argc != 2) {
+  if ((argc < 2) || (argc > 3)) {
     printf(usage);
     return 1;
   }
 
-  if ((fptr = fopen(argv[1],"r")) == NULL) {
-    printf(couldnt_open,argv[1]);
+  bTerse = false;
+
+  for (curr_arg = 1; curr_arg < argc; curr_arg++) {
+    if (!strcmp(argv[curr_arg],"-terse"))
+      bTerse = true;
+    else
+      break;
+  }
+
+  if (argc - curr_arg != 1) {
+    printf(usage);
     return 2;
+  }
+
+  if ((fptr = fopen(argv[curr_arg],"r")) == NULL) {
+    printf(couldnt_open,argv[curr_arg]);
+    return 3;
   }
 
   line_no = 0;
@@ -42,7 +58,10 @@ int main(int argc,char **argv)
     if ((line_no == 1) || (balance > max_balance))
       max_balance = balance;
 
-    printf("%s\t%d\n",str,max_balance - balance);
+    if (!bTerse)
+      printf("%s\t%d\n",str,max_balance - balance);
+    else
+      printf("%d\n",max_balance - balance);
   }
 
   fclose(fptr);
