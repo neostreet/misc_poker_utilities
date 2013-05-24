@@ -8,7 +8,7 @@ static char filename[MAX_FILENAME_LEN];
 #define MAX_LINE_LEN 1024
 static char line[MAX_LINE_LEN];
 
-static char usage[] = "usage: fflop_stats player_name filename\n";
+static char usage[] = "usage: fflop_stats player_name (-debug) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 static char is_the_button[] = " is the button";
 static char seat_str[] = "Seat ";
@@ -31,6 +31,8 @@ static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
 
 int main(int argc,char **argv)
 {
+  int curr_arg;
+  int bDebug;
   FILE *fptr0;
   int filename_len;
   FILE *fptr;
@@ -70,17 +72,31 @@ int main(int argc,char **argv)
   int pots_won_without_showdown;
   int player_folds_str_len;
 
-  if (argc != 3) {
+  if ((argc < 3) || (argc > 4)) {
     printf(usage);
     return 1;
   }
 
-  sprintf(player_folds_str,"%s: folds ",argv[1]);
+  bDebug = false;
+
+  for (curr_arg = 1; curr_arg < argc; curr_arg++) {
+    if (!strcmp(argv[curr_arg],"-debug"))
+      bDebug = true;
+    else
+      break;
+  }
+
+  if (argc - curr_arg != 2) {
+    printf(usage);
+    return 2;
+  }
+
+  sprintf(player_folds_str,"%s: folds ",argv[curr_arg]);
   player_folds_str_len = strlen(player_folds_str);
 
-  if ((fptr0 = fopen(argv[2],"r")) == NULL) {
-    printf(couldnt_open,argv[2]);
-    return 2;
+  if ((fptr0 = fopen(argv[curr_arg+1],"r")) == NULL) {
+    printf(couldnt_open,argv[curr_arg+1]);
+    return 3;
   }
 
   big_blinds = 0;
@@ -131,7 +147,7 @@ int main(int argc,char **argv)
 
       ix = 0;
 
-      player_found = find_substring(line,&ix,argv[1],true,false);
+      player_found = find_substring(line,&ix,argv[curr_arg],true,false);
 
       if ((player_found) && (saw_summary)) {
         ix = 0;
@@ -223,14 +239,22 @@ int main(int argc,char **argv)
       if (button_seat_ix == player_seat_ix) {
         small_blinds++;
 
-        if (!player_folded_before_flop)
+        if (!player_folded_before_flop) {
           small_blind_flops_seen++;
+
+          if (bDebug)
+            printf("%d\n",total_hands);
+        }
       }
       else {
         big_blinds++;
 
-        if (!player_folded_before_flop)
+        if (!player_folded_before_flop) {
           big_blind_flops_seen++;
+
+          if (bDebug)
+            printf("%d\n",total_hands);
+        }
       }
 
       continue;
@@ -239,8 +263,12 @@ int main(int argc,char **argv)
     if (button_seat_ix == player_seat_ix) {
       others++;
 
-      if (!player_folded_before_flop)
+      if (!player_folded_before_flop) {
         other_flops_seen++;
+
+        if (bDebug)
+          printf("%d\n",total_hands);
+      }
 
       continue;
     }
@@ -251,20 +279,32 @@ int main(int argc,char **argv)
     if (player_seat_ix - button_seat_ix == 2) {
       big_blinds++;
 
-      if (!player_folded_before_flop)
+      if (!player_folded_before_flop) {
         big_blind_flops_seen++;
+
+        if (bDebug)
+          printf("%d\n",total_hands);
+      }
     }
     else if (player_seat_ix - button_seat_ix == 1) {
       small_blinds++;
 
-      if (!player_folded_before_flop)
+      if (!player_folded_before_flop) {
         small_blind_flops_seen++;
+
+        if (bDebug)
+          printf("%d\n",total_hands);
+      }
     }
     else {
       others++;
 
-      if (!player_folded_before_flop)
+      if (!player_folded_before_flop) {
         other_flops_seen++;
+
+        if (bDebug)
+          printf("%d\n",total_hands);
+      }
     }
   }
 
