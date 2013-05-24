@@ -239,7 +239,7 @@ int main(int argc,char **argv)
       if (button_seat_ix == player_seat_ix) {
         small_blinds++;
 
-        if (!player_folded_before_flop) {
+        if (saw_flop && !player_folded_before_flop) {
           small_blind_flops_seen++;
 
           if (bDebug)
@@ -249,7 +249,7 @@ int main(int argc,char **argv)
       else {
         big_blinds++;
 
-        if (!player_folded_before_flop) {
+        if (saw_flop && !player_folded_before_flop) {
           big_blind_flops_seen++;
 
           if (bDebug)
@@ -263,7 +263,7 @@ int main(int argc,char **argv)
     if (button_seat_ix == player_seat_ix) {
       others++;
 
-      if (!player_folded_before_flop) {
+      if (saw_flop && !player_folded_before_flop) {
         other_flops_seen++;
 
         if (bDebug)
@@ -279,7 +279,7 @@ int main(int argc,char **argv)
     if (player_seat_ix - button_seat_ix == 2) {
       big_blinds++;
 
-      if (!player_folded_before_flop) {
+      if (saw_flop && !player_folded_before_flop) {
         big_blind_flops_seen++;
 
         if (bDebug)
@@ -289,7 +289,7 @@ int main(int argc,char **argv)
     else if (player_seat_ix - button_seat_ix == 1) {
       small_blinds++;
 
-      if (!player_folded_before_flop) {
+      if (saw_flop && !player_folded_before_flop) {
         small_blind_flops_seen++;
 
         if (bDebug)
@@ -299,7 +299,7 @@ int main(int argc,char **argv)
     else {
       others++;
 
-      if (!player_folded_before_flop) {
+      if (saw_flop && !player_folded_before_flop) {
         other_flops_seen++;
 
         if (bDebug)
