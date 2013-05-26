@@ -8,6 +8,8 @@
 #include <unistd.h>
 #endif
 
+static char usage[] = "usage: validate_delta (-debug) sessions_filename\n";
+static char fmt_str[] = "%s\n";
 static char outfile1[] = "fdeltt.out";
 static char outfile2[] = "fdeltt.out.addf_int";
 static char outfile3[] = "grep.out";
@@ -27,6 +29,8 @@ int get_delta(char *line,int line_len,int *delta_ptr);
 
 int main(int argc,char **argv)
 {
+  int curr_arg;
+  bool bDebug;
   FILE *fptr;
   int line_len;
   int delta1;
@@ -36,14 +40,42 @@ int main(int argc,char **argv)
   char month_str[3];
   char day_str[3];
 
+  if ((argc < 2) || (argc > 3)) {
+    printf(usage);
+    return 1;
+  }
+
+  bDebug = false;
+
+  for (curr_arg = 1; curr_arg < argc; curr_arg++) {
+    if (!strcmp(argv[curr_arg],"-debug"))
+      bDebug = true;
+    else
+      break;
+  }
+
+  if (argc - curr_arg != 1) {
+    printf(usage);
+    return 2;
+  }
+
   sprintf(buf,"fdelta -terse neostreet hands.lst > %s",outfile1);
+
+  if (bDebug)
+    printf(fmt_str,buf);
+
   system(buf);
+
   sprintf(buf,"addf_int %s > %s",outfile1,outfile2);
+
+  if (bDebug)
+    printf(fmt_str,buf);
+
   system(buf);
 
   if ((fptr = fopen(outfile2,"r")) == NULL) {
     printf(couldnt_open,outfile2);
-    return 1;
+    return 3;
   }
 
   fscanf(fptr,"%d",&delta1);
@@ -56,16 +88,20 @@ int main(int argc,char **argv)
 
   if (retval) {
     printf("get_year_month_day() failed: %d\n",retval);
-    return 2;
+    return 4;
   }
 
-  sprintf(buf,"grep %s-%s-%s /cygdrive/c/aidan/pokerstars/poker_sessions_data.sql > %s",
-    year_str,month_str,day_str,outfile3);
+  sprintf(buf,"grep %s-%s-%s %s > %s",
+    year_str,month_str,day_str,argv[curr_arg],outfile3);
+
+  if (bDebug)
+    printf(fmt_str,buf);
+
   system(buf);
 
   if ((fptr = fopen(outfile3,"r")) == NULL) {
     printf(couldnt_open,outfile3);
-    return 3;
+    return 5;
   }
 
   GetLine(fptr,line,&line_len,MAX_LINE_LEN);
@@ -76,11 +112,11 @@ int main(int argc,char **argv)
 
   if (retval) {
     printf("get_delta() failed: %d\n",retval);
-    return 4;
+    return 6;
   }
 
   if (delta1 != delta2)
-    printf("delta validation failed in %s\n",save_dir);
+    printf("%10d %10d %s\n",delta1,delta2,save_dir);
 
   return 0;
 }
