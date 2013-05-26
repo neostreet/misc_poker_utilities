@@ -116,7 +116,7 @@ int main(int argc,char **argv)
   }
 
   if (delta1 != delta2)
-    printf("%10d %10d %s\n",delta1,delta2,save_dir);
+    printf("%10d %10d %10d %s\n",delta1,delta2,delta2 - delta1,save_dir);
 
   return 0;
 }
