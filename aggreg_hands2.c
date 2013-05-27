@@ -2,7 +2,7 @@
 #include <string.h>
 
 static char usage[] =
-"usage: aggreg_hands2 (-debug) (-dbg_ixix) (-avgs) filename\n";
+"usage: aggreg_hands2 (-debug) (-dbg_ixix) (-totals) (-avgs) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 static char avg_fmt[] = " %9.2lf %9.2lf\n";
 
@@ -49,6 +49,7 @@ int main(int argc,char **argv)
 {
   int curr_arg;
   bool bDebug;
+  bool bTotals;
   bool bAvgs;
   int dbg_ix;
   int dbg;
@@ -75,18 +76,21 @@ int main(int argc,char **argv)
   double win_avg;
   double loss_avg;
 
-  if ((argc < 2) || (argc > 5)) {
+  if ((argc < 2) || (argc > 6)) {
     printf(usage);
     return 1;
   }
 
   bDebug = false;
+  bTotals = false;
   bAvgs = false;
   dbg_ix = -1;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-debug"))
       bDebug = true;
+    else if (!strcmp(argv[curr_arg],"-totals"))
+      bTotals = true;
     else if (!strcmp(argv[curr_arg],"-avgs"))
       bAvgs = true;
     else if (!strncmp(argv[curr_arg],"-dbg_ix",7))
@@ -345,14 +349,15 @@ int main(int argc,char **argv)
       putchar(0x0a);
   }
 
-  printf("\n    %10d %10d %10d %6d %6d %6d %6d",
-    total_sum_delta,
-    total_sum_wins,
-    total_sum_losses,
-    total_num_wins,
-    total_num_losses,
-    total_num_washes,
-    total_hand_count);
+  if (bTotals) {
+    printf("\n    %10d %10d %10d %6d %6d %6d %6d",
+      total_sum_delta,
+      total_sum_wins,
+      total_sum_losses,
+      total_num_wins,
+      total_num_losses,
+      total_num_washes,
+      total_hand_count);
 
     if (bAvgs) {
       if (!total_num_wins)
@@ -369,6 +374,7 @@ int main(int argc,char **argv)
     }
     else
       putchar(0x0a);
+  }
 
   return 0;
 }
