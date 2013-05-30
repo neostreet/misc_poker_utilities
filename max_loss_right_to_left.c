@@ -15,8 +15,7 @@ static char line[MAX_LINE_LEN];
 
 #define TAB 0x9
 
-static char usage[] =
-"usage: max_loss_right_to_left (-debug) (-verbose) (-no_sort) filename\n";
+static char usage[] = "usage: max_loss_right_to_left (-debug) (-verbose) (-no_sort) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char malloc_failed1[] = "malloc of %d session info structures failed\n";
@@ -48,6 +47,7 @@ struct session_info_struct {
   int ending_amount;
   int loss_amount;
   int num_loss_sessions;
+  double avg_amount_lost;
   time_t loss_start_date;
   time_t loss_end_date;
 };
@@ -82,7 +82,6 @@ int main(int argc,char **argv)
   int ix;
   int retval;
   char *cpt;
-  double avg_amount;
 
   if ((argc < 2) || (argc > 5)) {
     printf(usage);
@@ -167,6 +166,8 @@ int main(int argc,char **argv)
     if (max_loss) {
       session_info[m].num_loss_sessions = m - max_loss_ix + 1;
       session_info[m].loss_amount = max_loss;
+      session_info[m].avg_amount_lost = (double)session_info[m].loss_amount /
+          (double)session_info[m].num_loss_sessions;
       session_info[m].loss_start_date = session_info[max_loss_ix].loss_end_date;
     }
   }
@@ -195,13 +196,10 @@ int main(int argc,char **argv)
         cpt = ctime(&session_info[n].loss_end_date);
         printf("%s\n",format_date(cpt));
 
-        avg_amount = (double)session_info[n].loss_amount /
-          (double)session_info[n].num_loss_sessions;
-
         printf(fmt2,
           session_info[n].loss_amount,
           session_info[n].num_loss_sessions,
-          avg_amount);
+          session_info[n].avg_amount_lost);
       }
 
       num_losses++;
@@ -241,13 +239,10 @@ int main(int argc,char **argv)
     cpt = ctime(&session_info[sort_ixs[n]].loss_end_date);
     printf("%s\n",format_date(cpt));
 
-    avg_amount = (double)session_info[sort_ixs[n]].loss_amount /
-      (double)session_info[sort_ixs[n]].num_loss_sessions;
-
     printf(fmt2,
       session_info[sort_ixs[n]].loss_amount,
       session_info[sort_ixs[n]].num_loss_sessions,
-      avg_amount);
+      session_info[sort_ixs[n]].avg_amount_lost);
 
     if (!bVerbose)
       break;
