@@ -15,7 +15,7 @@ static char line[MAX_LINE_LEN];
 
 #define TAB 0x9
 
-static char usage[] = "usage: max_loss (-debug) (-verbose) (-no_sort) filename\n";
+static char usage[] = "usage: max_loss_left_to_right (-debug) (-verbose) (-no_sort) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char malloc_failed1[] = "malloc of %d session info structures failed\n";
