@@ -115,8 +115,6 @@ int main(int argc,char **argv)
       if (!strncmp(line,flop,FLOP_LEN)) {
         line[FLOP_LEN+8] = 0;
         printf("%s\n",&line[FLOP_LEN]);
-
-        break;
       }
     }
 
