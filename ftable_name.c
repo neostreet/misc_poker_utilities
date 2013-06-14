@@ -17,7 +17,8 @@ static char line[MAX_LINE_LEN];
 #define MAX_TABLE_NAME_LEN 64
 static char table_name[MAX_TABLE_NAME_LEN+1];
 
-static char usage[] = "usage: ftable_name (-debug) (-verbose) filename\n";
+static char usage[] =
+"usage: ftable_name (-debug) (-verbose) (-per_file) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
@@ -33,6 +34,7 @@ int main(int argc,char **argv)
   int curr_arg;
   bool bDebug;
   bool bVerbose;
+  bool bPerFile;
   FILE *fptr0;
   int filename_len;
   int num_files;
@@ -43,19 +45,22 @@ int main(int argc,char **argv)
   int ix;
   int retval;
 
-  if ((argc < 2) || (argc > 4)) {
+  if ((argc < 2) || (argc > 5)) {
     printf(usage);
     return 1;
   }
 
   bDebug = false;
   bVerbose = false;
+  bPerFile = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-debug"))
       bDebug = true;
     else if (!strcmp(argv[curr_arg],"-verbose"))
       bVerbose = true;
+    else if (!strcmp(argv[curr_arg],"-per_file"))
+      bPerFile = true;
     else
       break;
   }
@@ -65,7 +70,8 @@ int main(int argc,char **argv)
     return 2;
   }
 
-  tables.num_elems = 0;
+  if (!bPerFile)
+    tables.num_elems = 0;
 
   if ((fptr0 = fopen(argv[curr_arg],"r")) == NULL) {
     printf(couldnt_open,argv[curr_arg]);
@@ -86,6 +92,9 @@ int main(int argc,char **argv)
     }
 
     num_files++;
+
+    if (bPerFile)
+      tables.num_elems = 0;
 
     for ( ; ; ) {
       GetLine(fptr,line,&line_len,MAX_LINE_LEN);
