@@ -70,8 +70,7 @@ int main(int argc,char **argv)
     return 2;
   }
 
-  if (!bPerFile)
-    tables.num_elems = 0;
+  tables.num_elems = 0;
 
   if ((fptr0 = fopen(argv[curr_arg],"r")) == NULL) {
     printf(couldnt_open,argv[curr_arg]);
@@ -94,7 +93,7 @@ int main(int argc,char **argv)
     num_files++;
 
     if (bPerFile)
-      tables.num_elems = 0;
+      free_info_list(&tables);
 
     for ( ; ; ) {
       GetLine(fptr,line,&line_len,MAX_LINE_LEN);
