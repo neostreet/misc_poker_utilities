@@ -8,9 +8,11 @@ static char filename[MAX_FILENAME_LEN];
 #define MAX_LINE_LEN 1024
 static char line[MAX_LINE_LEN];
 
-static char usage[] = "usage: fflop_stats player_name (-debug) filename\n";
+static char usage[] = "usage: fflop_stats (-debug) player_name filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 static char is_the_button[] = " is the button";
+static char dealt_to[] = "Dealt to ";
+#define DEALT_TO_LEN (sizeof (dealt_to) - 1)
 static char seat_str[] = "Seat ";
 #define SEAT_STR_LEN (sizeof (seat_str) - 1)
 static char player_folds_str[128];
@@ -31,6 +33,9 @@ static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
 
 int main(int argc,char **argv)
 {
+  int m;
+  int n;
+  int p;
   int curr_arg;
   int bDebug;
   FILE *fptr0;
@@ -39,6 +44,7 @@ int main(int argc,char **argv)
   int line_len;
   int line_no;
   static int dbg_line_no;
+  char hole_cards[6];
   int ix;
   int button_seat;
   int button_seat_ix;
@@ -99,6 +105,7 @@ int main(int argc,char **argv)
     return 3;
   }
 
+  hole_cards[5] = 0;
   big_blinds = 0;
   small_blinds = 0;
   others = 0;
@@ -218,6 +225,26 @@ int main(int argc,char **argv)
 
         seat_count++;
       }
+      else if (bDebug && !strncmp(line,dealt_to,DEALT_TO_LEN)) {
+        for (n = 0; n < line_len; n++) {
+          if (line[n] == '[')
+            break;
+        }
+
+        if (n < line_len) {
+          n++;
+
+          for (m = n; m < line_len; m++) {
+            if (line[m] == ']')
+              break;
+          }
+
+          if (m < line_len) {
+            for (p = 0; p < 5; p++)
+              hole_cards[p] = line[n+p];
+          }
+        }
+      }
       else if (!strncmp(line,player_folds_str,player_folds_str_len)) {
         if (!saw_flop)
           player_folded_before_flop = 1;
@@ -243,7 +270,7 @@ int main(int argc,char **argv)
           small_blind_flops_seen++;
 
           if (bDebug)
-            printf("%d\n",total_hands);
+            printf("%s\n",hole_cards);
         }
       }
       else {
@@ -253,7 +280,7 @@ int main(int argc,char **argv)
           big_blind_flops_seen++;
 
           if (bDebug)
-            printf("%d\n",total_hands);
+            printf("%s\n",hole_cards);
         }
       }
 
@@ -267,7 +294,7 @@ int main(int argc,char **argv)
         other_flops_seen++;
 
         if (bDebug)
-          printf("%d\n",total_hands);
+          printf("%s\n",hole_cards);
       }
 
       continue;
@@ -283,7 +310,7 @@ int main(int argc,char **argv)
         big_blind_flops_seen++;
 
         if (bDebug)
-          printf("%d\n",total_hands);
+          printf("%s\n",hole_cards);
       }
     }
     else if (player_seat_ix - button_seat_ix == 1) {
@@ -293,7 +320,7 @@ int main(int argc,char **argv)
         small_blind_flops_seen++;
 
         if (bDebug)
-          printf("%d\n",total_hands);
+          printf("%s\n",hole_cards);
       }
     }
     else {
@@ -303,7 +330,7 @@ int main(int argc,char **argv)
         other_flops_seen++;
 
         if (bDebug)
-          printf("%d\n",total_hands);
+          printf("%s\n",hole_cards);
       }
     }
   }
