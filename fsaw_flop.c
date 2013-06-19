@@ -8,7 +8,7 @@ static char filename[MAX_FILENAME_LEN];
 #define MAX_LINE_LEN 1024
 static char line[MAX_LINE_LEN];
 
-static char usage[] = "usage: ffbf (-debug) player_name filename\n";
+static char usage[] = "usage: fsaw_flop (-debug) (-not) player_name filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 static char dealt_to[] = "Dealt to ";
 #define DEALT_TO_LEN (sizeof (dealt_to) - 1)
@@ -26,7 +26,8 @@ int main(int argc,char **argv)
   int n;
   int p;
   int curr_arg;
-  int bDebug;
+  bool bDebug;
+  bool bNot;
   FILE *fptr0;
   int filename_len;
   FILE *fptr;
@@ -36,22 +37,26 @@ int main(int argc,char **argv)
   char hole_cards[6];
   int ix;
   int player_found;
-  int saw_flop;
+  bool bSawFlop;
+  bool bFolded;
   int total_hands;
   static int dbg_hand;
   int dbg;
   int player_folds_str_len;
 
-  if ((argc < 3) || (argc > 4)) {
+  if ((argc < 3) || (argc > 5)) {
     printf(usage);
     return 1;
   }
 
   bDebug = false;
+  bNot = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-debug"))
       bDebug = true;
+    else if (!strcmp(argv[curr_arg],"-not"))
+      bNot = true;
     else
       break;
   }
@@ -90,7 +95,8 @@ int main(int argc,char **argv)
     }
 
     line_no = 0;
-    saw_flop = 0;
+    bSawFlop = false;
+    bFolded = false;
 
     for ( ; ; ) {
       GetLine(fptr,line,&line_len,MAX_LINE_LEN);
@@ -127,16 +133,40 @@ int main(int argc,char **argv)
           }
         }
       }
-      else if (!strncmp(line,player_folds_str,player_folds_str_len)) {
-        if (!saw_flop) {
-          if (!bDebug)
-            printf("%s\n",hole_cards);
-          else
-            printf("%s (%d)\n",hole_cards,total_hands);
+      else if (!strncmp(line,flop_str,FLOP_STR_LEN)) {
+        bSawFlop = true;
+
+        if (!bNot) {
+          if (!bFolded) {
+            if (!bDebug)
+              printf("%s\n",hole_cards);
+            else
+              printf("%s (%d)\n",hole_cards,total_hands);
+          }
         }
       }
-      else if (!strncmp(line,flop_str,FLOP_STR_LEN))
-        saw_flop = 1;
+      else if (!strncmp(line,player_folds_str,player_folds_str_len)) {
+        bFolded = true;
+
+        if (bNot) {
+          if (!bSawFlop) {
+            if (!bDebug)
+              printf("%s\n",hole_cards);
+            else
+              printf("%s (%d)\n",hole_cards,total_hands);
+          }
+        }
+      }
+      else if (!strncmp(line,summary_str,SUMMARY_STR_LEN)) {
+        if (bNot && !bFolded) {
+          if (!bSawFlop) {
+            if (!bDebug)
+              printf("%s\n",hole_cards);
+            else
+              printf("%s (%d)\n",hole_cards,total_hands);
+          }
+        }
+      }
     }
 
     fclose(fptr);
