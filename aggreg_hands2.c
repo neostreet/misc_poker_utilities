@@ -130,7 +130,7 @@ int main(int argc,char **argv)
     line_no++;
 
     for (rank_ix1 = 0; rank_ix1 < NUM_CARDS_IN_SUIT; rank_ix1++) {
-      if (line[0] == rank_chars[rank_ix1])
+      if (line[11] == rank_chars[rank_ix1])
         break;
     }
 
@@ -140,7 +140,7 @@ int main(int argc,char **argv)
     }
 
     for (suit_ix1 = 0; suit_ix1 < NUM_SUITS; suit_ix1++) {
-      if (line[1] == suit_chars[suit_ix1])
+      if (line[12] == suit_chars[suit_ix1])
         break;
     }
 
@@ -150,7 +150,7 @@ int main(int argc,char **argv)
     }
 
     for (rank_ix2 = 0; rank_ix2 < NUM_CARDS_IN_SUIT; rank_ix2++) {
-      if (line[3] == rank_chars[rank_ix2])
+      if (line[14] == rank_chars[rank_ix2])
         break;
     }
 
@@ -160,7 +160,7 @@ int main(int argc,char **argv)
     }
 
     for (suit_ix2 = 0; suit_ix2 < NUM_SUITS; suit_ix2++) {
-      if (line[4] == suit_chars[suit_ix2])
+      if (line[15] == suit_chars[suit_ix2])
         break;
     }
 
@@ -169,7 +169,7 @@ int main(int argc,char **argv)
       return 7;
     }
 
-    sscanf(&line[6],"%d",&delta);
+    sscanf(&line[0],"%d",&delta);
 
     ix = index_of_hand(rank_ix1,suit_ix1,rank_ix2,suit_ix2);
 
