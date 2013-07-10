@@ -26,7 +26,6 @@ static char in_chips[] = " in chips";
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
 static int Contains(bool bCaseSens,char *line,int line_len,
   char *string,int string_len,int *index);
-static void normalize_hole_cards(char *hole_cards);
 
 int main(int argc,char **argv)
 {

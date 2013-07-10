@@ -1,14 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#ifdef WIN32
-#include <direct.h>
-#else
-#define _MAX_PATH 4096
-#include <unistd.h>
-#endif
-
-static char save_dir[_MAX_PATH];
 
 #define MAX_FILENAME_LEN 1024
 static char filename[MAX_FILENAME_LEN];
@@ -64,8 +56,6 @@ int main(int argc,char **argv)
     printf(couldnt_open,argv[curr_arg]);
     return 3;
   }
-
-  getcwd(save_dir,_MAX_PATH);
 
   num_files = 0;
   sum_table_counts = 0;
@@ -124,9 +114,9 @@ int main(int argc,char **argv)
     }
 
     if (bTerse)
-      printf("%s\n",filename);
+      printf("%d\n",table_count);
     else
-      printf("%d %s\\%s\n",table_count,save_dir,filename);
+      printf("%d %s\n",table_count,filename);
   }
 
   return 0;
