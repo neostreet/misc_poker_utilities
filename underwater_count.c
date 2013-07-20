@@ -3,7 +3,7 @@
 #define MAX_LINE_LEN 1024
 static char line[MAX_LINE_LEN];
 
-static char usage[] = "usage: underwater_count starting_amount filename\n";
+static char usage[] = "usage: underwater_count filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
@@ -18,15 +18,13 @@ int main(int argc,char **argv)
   int starting_amount;
   double underwater_pct;
 
-  if (argc != 3) {
+  if (argc != 2) {
     printf(usage);
     return 1;
   }
 
-  sscanf(argv[1],"%d",&starting_amount);
-
-  if ((fptr = fopen(argv[2],"r")) == NULL) {
-    printf(couldnt_open,argv[2]);
+  if ((fptr = fopen(argv[1],"r")) == NULL) {
+    printf(couldnt_open,argv[1]);
     return 2;
   }
 
@@ -43,7 +41,9 @@ int main(int argc,char **argv)
 
     sscanf(line,"%d",&work);
 
-    if (work < starting_amount)
+    if (line_no == 1)
+      starting_amount = work;
+    else if (work < starting_amount)
       underwater_count++;
   }
 
