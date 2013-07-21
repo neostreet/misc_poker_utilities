@@ -50,8 +50,8 @@ int main(int argc,char **argv)
     return 2;
   }
 
-  if ((fptr = fopen(argv[1],"r")) == NULL) {
-    printf(couldnt_open,argv[1]);
+  if ((fptr = fopen(argv[curr_arg],"r")) == NULL) {
+    printf(couldnt_open,argv[curr_arg]);
     return 3;
   }
 
