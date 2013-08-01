@@ -79,9 +79,9 @@ int main(int argc,char **argv)
   underwater_pct = (double)underwater_count / (double)line_no;
 
   if (!bDebug)
-    printf("%d of %d (%lf)\n",underwater_count,line_no,underwater_pct);
+    printf("%lf %3d %3d\n",underwater_pct,underwater_count,line_no);
   else {
-    printf("%d of %d (%lf) %s\n",underwater_count,line_no,underwater_pct,
+    printf("%lf %3d %3d %s\n",underwater_pct,underwater_count,line_no,
       save_dir);
   }
 
