@@ -12,7 +12,7 @@ static char save_dir[_MAX_PATH];
 #define MAX_LINE_LEN 1024
 static char line[MAX_LINE_LEN];
 
-static char usage[] = "usage: underwater_count (-debug) filename\n";
+static char usage[] = "usage: underwater_count (-debug) (-diffval) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
@@ -21,6 +21,8 @@ int main(int argc,char **argv)
 {
   int curr_arg;
   bool bDebug;
+  bool bDiff;
+  int val;
   FILE *fptr;
   int line_len;
   int line_no;
@@ -29,17 +31,22 @@ int main(int argc,char **argv)
   int starting_amount;
   double underwater_pct;
 
-  if ((argc < 2) || (argc > 3)) {
+  if ((argc < 2) || (argc > 4)) {
     printf(usage);
     return 1;
   }
 
   bDebug = false;
+  bDiff = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-debug")) {
       bDebug = true;
       getcwd(save_dir,_MAX_PATH);
+    }
+    else if (!strncmp(argv[curr_arg],"-diff",5)) {
+      bDiff = true;
+      sscanf(&argv[curr_arg][5],"%d",&val);
     }
     else
       break;
@@ -78,11 +85,13 @@ int main(int argc,char **argv)
 
   underwater_pct = (double)underwater_count / (double)line_no;
 
-  if (!bDebug)
-    printf("%lf %3d %3d\n",underwater_pct,underwater_count,line_no);
-  else {
-    printf("%lf %3d %3d %s\n",underwater_pct,underwater_count,line_no,
-      save_dir);
+  if (!bDiff || (line_no - underwater_count == val)) {
+    if (!bDebug)
+      printf("%lf %3d %3d\n",underwater_pct,underwater_count,line_no);
+    else {
+      printf("%lf %3d %3d %s\n",underwater_pct,underwater_count,line_no,
+        save_dir);
+    }
   }
 
   return 0;
