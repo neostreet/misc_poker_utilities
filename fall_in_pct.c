@@ -88,6 +88,8 @@ int main(int argc,char **argv)
     fclose(fptr);
   }
 
+  fclose(fptr0);
+
   all_in_pct = (double)all_ins / (double)num_hands;
 
   if (!bDebug)
