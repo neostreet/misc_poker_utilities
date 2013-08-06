@@ -20,6 +20,8 @@ static char player_name[MAX_PLAYER_NAME_LEN+1];
 static char usage[] = "usage: fplayer_name (-debug) (-verbose) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
+static char table[] = "Table '";
+#define TABLE_LEN (sizeof (table) - 1)
 static char summary[] = "*** SUMMARY ***";
 #define SUMMARY_LEN (sizeof (summary) - 1)
 
@@ -41,6 +43,7 @@ int main(int argc,char **argv)
   int filename_len;
   int num_files;
   FILE *fptr;
+  int line_no;
   int line_len;
   struct info_list players;
   struct info_list_elem *work_elem;
@@ -91,6 +94,7 @@ int main(int argc,char **argv)
 
     bSkipping = false;
     num_files++;
+    line_no = 0;
 
     for ( ; ; ) {
       GetLine(fptr,line,&line_len,MAX_LINE_LEN);
@@ -98,7 +102,11 @@ int main(int argc,char **argv)
       if (feof(fptr))
         break;
 
-      if (bSkipping)
+      line_no++;
+
+      if (!strncmp(line,table,TABLE_LEN))
+        bSkipping = false;
+      else if (bSkipping)
         continue;
       else if (!strncmp(line,summary,SUMMARY_LEN))
         bSkipping = true;
@@ -106,7 +114,7 @@ int main(int argc,char **argv)
         retval = get_player_name(line,line_len,player_name,MAX_PLAYER_NAME_LEN);
 
         if (retval) {
-          printf("get_player_name() failed on line %d: %d\n",line_len,retval);
+          printf("get_player_name() failed on line %d: %d\n",line_no,retval);
           return 4;
         }
 
@@ -118,7 +126,7 @@ int main(int argc,char **argv)
             work_elem->int1++;
         }
         else
-          add_info_list_elem(&players,player_name,1,0,0,true);
+          add_info_list_elem(&players,player_name,1,0,0,0,true);
       }
     }
 
