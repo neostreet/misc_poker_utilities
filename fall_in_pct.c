@@ -1,10 +1,13 @@
 #include <stdio.h>
 #include <string.h>
 
+#define MAX_FILENAME_LEN 1024
+static char filename[MAX_FILENAME_LEN];
+
 #define MAX_LINE_LEN 1024
 static char line[MAX_LINE_LEN];
 
-static char usage[] = "usage: all_in_pct (-debug) filename\n";
+static char usage[] = "usage: fall_in_pct (-debug) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char table[] = "Table '";
@@ -19,6 +22,8 @@ int main(int argc,char **argv)
 {
   int curr_arg;
   bool bDebug;
+  FILE *fptr0;
+  int filename_len;
   FILE *fptr;
   int line_len;
   int line_no;
@@ -45,30 +50,43 @@ int main(int argc,char **argv)
     return 2;
   }
 
-  if ((fptr = fopen(argv[curr_arg],"r")) == NULL) {
+  if ((fptr0 = fopen(argv[curr_arg],"r")) == NULL) {
     printf(couldnt_open,argv[curr_arg]);
     return 3;
   }
 
   all_ins = 0;
   num_hands = 0;
-  line_no = 0;
 
   for ( ; ; ) {
-    GetLine(fptr,line,&line_len,MAX_LINE_LEN);
+    GetLine(fptr0,filename,&filename_len,MAX_FILENAME_LEN);
 
-    if (feof(fptr))
+    if (feof(fptr0))
       break;
 
-    line_no++;
+    if ((fptr = fopen(filename,"r")) == NULL) {
+      printf(couldnt_open,filename);
+      continue;
+    }
 
-    if (!strncmp(line,table,TABLE_LEN))
-      num_hands++;
-    else if (all_in(line,line_len,line_no))
-      all_ins++;
+    line_no = 0;
+
+    for ( ; ; ) {
+      GetLine(fptr,line,&line_len,MAX_LINE_LEN);
+
+      if (feof(fptr))
+        break;
+
+      line_no++;
+
+      if (!strncmp(line,table,TABLE_LEN))
+        num_hands++;
+      else if (all_in(line,line_len,line_no))
+        all_ins++;
+    }
+
+    fclose(fptr);
   }
-
-  fclose(fptr);
 
   all_in_pct = (double)all_ins / (double)num_hands;
 
