@@ -7,7 +7,7 @@ static char filename[MAX_FILENAME_LEN];
 #define MAX_LINE_LEN 1024
 static char line[MAX_LINE_LEN];
 
-static char usage[] = "usage: fall_in_pct (-debug) filename\n";
+static char usage[] = "usage: fall_in_pct (-debug) (-verbose) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char table[] = "Table '";
@@ -22,6 +22,7 @@ int main(int argc,char **argv)
 {
   int curr_arg;
   bool bDebug;
+  bool bVerbose;
   FILE *fptr0;
   int filename_len;
   FILE *fptr;
@@ -30,17 +31,21 @@ int main(int argc,char **argv)
   int all_ins;
   int num_hands;
   double all_in_pct;
+  int curr_file_num_hands;
 
-  if ((argc < 2) || (argc > 3)) {
+  if ((argc < 2) || (argc > 4)) {
     printf(usage);
     return 1;
   }
 
   bDebug = false;
+  bVerbose = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-debug"))
       bDebug = true;
+    else if (!strcmp(argv[curr_arg],"-verbose"))
+      bVerbose = true;
     else
       break;
   }
@@ -69,6 +74,7 @@ int main(int argc,char **argv)
       continue;
     }
 
+    curr_file_num_hands = 0;
     line_no = 0;
 
     for ( ; ; ) {
@@ -80,12 +86,18 @@ int main(int argc,char **argv)
       line_no++;
 
       if (!strncmp(line,table,TABLE_LEN))
-        num_hands++;
-      else if (all_in(line,line_len,line_no))
+        curr_file_num_hands++;
+      else if (all_in(line,line_len,line_no)) {
         all_ins++;
+
+        if (bVerbose)
+          printf("%s %d\n",filename,curr_file_num_hands);
+      }
     }
 
     fclose(fptr);
+
+    num_hands += curr_file_num_hands;
   }
 
   fclose(fptr0);

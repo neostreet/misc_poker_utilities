@@ -8,7 +8,7 @@ static char filename[MAX_FILENAME_LEN];
 #define MAX_LINE_LEN 1024
 static char line[MAX_LINE_LEN];
 
-static char usage[] = "usage: fheads_up_pct (-terse) filename\n";
+static char usage[] = "usage: fheads_up_pct (-terse) (-verbose) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
@@ -17,6 +17,7 @@ int main(int argc,char **argv)
 {
   int curr_arg;
   bool bTerse;
+  bool bVerbose;
   FILE *fptr0;
   int filename_len;
   int num_files;
@@ -26,17 +27,21 @@ int main(int argc,char **argv)
   int num_hands;
   int num_heads_up_hands;
   double heads_up_pct;
+  int curr_file_num_hands;
 
-  if ((argc < 2) || (argc > 3)) {
+  if ((argc < 2) || (argc > 4)) {
     printf(usage);
     return 1;
   }
 
   bTerse = false;
+  bVerbose = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-terse"))
       bTerse = true;
+    else if (!strcmp(argv[curr_arg],"-verbose"))
+      bVerbose = true;
     else
       break;
   }
@@ -46,9 +51,14 @@ int main(int argc,char **argv)
     return 2;
   }
 
+  if (bTerse && bVerbose) {
+    printf("can't specify both -terse and -verbose\n");
+    return 3;
+  }
+
   if ((fptr0 = fopen(argv[curr_arg],"r")) == NULL) {
     printf(couldnt_open,argv[curr_arg]);
-    return 3;
+    return 4;
   }
 
   num_files = 0;
@@ -66,6 +76,7 @@ int main(int argc,char **argv)
       continue;
     }
 
+    curr_file_num_hands = 0;
     num_files++;
 
     for ( ; ; ) {
@@ -76,7 +87,7 @@ int main(int argc,char **argv)
 
       if (!strncmp(line,"Table '",7)) {
         table_count = 0;
-        num_hands++;
+        curr_file_num_hands++;
 
         for ( ; ; ) {
           GetLine(fptr,line,&line_len,MAX_LINE_LEN);
@@ -91,12 +102,18 @@ int main(int argc,char **argv)
             table_count++;
         }
 
-        if (table_count == 2)
+        if (table_count == 2) {
           num_heads_up_hands++;
+
+          if (bVerbose)
+            printf("%s %d\n",filename,curr_file_num_hands);
+        }
       }
     }
 
     fclose(fptr);
+
+    num_hands += curr_file_num_hands;
   }
 
   fclose(fptr0);
