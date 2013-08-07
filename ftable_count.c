@@ -25,7 +25,8 @@ int main(int argc,char **argv)
   FILE *fptr;
   int line_len;
   int table_count;
-  int sum_table_counts;
+  int hand_count;
+  bool bSkip;
 
   if ((argc < 2) || (argc > 5)) {
     printf(usage);
@@ -58,7 +59,6 @@ int main(int argc,char **argv)
   }
 
   num_files = 0;
-  sum_table_counts = 0;
 
   for ( ; ; ) {
     GetLine(fptr0,filename,&filename_len,MAX_FILENAME_LEN);
@@ -72,7 +72,7 @@ int main(int argc,char **argv)
     }
 
     num_files++;
-    table_count = 0;
+    hand_count = 0;
 
     for ( ; ; ) {
       GetLine(fptr,line,&line_len,MAX_LINE_LEN);
@@ -81,6 +81,9 @@ int main(int argc,char **argv)
         break;
 
       if (!strncmp(line,"Table '",7)) {
+        table_count = 0;
+        hand_count++;
+
         for ( ; ; ) {
           GetLine(fptr,line,&line_len,MAX_LINE_LEN);
 
@@ -94,29 +97,29 @@ int main(int argc,char **argv)
             table_count++;
         }
 
-        break;
+        bSkip = false;
+
+        if (ge_num != -1) {
+          if (!bNot) {
+            if (table_count < ge_num)
+              bSkip = true;
+          }
+          else {
+            if (table_count >= ge_num)
+              bSkip = true;
+          }
+        }
+
+        if (!bSkip) {
+          if (bTerse)
+            printf("%d\n",table_count);
+          else
+            printf("%d %s %d\n",table_count,filename,hand_count);
+        }
       }
     }
 
     fclose(fptr);
-
-    sum_table_counts += table_count;
-
-    if (ge_num != -1) {
-      if (!bNot) {
-        if (table_count < ge_num)
-          continue;
-      }
-      else {
-        if (table_count >= ge_num)
-          continue;
-      }
-    }
-
-    if (bTerse)
-      printf("%d\n",table_count);
-    else
-      printf("%d %s\n",table_count,filename);
   }
 
   return 0;
