@@ -122,6 +122,8 @@ int main(int argc,char **argv)
     fclose(fptr);
   }
 
+  fclose(fptr0);
+
   return 0;
 }
 
