@@ -7,7 +7,7 @@ static char filename[MAX_FILENAME_LEN];
 #define MAX_LINE_LEN 1024
 static char line[MAX_LINE_LEN];
 
-static char usage[] = "usage: fall_in_pct (-debug) (-verbose) filename\n";
+static char usage[] = "usage: fall_in_pct (-debug) (-verbose) player_name filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char table[] = "Table '";
@@ -16,13 +16,15 @@ static char table[] = "Table '";
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
 static int Contains(bool bCaseSens,char *line,int line_len,
   char *string,int string_len,int *index);
-int all_in(char *line,int line_len,int line_no);
+int all_in(char *line,int line_len,int line_no,char *player_name,int player_name_len);
 
 int main(int argc,char **argv)
 {
   int curr_arg;
   bool bDebug;
   bool bVerbose;
+  int player_name_ix;
+  int player_name_len;
   FILE *fptr0;
   int filename_len;
   FILE *fptr;
@@ -33,7 +35,7 @@ int main(int argc,char **argv)
   double all_in_pct;
   int curr_file_num_hands;
 
-  if ((argc < 2) || (argc > 4)) {
+  if ((argc < 2) || (argc > 5)) {
     printf(usage);
     return 1;
   }
@@ -50,10 +52,13 @@ int main(int argc,char **argv)
       break;
   }
 
-  if (argc - curr_arg != 1) {
+  if (argc - curr_arg != 2) {
     printf(usage);
     return 2;
   }
+
+  player_name_ix = curr_arg++;
+  player_name_len = strlen(argv[player_name_ix]);
 
   if ((fptr0 = fopen(argv[curr_arg],"r")) == NULL) {
     printf(couldnt_open,argv[curr_arg]);
@@ -87,7 +92,7 @@ int main(int argc,char **argv)
 
       if (!strncmp(line,table,TABLE_LEN))
         curr_file_num_hands++;
-      else if (all_in(line,line_len,line_no)) {
+      else if (all_in(line,line_len,line_no,argv[player_name_ix],player_name_len)) {
         all_ins++;
 
         if (bVerbose)
@@ -171,13 +176,13 @@ static int Contains(bool bCaseSens,char *line,int line_len,
   return false;
 }
 
-int all_in(char *line,int line_len,int line_no)
+int all_in(char *line,int line_len,int line_no,char *player_name,int player_name_len)
 {
   int ix;
 
   if (Contains(true,
     line,line_len,
-    "neostreet",9,
+    player_name,player_name_len,
     &ix)) {
 
     if (Contains(true,
