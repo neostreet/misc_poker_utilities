@@ -1,0 +1,174 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#ifdef WIN32
+#include <direct.h>
+#else
+#define _MAX_PATH 4096
+#include <unistd.h>
+#endif
+
+#define MAX_LINE_LEN 1024
+static char line[MAX_LINE_LEN];
+
+static char usage[] =
+"usage: starting_stack (-debug) player_name filename\n";
+static char couldnt_open[] = "couldn't open %s\n";
+
+static char in_chips[] = " in chips";
+#define IN_CHIPS_LEN (sizeof (in_chips) - 1)
+
+static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
+static int Contains(bool bCaseSens,char *line,int line_len,
+  char *string,int string_len,int *index);
+
+int main(int argc,char **argv)
+{
+  int m;
+  int n;
+  int p;
+  int curr_arg;
+  bool bDebug;
+  int player_name_ix;
+  int player_name_len;
+  FILE *fptr;
+  int line_len;
+  int line_no;
+  int dbg_line_no;
+  int ix;
+  int starting_balance;
+  int num_hands;
+  int dbg;
+
+  if ((argc < 3) || (argc > 4)) {
+    printf(usage);
+    return 1;
+  }
+
+  bDebug = false;
+
+  for (curr_arg = 1; curr_arg < argc; curr_arg++) {
+    if (!strcmp(argv[curr_arg],"-debug"))
+      bDebug = true;
+    else
+      break;
+  }
+
+  if (argc - curr_arg != 2) {
+    printf(usage);
+    return 2;
+  }
+
+  player_name_ix = curr_arg++;
+  player_name_len = strlen(argv[player_name_ix]);
+
+  if ((fptr = fopen(argv[curr_arg],"r")) == NULL) {
+    printf(couldnt_open,argv[curr_arg]);
+    return 3;
+  }
+
+  for ( ; ; ) {
+    line_no = 0;
+
+    GetLine(fptr,line,&line_len,MAX_LINE_LEN);
+
+    if (feof(fptr))
+      break;
+
+    line_no++;
+
+    if (line_no == dbg_line_no)
+      dbg = 1;
+
+    if (Contains(true,
+      line,line_len,
+      argv[player_name_ix],player_name_len,
+      &ix)) {
+
+      if (Contains(true,
+        line,line_len,
+        in_chips,IN_CHIPS_LEN,
+        &ix)) {
+
+        num_hands++;
+
+        line[ix] = 0;
+
+        for (ix--; (ix >= 0) && (line[ix] != '('); ix--)
+          ;
+
+        sscanf(&line[ix+1],"%d",&starting_balance);
+
+        if (!bDebug)
+          printf("%d\n",starting_balance);
+        else
+          printf("%10d %s\n",starting_balance,argv[curr_arg]);
+
+        break;
+      }
+    }
+  }
+
+  fclose(fptr);
+
+  return 0;
+}
+
+static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen)
+{
+  int chara;
+  int local_line_len;
+
+  local_line_len = 0;
+
+  for ( ; ; ) {
+    chara = fgetc(fptr);
+
+    if (feof(fptr))
+      break;
+
+    if (chara == '\n')
+      break;
+
+    if (local_line_len < maxllen - 1)
+      line[local_line_len++] = (char)chara;
+  }
+
+  line[local_line_len] = 0;
+  *line_len = local_line_len;
+}
+
+static int Contains(bool bCaseSens,char *line,int line_len,
+  char *string,int string_len,int *index)
+{
+  int m;
+  int n;
+  int tries;
+  char chara;
+
+  tries = line_len - string_len + 1;
+
+  if (tries <= 0)
+    return false;
+
+  for (m = 0; m < tries; m++) {
+    for (n = 0; n < string_len; n++) {
+      chara = line[m + n];
+
+      if (!bCaseSens) {
+        if ((chara >= 'A') && (chara <= 'Z'))
+          chara += 'a' - 'A';
+      }
+
+      if (chara != string[n])
+        break;
+    }
+
+    if (n == string_len) {
+      *index = m;
+      return true;
+    }
+  }
+
+  return false;
+}
