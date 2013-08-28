@@ -15,7 +15,7 @@ static char filename[MAX_FILENAME_LEN];
 static char line[MAX_LINE_LEN];
 
 static char usage[] =
-"usage: fwinning_session3 (-debug) (-reverse) player_name filename\n";
+"usage: fwinning_session3 (-debug) (-reverse) (-exclude_felt_sessions) player_name filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char in_chips[] = " in chips";
@@ -52,6 +52,8 @@ int main(int argc,char **argv)
   int curr_arg;
   bool bDebug;
   bool bReverse;
+  bool bExcludeFeltSessions;
+  bool bHitFelt;
   int player_name_ix;
   int player_name_len;
   FILE *fptr0;
@@ -81,19 +83,22 @@ int main(int argc,char **argv)
   double dwork2;
   bool bSkipping;
 
-  if ((argc < 3) || (argc > 5)) {
+  if ((argc < 3) || (argc > 6)) {
     printf(usage);
     return 1;
   }
 
   bDebug = false;
   bReverse = false;
+  bExcludeFeltSessions = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-debug"))
       bDebug = true;
     else if (!strcmp(argv[curr_arg],"-reverse"))
       bReverse = true;
+    else if (!strcmp(argv[curr_arg],"-exclude_felt_sessions"))
+      bExcludeFeltSessions = true;
     else
       break;
   }
@@ -131,6 +136,9 @@ int main(int argc,char **argv)
     }
 
     session_delta = 0;
+
+    if (bExcludeFeltSessions)
+      bHitFelt = false;
 
     for ( ; ; ) {
       GetLine(fptr,line,&line_len,MAX_LINE_LEN);
@@ -251,6 +259,11 @@ int main(int argc,char **argv)
           delta = ending_balance - starting_balance;
           session_delta += delta;
 
+          if (bExcludeFeltSessions) {
+            if (!ending_balance)
+              bHitFelt = true;
+          }
+
           continue;
         }
         else if (Contains(true,
@@ -303,6 +316,11 @@ int main(int argc,char **argv)
           delta = ending_balance - starting_balance;
           session_delta += delta;
 
+          if (bExcludeFeltSessions) {
+            if (!ending_balance)
+              bHitFelt = true;
+          }
+
           continue;
         }
 
@@ -320,13 +338,15 @@ int main(int argc,char **argv)
       }
     }
 
-    if (!bReverse) {
-      if (session_delta > 0)
-        printf("%s\n",filename);
-    }
-    else {
-      if (session_delta < 0)
-        printf("%s\n",filename);
+    if (!bExcludeFeltSessions || !bHitFelt) {
+      if (!bReverse) {
+        if (session_delta > 0)
+          printf("%s\n",filename);
+      }
+      else {
+        if (session_delta < 0)
+          printf("%s\n",filename);
+      }
     }
 
     fclose(fptr);
