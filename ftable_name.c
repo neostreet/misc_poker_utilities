@@ -109,15 +109,19 @@ int main(int argc,char **argv)
           return 4;
         }
 
-        if (bDebug)
-          printf("%s\n",table_name);
+        if (bDebug) {
+          if (!bVerbose)
+            printf("%s\n",table_name);
+          else
+            printf("%s %s %s\n",filename,table_name,line);
+        }
 
         if (member_of_info_list(&tables,table_name,&ix)) {
           if (get_info_list_elem(&tables,ix,&work_elem))
             work_elem->int1++;
         }
         else {
-          add_info_list_elem(&tables,table_name,1,0,0,true);
+          add_info_list_elem(&tables,table_name,1,0,0,0,true);
 
           if (!bDebug) {
             if (!bVerbose)
