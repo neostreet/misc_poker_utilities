@@ -18,7 +18,7 @@ static char save_filename[MAX_FILENAME_LEN];
 static char line[MAX_LINE_LEN];
 
 static char usage[] =
-"usage: ffelted (-debug) player_name filename\n";
+"usage: ffelted (-debug) (-not) player_name filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char in_chips[] = " in chips";
@@ -56,6 +56,7 @@ int main(int argc,char **argv)
   int p;
   int curr_arg;
   bool bDebug;
+  bool bNot;
   bool bFelted;
   int player_name_ix;
   int player_name_len;
@@ -82,18 +83,21 @@ int main(int argc,char **argv)
   char hole_cards[6];
   int save_ending_balance;
 
-  if ((argc < 3) || (argc > 4)) {
+  if ((argc < 3) || (argc > 5)) {
     printf(usage);
     return 1;
   }
 
   bDebug = false;
+  bNot = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-debug")) {
       bDebug = true;
       getcwd(save_dir,_MAX_PATH);
     }
+    else if (!strcmp(argv[curr_arg],"-not"))
+      bNot = true;
     else
       break;
   }
@@ -283,7 +287,7 @@ int main(int argc,char **argv)
 
   fclose(fptr0);
 
-  if (bFelted) {
+  if ((!bNot && bFelted) || (bNot && !bFelted)) {
     if (!bDebug)
       printf("%s\n",argv[curr_arg]);
     else
