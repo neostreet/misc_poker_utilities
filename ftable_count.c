@@ -8,7 +8,8 @@ static char filename[MAX_FILENAME_LEN];
 #define MAX_LINE_LEN 1024
 static char line[MAX_LINE_LEN];
 
-static char usage[] = "usage: ftable_count (-genum) (-not) (-terse) filename\n";
+static char usage[] =
+"usage: ftable_count (-genum) (-not) (-terse) (-sum) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
@@ -19,16 +20,18 @@ int main(int argc,char **argv)
   int ge_num;
   bool bNot;
   bool bTerse;
+  bool bSum;
   FILE *fptr0;
   int filename_len;
   int num_files;
   FILE *fptr;
   int line_len;
   int table_count;
+  int sum_table_count;
   int hand_count;
   bool bSkip;
 
-  if ((argc < 2) || (argc > 5)) {
+  if ((argc < 2) || (argc > 6)) {
     printf(usage);
     return 1;
   }
@@ -36,6 +39,7 @@ int main(int argc,char **argv)
   ge_num = -1;
   bNot = false;
   bTerse = false;
+  bSum = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strncmp(argv[curr_arg],"-ge",3))
@@ -44,6 +48,8 @@ int main(int argc,char **argv)
       bNot = true;
     else if (!strcmp(argv[curr_arg],"-terse"))
       bTerse = true;
+    else if (!strcmp(argv[curr_arg],"-sum"))
+      bSum = true;
     else
       break;
   }
@@ -57,6 +63,9 @@ int main(int argc,char **argv)
     printf(couldnt_open,argv[curr_arg]);
     return 3;
   }
+
+  if (bSum)
+    sum_table_count = 0;
 
   num_files = 0;
 
@@ -97,24 +106,28 @@ int main(int argc,char **argv)
             table_count++;
         }
 
-        bSkip = false;
+        if (bSum)
+          sum_table_count += table_count;
+        else {
+          bSkip = false;
 
-        if (ge_num != -1) {
-          if (!bNot) {
-            if (table_count < ge_num)
-              bSkip = true;
+          if (ge_num != -1) {
+            if (!bNot) {
+              if (table_count < ge_num)
+                bSkip = true;
+            }
+            else {
+              if (table_count >= ge_num)
+                bSkip = true;
+            }
           }
-          else {
-            if (table_count >= ge_num)
-              bSkip = true;
-          }
-        }
 
-        if (!bSkip) {
-          if (bTerse)
-            printf("%d\n",table_count);
-          else
-            printf("%d %s %d\n",table_count,filename,hand_count);
+          if (!bSkip) {
+            if (bTerse)
+              printf("%d\n",table_count);
+            else
+              printf("%d %s %d\n",table_count,filename,hand_count);
+          }
         }
       }
     }
@@ -123,6 +136,9 @@ int main(int argc,char **argv)
   }
 
   fclose(fptr0);
+
+  if (bSum)
+    printf("%d\n",sum_table_count);
 
   return 0;
 }
