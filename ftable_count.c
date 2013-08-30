@@ -129,6 +129,8 @@ int main(int argc,char **argv)
               printf("%d %s %d\n",table_count,filename,hand_count);
           }
         }
+
+        break;
       }
     }
 
