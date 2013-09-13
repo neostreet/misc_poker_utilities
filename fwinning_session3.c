@@ -16,7 +16,7 @@ static char line[MAX_LINE_LEN];
 
 static char usage[] =
 "usage: fwinning_session3 (-debug) (-reverse) (-exclude_felt_sessions)\n"
-"  (-only_felt_sessions) player_name filename\n";
+"  (-only_felt_sessions) (-session_length_gelen) player_name filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char in_chips[] = " in chips";
@@ -56,6 +56,8 @@ int main(int argc,char **argv)
   bool bExcludeFeltSessions;
   bool bOnlyFeltSessions;
   bool bHitFelt;
+  bool bSessionLengthGE;
+  int minimum_session_length;
   int player_name_ix;
   int player_name_len;
   FILE *fptr0;
@@ -79,6 +81,7 @@ int main(int argc,char **argv)
   int session_delta;
   int file_no;
   int dbg_file_no;
+  int num_hands;
   int dbg;
   int work;
   double dwork1;
@@ -86,7 +89,7 @@ int main(int argc,char **argv)
   bool bSkipping;
   bool bPrintFilename;
 
-  if ((argc < 3) || (argc > 7)) {
+  if ((argc < 3) || (argc > 8)) {
     printf(usage);
     return 1;
   }
@@ -95,6 +98,7 @@ int main(int argc,char **argv)
   bReverse = false;
   bExcludeFeltSessions = false;
   bOnlyFeltSessions = false;
+  bSessionLengthGE = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-debug"))
@@ -105,6 +109,10 @@ int main(int argc,char **argv)
       bExcludeFeltSessions = true;
     else if (!strcmp(argv[curr_arg],"-only_felt_sessions"))
       bOnlyFeltSessions = true;
+    else if (!strncmp(argv[curr_arg],"-session_length_ge",18)) {
+      sscanf(&argv[curr_arg][18],"%d",&minimum_session_length);
+      bSessionLengthGE = true;
+    }
     else
       break;
   }
@@ -137,6 +145,7 @@ int main(int argc,char **argv)
       break;
 
     file_no++;
+    num_hands = 0;
 
     if (dbg_file_no == file_no)
       dbg = 1;
@@ -176,6 +185,7 @@ int main(int argc,char **argv)
           &ix)) {
 
           bSkipping = false;
+          num_hands++;
 
           street = 0;
           num_street_markers = 0;
@@ -354,6 +364,8 @@ int main(int argc,char **argv)
     if (bExcludeFeltSessions && bHitFelt)
       bPrintFilename = false;
     else if (bOnlyFeltSessions && !bHitFelt)
+      bPrintFilename = false;
+    else if (bSessionLengthGE && (num_hands < minimum_session_length))
       bPrintFilename = false;
 
     if (bPrintFilename) {
