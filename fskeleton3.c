@@ -149,11 +149,9 @@ int main(int argc,char **argv)
 
           for (ix--; (ix >= 0) && (line[ix] != '('); ix--)
             ;
-
-          continue;
         }
         else if (bSkipping)
-          continue;
+          ;
         else if (!strncmp(line,dealt_to,DEALT_TO_LEN)) {
           for (n = 0; n < line_len; n++) {
             if (line[n] == '[')
@@ -182,8 +180,7 @@ int main(int argc,char **argv)
           line,line_len,
           folds,FOLDS_LEN,
           &ix)) {
-
-          continue;
+          ;
         }
         else if (Contains(true,
           line,line_len,
@@ -211,7 +208,7 @@ int main(int argc,char **argv)
         }
       }
       else if (bSkipping)
-        continue;
+        ;
       else {
         if (!strncmp(line,summary,SUMMARY_LEN)) {
           if (bDebug)
@@ -225,8 +222,6 @@ int main(int argc,char **argv)
             printf(" %s %3d\n",filename,num_hands);
           else
             putchar(0x0a);
-
-          continue;
         }
       }
     }
