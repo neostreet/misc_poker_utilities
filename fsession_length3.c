@@ -15,7 +15,8 @@ static char filename[MAX_FILENAME_LEN];
 static char line[MAX_LINE_LEN];
 
 static char usage[] =
-"usage: fsession_length3 (-terse) (-debug) player_name filename\n";
+"usage: fsession_length3 (-terse) (-debug) (-gelength) (-ltlength)\n"
+"  (-filename_only) player_name filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char in_chips[] = " in chips";
@@ -35,6 +36,11 @@ int main(int argc,char **argv)
   int curr_arg;
   bool bTerse;
   bool bDebug;
+  bool bGeLength;
+  int ge_length;
+  bool bLtLength;
+  int lt_length;
+  bool bFilenameOnly;
   int player_name_ix;
   int player_name_len;
   FILE *fptr0;
@@ -50,19 +56,32 @@ int main(int argc,char **argv)
   int dbg;
   bool bSkipping;
 
-  if ((argc < 3) || (argc > 5)) {
+  if ((argc < 3) || (argc > 8)) {
     printf(usage);
     return 1;
   }
 
   bTerse = false;
   bDebug = false;
+  bGeLength = false;
+  bLtLength = false;
+  bFilenameOnly = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-terse"))
       bTerse = true;
     else if (!strcmp(argv[curr_arg],"-debug"))
       bDebug = true;
+    else if (!strncmp(argv[curr_arg],"-ge",3)) {
+      bGeLength = true;
+      sscanf(&argv[curr_arg][3],"%d",&ge_length);
+    }
+    else if (!strncmp(argv[curr_arg],"-lt",3)) {
+      bLtLength = true;
+      sscanf(&argv[curr_arg][3],"%d",&lt_length);
+    }
+    else if (!strcmp(argv[curr_arg],"-filename_only"))
+      bFilenameOnly = true;
     else
       break;
   }
@@ -72,12 +91,17 @@ int main(int argc,char **argv)
     return 2;
   }
 
+  if (bGeLength && bLtLength) {
+    printf("can't specify both -gelength and -ltlength\n");
+    return 3;
+  }
+
   player_name_ix = curr_arg++;
   player_name_len = strlen(argv[player_name_ix]);
 
   if ((fptr0 = fopen(argv[curr_arg],"r")) == NULL) {
     printf(couldnt_open,argv[curr_arg]);
-    return 3;
+    return 4;
   }
 
   file_no = 0;
@@ -145,10 +169,16 @@ int main(int argc,char **argv)
 
     fclose(fptr);
 
-    if (bTerse)
-      printf("%3d\n",num_hands);
-    else
-      printf("%3d %s\n",num_hands,filename);
+    if (!bGeLength || (num_hands >= ge_length)) {
+      if (!bLtLength || (num_hands < lt_length)) {
+        if (bTerse)
+          printf("%3d\n",num_hands);
+        else if (bFilenameOnly)
+          printf("%s\n",filename);
+        else
+          printf("%3d %s\n",num_hands,filename);
+      }
+    }
   }
 
   fclose(fptr0);
