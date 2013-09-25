@@ -128,19 +128,19 @@ int main(int argc,char **argv)
   if (!bVerbose) {
     if (!bDebug) {
       if (bMarkWinningSession && bWinningSession)
-        printf("%lf (w)\n",agoal);
+        printf("%lf (w) (%d)\n",agoal,line_no);
       else if (bMarkLosingSession && !bWinningSession)
-        printf("%lf (l)\n",agoal);
+        printf("%lf (l) (%d)\n",agoal,line_no);
       else
-        printf("%lf\n",agoal);
+        printf("%lf (%d)\n",agoal,line_no);
     }
     else {
       if (bMarkWinningSession && bWinningSession)
-        printf("%s %lf (w)\n",save_dir,agoal);
+        printf("%s %lf (w) (%d)\n",save_dir,agoal,line_no);
       else if (bMarkLosingSession && !bWinningSession)
-        printf("%s %lf (l)\n",save_dir,agoal);
+        printf("%s %lf (l) (%d)\n",save_dir,agoal,line_no);
       else
-        printf("%s %lf\n",save_dir,agoal);
+        printf("%s %lf (%d)\n",save_dir,agoal,line_no);
     }
   }
   else {
