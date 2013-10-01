@@ -19,7 +19,7 @@ static char min_filename[MAX_FILENAME_LEN];
 static char line[MAX_LINE_LEN];
 
 static char usage[] =
-"usage: fopm player_name filename\n";
+"usage: fopm (-verbose) player_name filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char in_chips[] = " in chips";
@@ -52,6 +52,8 @@ int get_work_amount(char *line,int line_len);
 
 int main(int argc,char **argv)
 {
+  int curr_arg;
+  bool bVerbose;
   int player_name_ix;
   int player_name_len;
   FILE *fptr0;
@@ -78,17 +80,31 @@ int main(int argc,char **argv)
   int work;
   double dwork;
 
-  if (argc != 3) {
+  if ((argc < 3) || (argc > 4)) {
     printf(usage);
     return 1;
   }
 
-  player_name_ix = 1;
+  bVerbose = false;
+
+  for (curr_arg = 1; curr_arg < argc; curr_arg++) {
+    if (!strcmp(argv[curr_arg],"-verbose"))
+      bVerbose = true;
+    else
+      break;
+  }
+
+  if (argc - curr_arg != 2) {
+    printf(usage);
+    return 2;
+  }
+
+  player_name_ix = curr_arg;
   player_name_len = strlen(argv[player_name_ix]);
 
-  if ((fptr0 = fopen(argv[2],"r")) == NULL) {
-    printf(couldnt_open,argv[2]);
-    return 2;
+  if ((fptr0 = fopen(argv[curr_arg+1],"r")) == NULL) {
+    printf(couldnt_open,argv[curr_arg+1]);
+    return 3;
   }
 
   getcwd(save_dir,_MAX_PATH);
@@ -237,7 +253,11 @@ int main(int argc,char **argv)
 
     if (collected_from_pot && (delta > 0)) {
       dwork = (double)delta / (double)collected_from_pot;
-      printf("%10.4lf %s\\%s\n",dwork,save_dir,filename);
+
+      if (!bVerbose)
+        printf("%6.4lf %s/%s\n",dwork,save_dir,filename);
+      else
+        printf("%6.4lf (%6d %6d) %s/%s\n",dwork,delta,collected_from_pot,save_dir,filename);
     }
   }
 
