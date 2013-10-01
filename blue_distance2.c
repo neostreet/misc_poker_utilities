@@ -4,13 +4,14 @@
 #define MAX_STR_LEN 256
 
 static char usage[] =
-"usage: blue_distance2 (-terse) (-no_dates) (-in_sessions) filename\n";
+"usage: blue_distance2 (-terse) (-verbose) (-no_dates) (-in_sessions) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 int main(int argc,char **argv)
 {
   int curr_arg;
   bool bTerse;
+  bool bVerbose;
   bool bNoDates;
   bool bInSessions;
   FILE *fptr;
@@ -22,18 +23,21 @@ int main(int argc,char **argv)
   int max_balance;
   int max_balance_ix;
 
-  if ((argc < 2) || (argc > 5)) {
+  if ((argc < 2) || (argc > 6)) {
     printf(usage);
     return 1;
   }
 
   bTerse = false;
+  bVerbose = false;
   bNoDates = false;
   bInSessions = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-terse"))
       bTerse = true;
+    else if (!strcmp(argv[curr_arg],"-verbose"))
+      bVerbose = true;
     else if (!strcmp(argv[curr_arg],"-no_dates"))
       bNoDates = true;
     else if (!strcmp(argv[curr_arg],"-in_sessions"))
@@ -83,8 +87,14 @@ int main(int argc,char **argv)
 
     if (!bTerse) {
       if (!bNoDates) {
-        if (!bInSessions)
-          printf("%s\t%d\n",str,max_balance - balance);
+        if (!bInSessions) {
+          if (!bVerbose)
+            printf("%s\t%d\n",str,max_balance - balance);
+          else {
+            printf("%s\t%d (%d %d)\n",str,max_balance - balance,
+              max_balance,balance);
+          }
+        }
         else
           printf("%s\t%d\n",str,line_no - max_balance_ix);
       }
