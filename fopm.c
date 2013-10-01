@@ -19,13 +19,15 @@ static char min_filename[MAX_FILENAME_LEN];
 static char line[MAX_LINE_LEN];
 
 static char usage[] =
-"usage: fopm (-verbose) player_name filename\n";
+"usage: fopm (-verbose) (-saw_river) player_name filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char in_chips[] = " in chips";
 #define IN_CHIPS_LEN (sizeof (in_chips) - 1)
 static char summary[] = "*** SUMMARY ***";
 #define SUMMARY_LEN (sizeof (summary) - 1)
+static char river[] = "*** RIVER *** [";
+#define RIVER_LEN (sizeof (river) - 1)
 static char street_marker[] = "*** ";
 #define STREET_MARKER_LEN (sizeof (street_marker) - 1)
 static char posts[] = " posts ";
@@ -54,6 +56,9 @@ int main(int argc,char **argv)
 {
   int curr_arg;
   bool bVerbose;
+  bool bSawRiver;
+  bool bFolded;
+  bool bHaveRiver;
   int player_name_ix;
   int player_name_len;
   FILE *fptr0;
@@ -80,16 +85,19 @@ int main(int argc,char **argv)
   int work;
   double dwork;
 
-  if ((argc < 3) || (argc > 4)) {
+  if ((argc < 3) || (argc > 5)) {
     printf(usage);
     return 1;
   }
 
   bVerbose = false;
+  bSawRiver = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-verbose"))
       bVerbose = true;
+    else if (!strcmp(argv[curr_arg],"-saw_river"))
+      bSawRiver = true;
     else
       break;
   }
@@ -136,6 +144,8 @@ int main(int argc,char **argv)
     uncalled_bet_amount = 0;
     collected_from_pot = 0;
     collected_from_pot_count = 0;
+    bFolded = false;
+    bHaveRiver = false;
 
     for ( ; ; ) {
       GetLine(fptr,line,&line_len,MAX_LINE_LEN);
@@ -161,6 +171,8 @@ int main(int argc,char **argv)
             ;
 
           sscanf(&line[ix+1],"%d",&starting_balance);
+          bFolded = false;
+          bHaveRiver = false;
 
           continue;
         }
@@ -207,6 +219,7 @@ int main(int argc,char **argv)
           folds,FOLDS_LEN,
           &ix)) {
           spent_this_hand += spent_this_street;
+          bFolded = true;
           break;
         }
         else if (Contains(true,
@@ -232,6 +245,11 @@ int main(int argc,char **argv)
         if (!strncmp(line,summary,SUMMARY_LEN))
           break;
 
+        if (!strncmp(line,river,RIVER_LEN)) {
+          if (!bFolded)
+            bHaveRiver = true;
+        }
+
         if (!strncmp(line,street_marker,STREET_MARKER_LEN)) {
           num_street_markers++;
 
@@ -252,12 +270,14 @@ int main(int argc,char **argv)
     delta = ending_balance - starting_balance;
 
     if (collected_from_pot && (delta > 0)) {
-      dwork = (double)delta / (double)collected_from_pot;
+      if (!bSawRiver || bHaveRiver) {
+        dwork = (double)delta / (double)collected_from_pot;
 
-      if (!bVerbose)
-        printf("%6.4lf %s/%s\n",dwork,save_dir,filename);
-      else
-        printf("%6.4lf (%6d %6d) %s/%s\n",dwork,delta,collected_from_pot,save_dir,filename);
+        if (!bVerbose)
+          printf("%6.4lf %s/%s\n",dwork,save_dir,filename);
+        else
+          printf("%6.4lf (%6d %6d) %s/%s\n",dwork,delta,collected_from_pot,save_dir,filename);
+      }
     }
   }
 
