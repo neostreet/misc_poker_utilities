@@ -122,8 +122,12 @@ int main(int argc,char **argv)
           else
             printf("%s\t%d\n",str,line_no - max_balance_ix);
         }
-        else if (line_no == max_balance_ix)
-          printf("%s\t%d\n",str,max_balance);
+        else if (line_no == max_balance_ix) {
+          if (!bVerbose)
+            printf("%s\t%d\n",str,max_balance);
+          else
+            printf("%s\t%d (%d %d)\n",str,max_balance,delta,line_no);
+        }
       }
       else {
         if (!bInSessions) {
