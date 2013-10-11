@@ -4,7 +4,8 @@
 #define MAX_STR_LEN 256
 
 static char usage[] =
-"usage: blue_distance2 (-terse) (-verbose) (-no_dates) (-in_sessions) filename\n";
+"usage: blue_distance2 (-terse) (-verbose) (-initial_bal) (-no_dates)\n"
+"  (-only_blue) (-in_sessions) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 int main(int argc,char **argv)
@@ -13,7 +14,9 @@ int main(int argc,char **argv)
   bool bTerse;
   bool bVerbose;
   bool bNoDates;
+  bool bOnlyBlue;
   bool bInSessions;
+  int initial_bal;
   FILE *fptr;
   int line_len;
   int line_no;
@@ -23,7 +26,7 @@ int main(int argc,char **argv)
   int max_balance;
   int max_balance_ix;
 
-  if ((argc < 2) || (argc > 6)) {
+  if ((argc < 2) || (argc > 8)) {
     printf(usage);
     return 1;
   }
@@ -31,15 +34,21 @@ int main(int argc,char **argv)
   bTerse = false;
   bVerbose = false;
   bNoDates = false;
+  bOnlyBlue = false;
   bInSessions = false;
+  initial_bal = 0;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-terse"))
       bTerse = true;
     else if (!strcmp(argv[curr_arg],"-verbose"))
       bVerbose = true;
+    else if (!strncmp(argv[curr_arg],"-initial_bal",12))
+      sscanf(&argv[curr_arg][12],"%d",&initial_bal);
     else if (!strcmp(argv[curr_arg],"-no_dates"))
       bNoDates = true;
+    else if (!strcmp(argv[curr_arg],"-only_blue"))
+      bOnlyBlue = true;
     else if (!strcmp(argv[curr_arg],"-in_sessions"))
       bInSessions = true;
     else
@@ -65,15 +74,29 @@ int main(int argc,char **argv)
       break;
 
     if (!line_no) {
-      if (delta < 0) {
-        max_balance = delta * -1;
-        max_balance_ix = -1;
-        balance = 0;
+      if (initial_bal) {
+        if (delta < 0) {
+          max_balance = initial_bal;
+          max_balance_ix = -1;
+          balance = initial_bal + delta;
+        }
+        else {
+          max_balance = initial_bal + delta;
+          max_balance_ix = 0;
+          balance = max_balance;
+        }
       }
       else {
-        max_balance = delta;
-        max_balance_ix = 0;
-        balance = max_balance;
+        if (delta < 0) {
+          max_balance = delta * -1;
+          max_balance_ix = -1;
+          balance = 0;
+        }
+        else {
+          max_balance = delta;
+          max_balance_ix = 0;
+          balance = max_balance;
+        }
       }
     }
     else {
@@ -87,20 +110,30 @@ int main(int argc,char **argv)
 
     if (!bTerse) {
       if (!bNoDates) {
+        if (!bOnlyBlue) {
+          if (!bInSessions) {
+            if (!bVerbose)
+              printf("%s\t%d\n",str,max_balance - balance);
+            else {
+              printf("%s\t%d (%d %d)\n",str,max_balance - balance,
+                max_balance,balance);
+            }
+          }
+          else
+            printf("%s\t%d\n",str,line_no - max_balance_ix);
+        }
+        else if (line_no == max_balance_ix)
+          printf("%s\t%d\n",str,max_balance);
+      }
+      else {
         if (!bInSessions) {
           if (!bVerbose)
-            printf("%s\t%d\n",str,max_balance - balance);
+            printf("%d\n",max_balance - balance);
           else {
-            printf("%s\t%d (%d %d)\n",str,max_balance - balance,
+            printf("%d (%d %d)\n",max_balance - balance,
               max_balance,balance);
           }
         }
-        else
-          printf("%s\t%d\n",str,line_no - max_balance_ix);
-      }
-      else {
-        if (!bInSessions)
-          printf("%d\n",max_balance - balance);
         else
           printf("%d\n",line_no - max_balance_ix);
       }
