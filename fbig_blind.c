@@ -128,7 +128,7 @@ int main(int argc,char **argv)
             if (!bVerbose)
               printf("%d\n",curr_big_blind_amount);
             else
-              printf("%s %d %s\n",filename,curr_big_blind_amount,line);
+              printf("%d %s %s\n",curr_big_blind_amount,filename,line);
           }
         }
       }
