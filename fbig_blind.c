@@ -4,8 +4,11 @@
 #ifdef WIN32
 #include <direct.h>
 #else
+#define _MAX_PATH 4096
 #include <unistd.h>
 #endif
+
+static char save_dir[_MAX_PATH];
 
 #define MAX_FILENAME_LEN 1024
 static char filename[MAX_FILENAME_LEN];
@@ -17,10 +20,11 @@ static char line[MAX_LINE_LEN];
 static int big_blind_amount[MAX_BIG_BLIND_AMOUNTS];
 
 static char usage[] =
-"usage: fbig_blind (-debug) (-verbose) (-per_file) filename\n";
+"usage: fbig_blind (-debug) (-verbose) (-per_file) (-get_date_from_cwd) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
+static int get_date_from_cwd(char *cwd,char **date_string_ptr);
 static int get_big_blind_amount(
   char *line,
   int line_len,
@@ -34,6 +38,8 @@ int main(int argc,char **argv)
   bool bDebug;
   bool bVerbose;
   bool bPerFile;
+  bool bGetDateFromCwd;
+  char *date_string;
   FILE *fptr0;
   int filename_len;
   int num_files;
@@ -44,7 +50,7 @@ int main(int argc,char **argv)
   int num_big_blind_amounts;
   int curr_big_blind_amount;
 
-  if ((argc < 2) || (argc > 5)) {
+  if ((argc < 2) || (argc > 6)) {
     printf(usage);
     return 1;
   }
@@ -52,6 +58,7 @@ int main(int argc,char **argv)
   bDebug = false;
   bVerbose = false;
   bPerFile = false;
+  bGetDateFromCwd = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-debug"))
@@ -60,6 +67,8 @@ int main(int argc,char **argv)
       bVerbose = true;
     else if (!strcmp(argv[curr_arg],"-per_file"))
       bPerFile = true;
+    else if (!strcmp(argv[curr_arg],"-get_date_from_cwd"))
+      bGetDateFromCwd = true;
     else
       break;
   }
@@ -72,6 +81,17 @@ int main(int argc,char **argv)
   if ((fptr0 = fopen(argv[curr_arg],"r")) == NULL) {
     printf(couldnt_open,argv[curr_arg]);
     return 3;
+  }
+
+  if (bGetDateFromCwd) {
+    getcwd(save_dir,_MAX_PATH);
+
+    retval = get_date_from_cwd(save_dir,&date_string);
+
+    if (retval) {
+      printf("get_date_from_cwd() failed: %d\n",retval);
+      return 4;
+    }
   }
 
   num_files = 0;
@@ -104,7 +124,7 @@ int main(int argc,char **argv)
 
         if (retval) {
           printf("get_big_blind_amount() failed on line %d: %d\n",line_len,retval);
-          return 4;
+          return 5;
         }
 
         if (bDebug)
@@ -119,16 +139,46 @@ int main(int argc,char **argv)
           if (num_big_blind_amounts == MAX_BIG_BLIND_AMOUNTS) {
             printf("MAX_BIG_BLIND_AMOUNTS value of %d exceeded\n",
               MAX_BIG_BLIND_AMOUNTS);
-            return 5;
+            return 6;
           }
 
           big_blind_amount[num_big_blind_amounts++] = curr_big_blind_amount;
 
           if (!bDebug) {
-            if (!bVerbose)
-              printf("%d\n",curr_big_blind_amount);
-            else
-              printf("%d %s %s\n",curr_big_blind_amount,filename,line);
+            if (!bVerbose) {
+              if (bPerFile || num_big_blind_amounts == 1) {
+                if (!bGetDateFromCwd)
+                  printf("%d\n",curr_big_blind_amount);
+                else
+                  printf("%d\t%s\n",curr_big_blind_amount,date_string);
+              }
+              else {
+                if (!bGetDateFromCwd)
+                  printf("%d (%d)\n",curr_big_blind_amount,num_big_blind_amounts);
+                else {
+                  printf("%d (%d) %s\n",curr_big_blind_amount,num_big_blind_amounts,
+                    date_string);
+                }
+              }
+            }
+            else {
+              if (bPerFile || num_big_blind_amounts == 1) {
+                if (!bGetDateFromCwd)
+                  printf("%d %s %s\n",curr_big_blind_amount,filename,line);
+                else
+                  printf("%d %s %s %s\n",curr_big_blind_amount,date_string,filename,line);
+              }
+              else {
+                if (!bGetDateFromCwd) {
+                  printf("%d (%d) %s %s\n",curr_big_blind_amount,num_big_blind_amounts,
+                    filename,line);
+                }
+                else {
+                  printf("%d (%d) %s %s %s\n",curr_big_blind_amount,num_big_blind_amounts,
+                    date_string,filename,line);
+                }
+              }
+            }
           }
         }
       }
@@ -162,6 +212,44 @@ static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen)
 
   line[local_line_len] = 0;
   *line_len = local_line_len;
+}
+
+static char sql_date_string[11];
+
+static int get_date_from_cwd(char *cwd,char **date_string_ptr)
+{
+  int n;
+  int len;
+  int slash_count;
+
+  len = strlen(cwd);
+  slash_count = 0;
+
+  for (n = len - 1; (n >= 0); n--) {
+    if (cwd[n] == '/') {
+      slash_count++;
+
+      if (slash_count == 2)
+        break;
+    }
+  }
+
+  if (slash_count != 2)
+    return 1;
+
+  if (cwd[n+5] != '/')
+    return 2;
+
+  strncpy(sql_date_string,&cwd[n+1],4);
+  sql_date_string[4] = '-';
+  strncpy(&sql_date_string[5],&cwd[n+6],2);
+  sql_date_string[7] = '-';
+  strncpy(&sql_date_string[8],&cwd[n+8],2);
+  sql_date_string[10] = 0;
+
+  *date_string_ptr = sql_date_string;
+
+  return 0;
 }
 
 static int get_big_blind_amount(
