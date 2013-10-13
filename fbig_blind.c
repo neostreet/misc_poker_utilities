@@ -108,7 +108,7 @@ int main(int argc,char **argv)
         }
 
         if (bDebug)
-          printf("%s\n",big_blind_amount[num_big_blind_amounts - 1]);
+          printf("%d\n",curr_big_blind_amount);
 
         for (n = 0; n < num_big_blind_amounts; n++) {
           if (big_blind_amount[n] == curr_big_blind_amount)
