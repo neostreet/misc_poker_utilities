@@ -15,22 +15,30 @@ static char filename[MAX_FILENAME_LEN];
 
 #define MAX_LINE_LEN 1024
 static char line[MAX_LINE_LEN];
+static char table_line[MAX_LINE_LEN];
 
-#define MAX_BIG_BLIND_AMOUNTS 10
-static int big_blind_amount[MAX_BIG_BLIND_AMOUNTS];
+struct big_blind_struct {
+  int big_blind;
+  int table_size;
+};
+
+#define MAX_BIG_BLIND_STRUCTS 10
+static struct big_blind_struct big_blind_structs[MAX_BIG_BLIND_STRUCTS];
 
 static char usage[] =
 "usage: fbig_blind (-debug) (-verbose) (-per_file) (-get_date_from_cwd)\n"
-"  (-get_date_from_filename) filename\n";
+"  (-get_date_from_filename) (-table_size) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
 static int get_date_from_path(char *path,char slash_char,int num_slashes,char **date_string_ptr);
-static int get_big_blind_amount(
+static int get_big_blind(
   char *line,
   int line_len,
-  int *big_blind_amount
+  int *big_blind_ptr
 );
+static int Contains(bool bCaseSens,char *line,int line_len,
+  char *string,int string_len,int *index);
 
 int main(int argc,char **argv)
 {
@@ -42,18 +50,22 @@ int main(int argc,char **argv)
   bool bGetDate;
   bool bGetDateFromCwd;
   bool bGetDateFromFilename;
+  bool bTableSize;
   char *date_string;
   FILE *fptr0;
   int filename_len;
   int num_files;
   FILE *fptr;
+  int line_no;
   int line_len;
+  int table_line_len;
   int ix;
   int retval;
-  int num_big_blind_amounts;
-  int curr_big_blind_amount;
+  int num_big_blind_structs;
+  int curr_big_blind;
+  int curr_table_size;
 
-  if ((argc < 2) || (argc > 7)) {
+  if ((argc < 2) || (argc > 8)) {
     printf(usage);
     return 1;
   }
@@ -64,6 +76,7 @@ int main(int argc,char **argv)
   bGetDate = false;
   bGetDateFromCwd = false;
   bGetDateFromFilename = false;
+  bTableSize = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-debug"))
@@ -80,6 +93,8 @@ int main(int argc,char **argv)
       bGetDate = true;
       bGetDateFromFilename = true;
     }
+    else if (!strcmp(argv[curr_arg],"-table_size"))
+      bTableSize = true;
     else
       break;
   }
@@ -111,7 +126,7 @@ int main(int argc,char **argv)
   }
 
   num_files = 0;
-  num_big_blind_amounts = 0;
+  num_big_blind_structs = 0;
 
   for ( ; ; ) {
     GetLine(fptr0,filename,&filename_len,MAX_FILENAME_LEN);
@@ -134,9 +149,10 @@ int main(int argc,char **argv)
     }
 
     num_files++;
+    line_no = 0;
 
     if (bPerFile)
-      num_big_blind_amounts = 0;
+      num_big_blind_structs = 0;
 
     for ( ; ; ) {
       GetLine(fptr,line,&line_len,MAX_LINE_LEN);
@@ -144,63 +160,137 @@ int main(int argc,char **argv)
       if (feof(fptr))
         break;
 
+      line_no++;
+
       if (!strncmp(line,"PokerStars ",11)) {
-        retval = get_big_blind_amount(line,line_len,&curr_big_blind_amount);
+        retval = get_big_blind(line,line_len,&curr_big_blind);
 
         if (retval) {
-          printf("get_big_blind_amount() failed on line %d: %d\n",line_len,retval);
+          printf("%s: get_big_blind() failed on line %d: %d\n",filename,line_len,retval);
           return 7;
         }
 
         if (bDebug)
-          printf("%d\n",curr_big_blind_amount);
+          printf("%d\n",curr_big_blind);
 
-        for (n = 0; n < num_big_blind_amounts; n++) {
-          if (big_blind_amount[n] == curr_big_blind_amount)
-            break;
-        }
+        if (bTableSize) {
+          GetLine(fptr,table_line,&table_line_len,MAX_LINE_LEN);
 
-        if (n == num_big_blind_amounts) {
-          if (num_big_blind_amounts == MAX_BIG_BLIND_AMOUNTS) {
-            printf("MAX_BIG_BLIND_AMOUNTS value of %d exceeded\n",
-              MAX_BIG_BLIND_AMOUNTS);
+          if (feof(fptr)) {
+            printf("%s: couldn't get table line after line %d\n",filename,line_no);
             return 8;
           }
 
-          big_blind_amount[num_big_blind_amounts++] = curr_big_blind_amount;
+          line_no++;
+
+          if (Contains(true,
+            table_line,table_line_len,
+            "-max",4,
+            &ix)) {
+
+            line[ix] = 0;
+            sscanf(&table_line[ix-1],"%d",&curr_table_size);
+          }
+          else
+            curr_table_size = 0;
+        }
+
+        for (n = 0; n < num_big_blind_structs; n++) {
+          if (!bTableSize) {
+            if (big_blind_structs[n].big_blind == curr_big_blind)
+              break;
+          }
+          else {
+            if ((big_blind_structs[n].big_blind == curr_big_blind) &&
+                (big_blind_structs[n].table_size == curr_table_size))
+              break;
+          }
+        }
+
+        if (n == num_big_blind_structs) {
+          if (num_big_blind_structs == MAX_BIG_BLIND_STRUCTS) {
+            printf("MAX_BIG_BLIND_STRUCTS value of %d exceeded\n",
+              MAX_BIG_BLIND_STRUCTS);
+            return 9;
+          }
+
+          big_blind_structs[num_big_blind_structs].big_blind = curr_big_blind;
+
+          if (bTableSize)
+            big_blind_structs[num_big_blind_structs].table_size = curr_table_size;
+
+          num_big_blind_structs++;
 
           if (!bDebug) {
             if (!bVerbose) {
-              if (bPerFile || num_big_blind_amounts == 1) {
-                if (!bGetDate)
-                  printf("%d\n",curr_big_blind_amount);
-                else
-                  printf("%d\t%s\n",curr_big_blind_amount,date_string);
+              if (bPerFile || num_big_blind_structs == 1) {
+                if (!bGetDate) {
+                  if (!bTableSize)
+                    printf("%d\n",curr_big_blind);
+                  else
+                    printf("%d %d\n",curr_big_blind,curr_table_size);
+                }
+                else {
+                  if (!bTableSize)
+                    printf("%d\t%s\n",curr_big_blind,date_string);
+                  else
+                    printf("%d\t%d\t%s\n",curr_big_blind,curr_table_size,date_string);
+                }
               }
               else {
-                if (!bGetDate)
-                  printf("%d (%d)\n",curr_big_blind_amount,num_big_blind_amounts);
+                if (!bGetDate) {
+                  if (!bTableSize)
+                    printf("%d (%d)\n",curr_big_blind,num_big_blind_structs);
+                  else
+                    printf("%d %d (%d)\n",curr_big_blind,curr_table_size,num_big_blind_structs);
+                }
                 else {
-                  printf("%d (%d) %s\n",curr_big_blind_amount,num_big_blind_amounts,
-                    date_string);
+                  if (!bTableSize) {
+                    printf("%d (%d) %s\n",curr_big_blind,num_big_blind_structs,
+                      date_string);
+                  }
+                  else {
+                    printf("%d %d (%d) %s\n",curr_big_blind,curr_table_size,num_big_blind_structs,
+                      date_string);
+                  }
                 }
               }
             }
             else {
-              if (bPerFile || num_big_blind_amounts == 1) {
-                if (!bGetDate)
-                  printf("%d %s %s\n",curr_big_blind_amount,filename,line);
-                else
-                  printf("%d %s %s %s\n",curr_big_blind_amount,date_string,filename,line);
+              if (bPerFile || num_big_blind_structs == 1) {
+                if (!bGetDate) {
+                  if (!bTableSize)
+                    printf("%d %s %s\n",curr_big_blind,filename,line);
+                  else
+                    printf("%d %d %s %s\n",curr_big_blind,curr_table_size,filename,line);
+                }
+                else {
+                  if (!bTableSize)
+                    printf("%d %s %s %s\n",curr_big_blind,date_string,filename,line);
+                  else
+                    printf("%d %d %s %s %s\n",curr_big_blind,curr_table_size,date_string,filename,line);
+                }
               }
               else {
                 if (!bGetDate) {
-                  printf("%d (%d) %s %s\n",curr_big_blind_amount,num_big_blind_amounts,
-                    filename,line);
+                  if (!bTableSize) {
+                    printf("%d (%d) %s %s\n",curr_big_blind,num_big_blind_structs,
+                      filename,line);
+                  }
+                  else {
+                    printf("%d %d (%d) %s %s\n",curr_big_blind,curr_table_size,num_big_blind_structs,
+                      filename,line);
+                  }
                 }
                 else {
-                  printf("%d (%d) %s %s %s\n",curr_big_blind_amount,num_big_blind_amounts,
-                    date_string,filename,line);
+                  if (!bTableSize) {
+                    printf("%d (%d) %s %s %s\n",curr_big_blind,num_big_blind_structs,
+                      date_string,filename,line);
+                  }
+                  else {
+                    printf("%d %d (%d) %s %s %s\n",curr_big_blind,curr_table_size,num_big_blind_structs,
+                      date_string,filename,line);
+                  }
                 }
               }
             }
@@ -277,10 +367,10 @@ static int get_date_from_path(char *path,char slash_char,int num_slashes,char **
   return 0;
 }
 
-static int get_big_blind_amount(
+static int get_big_blind(
   char *line,
   int line_len,
-  int *big_blind_amount
+  int *big_blind_ptr
 )
 {
   int n;
@@ -303,7 +393,42 @@ static int get_big_blind_amount(
 
   n++;
 
-  sscanf(&line[n],"%d",big_blind_amount);
+  sscanf(&line[n],"%d",big_blind_ptr);
 
   return 0;
+}
+
+static int Contains(bool bCaseSens,char *line,int line_len,
+  char *string,int string_len,int *index)
+{
+  int m;
+  int n;
+  int tries;
+  char chara;
+
+  tries = line_len - string_len + 1;
+
+  if (tries <= 0)
+    return false;
+
+  for (m = 0; m < tries; m++) {
+    for (n = 0; n < string_len; n++) {
+      chara = line[m + n];
+
+      if (!bCaseSens) {
+        if ((chara >= 'A') && (chara <= 'Z'))
+          chara += 'a' - 'A';
+      }
+
+      if (chara != string[n])
+        break;
+    }
+
+    if (n == string_len) {
+      *index = m;
+      return true;
+    }
+  }
+
+  return false;
 }
