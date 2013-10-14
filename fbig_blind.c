@@ -246,11 +246,11 @@ int main(int argc,char **argv)
                 }
                 else {
                   if (!bTableSize) {
-                    printf("%d (%d) %s\n",curr_big_blind,num_big_blind_structs,
+                    printf("%d\t(%d)\t%s\n",curr_big_blind,num_big_blind_structs,
                       date_string);
                   }
                   else {
-                    printf("%d %d (%d) %s\n",curr_big_blind,curr_table_size,num_big_blind_structs,
+                    printf("%d\t%d\t(%d)\t%s\n",curr_big_blind,curr_table_size,num_big_blind_structs,
                       date_string);
                   }
                 }
@@ -266,9 +266,9 @@ int main(int argc,char **argv)
                 }
                 else {
                   if (!bTableSize)
-                    printf("%d %s %s %s\n",curr_big_blind,date_string,filename,line);
+                    printf("%d\t%s\t%s\t%s\n",curr_big_blind,date_string,filename,line);
                   else
-                    printf("%d %d %s %s %s\n",curr_big_blind,curr_table_size,date_string,filename,line);
+                    printf("%d\t%d\t%s\t%s\t%s\n",curr_big_blind,curr_table_size,date_string,filename,line);
                 }
               }
               else {
@@ -284,11 +284,11 @@ int main(int argc,char **argv)
                 }
                 else {
                   if (!bTableSize) {
-                    printf("%d (%d) %s %s %s\n",curr_big_blind,num_big_blind_structs,
+                    printf("%d\t(%d)\t%s\t%s\t%s\n",curr_big_blind,num_big_blind_structs,
                       date_string,filename,line);
                   }
                   else {
-                    printf("%d %d (%d) %s %s %s\n",curr_big_blind,curr_table_size,num_big_blind_structs,
+                    printf("%d\t%d\t(%d)\t%s\t%s\t%s\n",curr_big_blind,curr_table_size,num_big_blind_structs,
                       date_string,filename,line);
                   }
                 }
