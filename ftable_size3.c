@@ -49,6 +49,7 @@ int main(int argc,char **argv)
   int dbg;
   int ix;
   int table_size;
+  int prev_table_size;
 
   if ((argc < 2) || (argc > 5)) {
     printf(usage);
@@ -134,7 +135,11 @@ int main(int argc,char **argv)
         else
           table_size = 0;
 
-        printf("%d %s %3d\n",table_size,filename,num_hands);
+        if (!bTerse || (num_hands == 1) || (table_size != prev_table_size))
+          printf("%d %s %3d\n",table_size,filename,num_hands);
+
+        if (bTerse)
+          prev_table_size = table_size;
       }
     }
 
