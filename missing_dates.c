@@ -13,7 +13,7 @@
 #define MAX_LINE_LEN 1024
 static char line[MAX_LINE_LEN];
 
-static char usage[] = "usage: missing_dates filename\n";
+static char usage[] = "usage: missing_dates (-length) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 struct missing_dates_info {
@@ -56,6 +56,8 @@ static char *format_date(char *cpt);
 
 int main(int argc,char **argv)
 {
+  int curr_arg;
+  bool bLength;
   int m;
   int n;
   FILE *fptr;
@@ -66,14 +68,28 @@ int main(int argc,char **argv)
   time_t missing_date;
   char *cpt;
 
-  if (argc != 2) {
+  if ((argc < 2) || (argc > 3)) {
     printf(usage);
     return 1;
   }
 
-  if ((fptr = fopen(argv[1],"r")) == NULL) {
-    printf(couldnt_open,argv[1]);
+  bLength = false;
+
+  for (curr_arg = 1; curr_arg < argc; curr_arg++) {
+    if (!strcmp(argv[curr_arg],"-length"))
+      bLength = true;
+    else
+      break;
+  }
+
+  if (argc - curr_arg != 1) {
+    printf(usage);
     return 2;
+  }
+
+  if ((fptr = fopen(argv[curr_arg],"r")) == NULL) {
+    printf(couldnt_open,argv[curr_arg]);
+    return 3;
   }
 
   num_sessions = 0;
@@ -93,7 +109,7 @@ int main(int argc,char **argv)
     num_sessions * sizeof (struct missing_dates_info))) == NULL) {
     printf(malloc_failed1,num_sessions);
     fclose(fptr);
-    return 3;
+    return 4;
   }
 
   session_ix = 0;
@@ -108,7 +124,7 @@ int main(int argc,char **argv)
 
     if (retval) {
       printf("get_session_date() failed on line %d: %d\n",session_ix+1,retval);
-      return 4;
+      return 5;
     }
 
     session_ix++;
@@ -128,10 +144,16 @@ int main(int argc,char **argv)
     if (missing_dates[n].datediff > 1) {
       missing_date = missing_dates[n-1].start_date;
 
-      for (m = 0; m < missing_dates[n].datediff - 1; m++) {
-        missing_date += SECS_PER_DAY;
+      if (!bLength) {
+        for (m = 0; m < missing_dates[n].datediff - 1; m++) {
+          missing_date += SECS_PER_DAY;
+          cpt = ctime(&missing_date);
+          printf("%s\n",format_date(cpt));
+        }
+      }
+      else {
         cpt = ctime(&missing_date);
-        printf("%s\n",format_date(cpt));
+        printf("%3d %s\n",missing_dates[n].datediff,format_date(cpt));
       }
     }
   }
