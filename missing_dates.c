@@ -153,7 +153,7 @@ int main(int argc,char **argv)
       }
       else {
         cpt = ctime(&missing_date);
-        printf("%3d %s\n",missing_dates[n].datediff,format_date(cpt));
+        printf("%3d %s\n",missing_dates[n].datediff - 1,format_date(cpt));
       }
     }
   }
