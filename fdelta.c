@@ -17,8 +17,9 @@ static char filename[MAX_FILENAME_LEN];
 static char line[MAX_LINE_LEN];
 
 static char usage[] =
-"usage: fdelta (-terse) (-verbose) (-debug) (-sum) (-avg) (-absolute_value) (-winning_only)\n"
-"  (-losing_only) (-pocket_pairs_only) player_name filename\n";
+"usage: fdelta (-terse) (-verbose) (-debug) (-sum) (-avg) (-absolute_value)\n"
+"  (-winning_only) (-losing_only) (-pocket_pairs_only) (-file_names)\n"
+"  player_name filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char in_chips[] = " in chips";
@@ -64,6 +65,7 @@ int main(int argc,char **argv)
   bool bWinningOnly;
   bool bLosingOnly;
   bool bPocketPairsOnly;
+  bool bFileNames;
   int player_name_ix;
   int player_name_len;
   FILE *fptr0;
@@ -98,7 +100,7 @@ int main(int argc,char **argv)
   int sum_negative_deltas;
   int sum_absolute_value_deltas;
 
-  if ((argc < 3) || (argc > 12)) {
+  if ((argc < 3) || (argc > 13)) {
     printf(usage);
     return 1;
   }
@@ -112,6 +114,7 @@ int main(int argc,char **argv)
   bWinningOnly = false;
   bLosingOnly = false;
   bPocketPairsOnly = false;
+  bFileNames = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-terse"))
@@ -134,6 +137,10 @@ int main(int argc,char **argv)
       bLosingOnly = true;
     else if (!strcmp(argv[curr_arg],"-pocket_pairs_only"))
       bPocketPairsOnly = true;
+    else if (!strcmp(argv[curr_arg],"-file_names")) {
+      bFileNames = true;
+      getcwd(save_dir,_MAX_PATH);
+    }
     else
       break;
   }
@@ -421,10 +428,12 @@ int main(int argc,char **argv)
     else {
       if (bTerse)
         printf("%d\n",delta);
+      else if (bFileNames)
+        printf("%10d %s/%s\n",delta,save_dir,filename);
       else if (!bVerbose)
         printf("%s %10d\n",hole_cards,delta);
       else
-        printf("%s %10d %s\\%s\n",hole_cards,delta,save_dir,filename);
+        printf("%s %10d %s/%s\n",hole_cards,delta,save_dir,filename);
     }
   }
 
