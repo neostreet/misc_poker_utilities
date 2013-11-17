@@ -24,7 +24,8 @@ struct session_info_struct {
 #define TAB 0x9
 
 static char usage[] =
-"usage: session_moving_sum (-no_sort) (-ascending) (-absolute_value) subset_size filename\n";
+"usage: session_moving_sum (-no_sort) (-ascending) (-absolute_value)\n"
+"  (-skip_interim) subset_size filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char malloc_failed1[] = "malloc of %d session info structures failed\n";
@@ -66,9 +67,11 @@ int main(int argc,char **argv)
   int n;
   bool bNoSort;
   bool bAbsoluteValue;
+  bool bSkipInterim;
   int curr_arg;
   int session_ix;
   int subset_size;
+  int work_subset_size;
   FILE *fptr;
   int line_len;
   int set_size;
@@ -80,7 +83,7 @@ int main(int argc,char **argv)
   int retval;
   char *cpt;
 
-  if ((argc < 3) || (argc > 6)) {
+  if ((argc < 3) || (argc > 7)) {
     printf(usage);
     return 1;
   }
@@ -88,6 +91,7 @@ int main(int argc,char **argv)
   bNoSort = false;
   bAscending = false;
   bAbsoluteValue = false;
+  bSkipInterim = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-no_sort"))
@@ -96,6 +100,8 @@ int main(int argc,char **argv)
       bAscending = true;
     else if (!strcmp(argv[curr_arg],"-absolute_value"))
       bAbsoluteValue = true;
+    else if (!strcmp(argv[curr_arg],"-skip_interim"))
+      bSkipInterim = true;
     else
       break;
   }
@@ -138,7 +144,10 @@ int main(int argc,char **argv)
     return 4;
   }
 
-  num_sums = set_size - subset_size + 1;
+  if (!bSkipInterim)
+    num_sums = set_size - subset_size + 1;
+  else
+    num_sums = (set_size + subset_size - 1) / subset_size;
 
   if ((session_info = (struct session_info_struct *)malloc(
     set_size * sizeof (struct session_info_struct))) == NULL) {
@@ -189,16 +198,40 @@ int main(int argc,char **argv)
     sum = 0;
     num_winning_sessions = 0;
 
-    for (m = 0; m < subset_size; m++) {
-      sum += session_info[n+m].delta;
+    if (!bSkipInterim) {
+      for (m = 0; m < subset_size; m++) {
+        sum += session_info[n+m].delta;
 
-      if (session_info[n+m].delta > 0)
-        num_winning_sessions++;
+        if (session_info[n+m].delta > 0)
+          num_winning_sessions++;
+      }
+    }
+    else {
+      if (n < num_sums - 1)
+        work_subset_size = subset_size;
+      else
+        work_subset_size = set_size - (subset_size * n);
+
+      for (m = 0; m < work_subset_size; m++) {
+        sum += session_info[subset_size * n + m].delta;
+
+        if (session_info[subset_size * n + m].delta > 0)
+          num_winning_sessions++;
+      }
     }
 
     session_info[n].sum = sum;
     session_info[n].num_winning_sessions = num_winning_sessions;
-    session_info[n].end_date = session_info[n+subset_size-1].start_date;
+
+    if (!bSkipInterim)
+      session_info[n].end_date = session_info[n + subset_size - 1].start_date;
+    else {
+      if (n > 0)
+        session_info[n].start_date = session_info[subset_size * n].start_date;
+
+      session_info[n].end_date = session_info[subset_size * n + subset_size - 1].start_date;
+    }
+
     sort_ixs[n] = n;
   }
 
