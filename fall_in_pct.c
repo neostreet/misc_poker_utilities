@@ -1,5 +1,14 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#ifdef WIN32
+#include <direct.h>
+#else
+#define _MAX_PATH 4096
+#include <unistd.h>
+#endif
+
+static char save_dir[_MAX_PATH];
 
 #define MAX_FILENAME_LEN 1024
 static char filename[MAX_FILENAME_LEN];
@@ -44,8 +53,10 @@ int main(int argc,char **argv)
   bVerbose = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
-    if (!strcmp(argv[curr_arg],"-debug"))
+    if (!strcmp(argv[curr_arg],"-debug")) {
       bDebug = true;
+      getcwd(save_dir,_MAX_PATH);
+    }
     else if (!strcmp(argv[curr_arg],"-verbose"))
       bVerbose = true;
     else
@@ -112,7 +123,7 @@ int main(int argc,char **argv)
   if (!bDebug)
     printf("%lf\n",all_in_pct);
   else
-    printf("%lf (%d of %d)\n",all_in_pct,all_ins,num_hands);
+    printf("%lf (%d of %d) %s\n",all_in_pct,all_ins,num_hands,save_dir);
 
   return 0;
 }
@@ -187,7 +198,7 @@ int all_in(char *line,int line_len,int line_no,char *player_name,int player_name
 
     if (Contains(true,
       line,line_len,
-      "all-in",6,
+      (char *)"all-in",6,
       &ix)) {
 
       return 1;
