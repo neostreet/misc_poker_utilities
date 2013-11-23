@@ -17,6 +17,9 @@ static char max_filename[MAX_FILENAME_LEN];
 #define MAX_LINE_LEN 1024
 static char line[MAX_LINE_LEN];
 
+#define MAX_PLAYER_NAME_LEN 30
+static char player_name[MAX_PLAYER_NAME_LEN+1];
+
 static char usage[] =
 "usage: ftable_maxstack (-verbose) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
@@ -27,6 +30,11 @@ static char in_chips[] = " in chips";
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
 static int Contains(bool bCaseSens,char *line,int line_len,
   char *string,int string_len,int *index);
+static int get_player_name(
+  char *line,
+  int line_len,
+  char *player_name,
+  int max_player_name_len);
 
 int main(int argc,char **argv)
 {
@@ -105,15 +113,18 @@ int main(int argc,char **argv)
 
         sscanf(&line[ix+1],"%d",&work);
 
-        if (work > table_max_stack)
+        if (work > table_max_stack) {
           table_max_stack = work;
+
+          get_player_name(line,line_len,player_name,MAX_PLAYER_NAME_LEN);
+        }
       }
     }
 
     fclose(fptr);
 
     if (bVerbose)
-      printf("%10d %s\\%s\n",table_max_stack,save_dir,filename);
+      printf("%10d %s %s/%s\n",table_max_stack,player_name,save_dir,filename);
     else if (table_max_stack > max_table_max_stack) {
       strcpy(max_filename,filename);
       max_table_max_stack = table_max_stack;
@@ -183,4 +194,22 @@ static int Contains(bool bCaseSens,char *line,int line_len,
   }
 
   return false;
+}
+
+static int get_player_name(
+  char *line,
+  int line_len,
+  char *player_name,
+  int max_player_name_len)
+{
+  int n;
+
+  for (n = 0; n < max_player_name_len; n++) {
+    if ((8 + n >= line_len) || (line[8+n] == '('))
+      break;
+
+    player_name[n] = line[8+n];
+  }
+
+  player_name[n] = 0;
 }
