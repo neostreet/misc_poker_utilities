@@ -116,7 +116,8 @@ int main(int argc,char **argv)
         if (work > table_max_stack) {
           table_max_stack = work;
 
-          get_player_name(line,line_len,player_name,MAX_PLAYER_NAME_LEN);
+          if (bVerbose)
+            get_player_name(line,line_len,player_name,MAX_PLAYER_NAME_LEN);
         }
       }
     }
