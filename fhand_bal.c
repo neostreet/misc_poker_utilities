@@ -338,20 +338,20 @@ int main(int argc,char **argv)
 
     if (!bDebug) {
       if (bTerse) {
-        printf("%10d %10d %10d %s\\%s\n",
+        printf("%10d %10d %10d %s/%s\n",
           starting_balance,delta,ending_balance,save_dir,filename);
       }
       else if (bDelta)
-        printf("%10d %s\\%s\n",delta,save_dir,filename);
+        printf("%10d %s/%s\n",delta,save_dir,filename);
       else if (bStartingBalance)
-        printf("%10d %s\\%s\n",starting_balance,save_dir,filename);
+        printf("%10d %s/%s\n",starting_balance,save_dir,filename);
       else
-        printf("%10d %s\\%s\n",ending_balance,save_dir,filename);
+        printf("%10d %s/%s\n",ending_balance,save_dir,filename);
     }
     else {
       wagered_amount = spent_this_hand + uncalled_bet_amount;
 
-      printf("%s\\%s\n",save_dir,filename);
+      printf("%s/%s\n",save_dir,filename);
       printf("%10d starting_balance\n",starting_balance);
       printf("%10d wagered_amount\n",wagered_amount);
       printf("%10d uncalled_bet_amount\n",uncalled_bet_amount);
