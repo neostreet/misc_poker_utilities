@@ -47,13 +47,13 @@ int main(int argc,char **argv)
     return 1;
   }
 
+  getcwd(save_dir,_MAX_PATH);
+
   bVerbose = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
-    if (!strcmp(argv[curr_arg],"-verbose")) {
+    if (!strcmp(argv[curr_arg],"-verbose"))
       bVerbose = true;
-      getcwd(save_dir,_MAX_PATH);
-    }
     else
       break;
   }
@@ -111,7 +111,7 @@ int main(int argc,char **argv)
     fclose(fptr);
 
     if (bVerbose)
-      printf("%10d %s\\%s\n",table_chips,save_dir,filename);
+      printf("%10d %s/%s\n",table_chips,save_dir,filename);
     else if (table_chips > max_table_chips) {
       strcpy(max_filename,filename);
       max_table_chips = table_chips;
@@ -119,7 +119,7 @@ int main(int argc,char **argv)
   }
 
   if (!bVerbose)
-    printf("%10d %s\n",max_table_chips,max_filename);
+    printf("%10d %s/%s\n",max_table_chips,save_dir,max_filename);
 
   return 0;
 }
