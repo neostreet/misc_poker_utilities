@@ -113,7 +113,7 @@ int main(int argc,char **argv)
         if (!bDebug)
           printf("%s\n",&line[ix]);
         else
-          printf("%s %s\\%s\n",&line[ix],save_dir,filename);
+          printf("%s %s/%s\n",&line[ix],save_dir,filename);
 
         break;
       }

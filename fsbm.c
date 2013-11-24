@@ -237,7 +237,7 @@ int main(int argc,char **argv)
 
     if (collected_from_pot && (delta > 0)) {
       dwork = (double)ending_balance / (double)starting_balance;
-      printf("%10.4lf %s\\%s\n",dwork,save_dir,filename);
+      printf("%10.4lf %s/%s\n",dwork,save_dir,filename);
     }
   }
 

@@ -194,7 +194,7 @@ int main(int argc,char **argv)
     fclose(fptr);
 
     if (bDebug)
-      printf("%d %s %s\\%s\n",numdecs,hole_cards,save_dir,filename);
+      printf("%d %s %s/%s\n",numdecs,hole_cards,save_dir,filename);
 
     tot_numdecs += numdecs;
   }

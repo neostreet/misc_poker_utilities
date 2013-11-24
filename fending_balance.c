@@ -290,7 +290,7 @@ int main(int argc,char **argv)
       if (!bDebug)
         printf("%d\n",ending_balance);
       else
-        printf("%10d %s %s\\%s\n",ending_balance,hole_cards,save_dir,filename);
+        printf("%10d %s %s/%s\n",ending_balance,hole_cards,save_dir,filename);
     }
     else if (bMin) {
       if ((file_no == 1) || (ending_balance < save_ending_balance)) {
@@ -312,7 +312,7 @@ int main(int argc,char **argv)
     if (!bDebug)
       printf("%d\n",save_ending_balance);
     else
-      printf("%10d %s\\%s\n",save_ending_balance,save_dir,save_filename);
+      printf("%10d %s/%s\n",save_ending_balance,save_dir,save_filename);
   }
 
   return 0;

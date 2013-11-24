@@ -168,7 +168,7 @@ int main(int argc,char **argv)
         if (!bVerbose)
           printf("%d\n",maxval);
         else
-          printf("%10d %s\\%s %s\n",maxval,save_dir,filename,player_name);
+          printf("%10d %s/%s %s\n",maxval,save_dir,filename,player_name);
 
         break;
       }

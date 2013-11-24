@@ -344,7 +344,7 @@ int main(int argc,char **argv)
     else if (!bVerbose)
       printf("%s %10d\n",hole_cards,collected_from_pot);
     else
-      printf("%s %10d %s\\%s\n",hole_cards,collected_from_pot,save_dir,filename);
+      printf("%s %10d %s/%s\n",hole_cards,collected_from_pot,save_dir,filename);
   }
 
   fclose(fptr0);

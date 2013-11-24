@@ -254,7 +254,7 @@ int main(int argc,char **argv)
       if (!bDebug)
         printf("%lf\n",dwork);
       else
-        printf("%10.2lf %s\\%s\n",dwork,save_dir,filename);
+        printf("%10.2lf %s/%s\n",dwork,save_dir,filename);
     }
   }
 

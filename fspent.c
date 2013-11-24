@@ -242,7 +242,7 @@ int main(int argc,char **argv)
     if (!bDebug)
       printf("%d\n",spent_this_hand);
     else
-      printf("%10d %s %s\\%s\n",
+      printf("%10d %s %s/%s\n",
         spent_this_hand,hole_cards,save_dir,filename);
   }
 

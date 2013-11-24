@@ -121,7 +121,7 @@ int main(int argc,char **argv)
               if (!bDebug)
                 printf("%s\n",&line[n]);
               else
-                printf("%s %s\\%s\n",&line[n],save_dir,filename);
+                printf("%s %s/%s\n",&line[n],save_dir,filename);
 
               continue;
             }

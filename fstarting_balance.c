@@ -185,9 +185,9 @@ int main(int argc,char **argv)
       }
       else {
         if (!bHandNumber)
-          printf("%10d %s %s\\%s\n",starting_balance,hole_cards,save_dir,filename);
+          printf("%10d %s %s/%s\n",starting_balance,hole_cards,save_dir,filename);
         else
-          printf("%10d %s %s\\%s (%d)\n",starting_balance,hole_cards,save_dir,filename,file_no);
+          printf("%10d %s %s/%s (%d)\n",starting_balance,hole_cards,save_dir,filename,file_no);
       }
     }
     else if (bMin) {
@@ -210,7 +210,7 @@ int main(int argc,char **argv)
     if (!bDebug)
       printf("%d\n",save_starting_balance);
     else
-      printf("%10d %s\\%s\n",save_starting_balance,save_dir,save_filename);
+      printf("%10d %s/%s\n",save_starting_balance,save_dir,save_filename);
   }
 
   return 0;

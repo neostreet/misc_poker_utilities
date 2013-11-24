@@ -291,7 +291,7 @@ int main(int argc,char **argv)
       if (!bVerbose)
         printf("%d\n",spent_this_street);
       else
-        printf("%10d %s %s\\%s\n",
+        printf("%10d %s %s/%s\n",
           spent_this_street,hole_cards,save_dir,filename);
     }
 
