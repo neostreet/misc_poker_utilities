@@ -32,7 +32,7 @@ struct session_info_struct {
 
 #define TAB 0x9
 
-static char usage[] = "usage: delta_by_weekday filename\n";
+static char usage[] = "usage: delta_by_weekday (-verbose) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 struct digit_range {
@@ -58,6 +58,8 @@ static int get_weekday(char *cpt,int *ix);
 
 int main(int argc,char **argv)
 {
+  int curr_arg;
+  bool bVerbose;
   int n;
   FILE *fptr;
   int line_len;
@@ -67,15 +69,30 @@ int main(int argc,char **argv)
   char *cpt;
   int ix;
   int total_delta;
+  int total_num_sessions;
 
-  if (argc != 2) {
+  if ((argc < 2) || (argc > 3)) {
     printf(usage);
     return 1;
   }
 
-  if ((fptr = fopen(argv[1],"r")) == NULL) {
-    printf(couldnt_open,argv[1]);
+  bVerbose = false;
+
+  for (curr_arg = 1; curr_arg < argc; curr_arg++) {
+    if (!strcmp(argv[curr_arg],"-verbose"))
+      bVerbose = true;
+    else
+      break;
+  }
+
+  if (argc - curr_arg != 1) {
+    printf(usage);
     return 2;
+  }
+
+  if ((fptr = fopen(argv[curr_arg],"r")) == NULL) {
+    printf(couldnt_open,argv[curr_arg]);
+    return 3;
   }
 
   line_no = 0;
@@ -90,7 +107,7 @@ int main(int argc,char **argv)
 
     if (retval) {
       printf("get_session_info() failed on line %d: %d\n",line_no+1,retval);
-      return 3;
+      return 4;
     }
 
     cpt = ctime(&work_session.poker_session_date);
@@ -99,7 +116,7 @@ int main(int argc,char **argv)
 
     if (retval) {
       printf("get_weekday() failed on line %d: %d\n",line_no+1,retval);
-      return 4;
+      return 5;
     }
 
     weekday_stats[ix].delta += work_session.delta;
@@ -111,13 +128,25 @@ int main(int argc,char **argv)
   fclose(fptr);
 
   total_delta = 0;
+  total_num_sessions = 0;
 
   for (n = 0; n < NUM_WEEKDAYS; n++) {
-    printf("%s %10d\n",weekdays[n],weekday_stats[n].delta);
+    if (!bVerbose)
+      printf("%s %10d\n",weekdays[n],weekday_stats[n].delta);
+    else {
+      printf("%s %10d (%5d)\n",weekdays[n],
+        weekday_stats[n].delta,
+        weekday_stats[n].num_sessions);
+    }
+
     total_delta += weekday_stats[n].delta;
+    total_num_sessions += weekday_stats[n].num_sessions;
   }
 
-  printf("\n    %10d\n",total_delta);
+  if (!bVerbose)
+    printf("\n    %10d\n",total_delta);
+  else
+    printf("\n    %10d (%5d)\n",total_delta,total_num_sessions);
 
   return 0;
 }
