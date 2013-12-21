@@ -74,6 +74,7 @@ int main(int argc,char **argv)
   int ending_balance;
   int delta;
   int maxwin;
+  int maxwin_ix;
   int file_no;
   int dbg_file_no;
   int num_hands;
@@ -258,12 +259,16 @@ int main(int argc,char **argv)
           delta = ending_balance - starting_balance;
 
           if (!bReverse) {
-            if ((delta > 0) && (delta > maxwin))
+            if ((delta > 0) && (delta > maxwin)) {
               maxwin = delta;
+              maxwin_ix = num_hands;
+            }
           }
           else {
-            if ((delta < 0) && (delta < maxwin))
+            if ((delta < 0) && (delta < maxwin)) {
               maxwin = delta;
+              maxwin_ix = num_hands;
+            }
           }
 
           continue;
@@ -318,12 +323,16 @@ int main(int argc,char **argv)
           delta = ending_balance - starting_balance;
 
           if (!bReverse) {
-            if ((delta > 0) && (delta > maxwin))
+            if ((delta > 0) && (delta > maxwin)) {
               maxwin = delta;
+              maxwin_ix = num_hands;
+            }
           }
           else {
-            if ((delta < 0) && (delta < maxwin))
+            if ((delta < 0) && (delta < maxwin)) {
               maxwin = delta;
+              maxwin_ix = num_hands;
+            }
           }
 
           continue;
@@ -343,7 +352,7 @@ int main(int argc,char **argv)
       }
     }
 
-    printf("%10d %s\n",maxwin,filename);
+    printf("%10d %s (%d)\n",maxwin,filename,maxwin_ix);
 
     fclose(fptr);
   }
