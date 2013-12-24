@@ -16,7 +16,7 @@ static char filename[MAX_FILENAME_LEN];
 #define MAX_LINE_LEN 1024
 static char line[MAX_LINE_LEN];
 
-static char usage[] = "usage: showdown_pct (-verbose) player_name filename\n";
+static char usage[] = "usage: showdown_pct (-verbose) (-perfect) player_name filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 static char is_the_button[] = " is the button";
 static char seat_str[] = "Seat ";
@@ -41,6 +41,7 @@ int main(int argc,char **argv)
 {
   int curr_arg;
   bool bVerbose;
+  bool bPerfect;
   FILE *fptr0;
   int filename_len;
   FILE *fptr;
@@ -67,18 +68,21 @@ int main(int argc,char **argv)
   int num_mucked;
   int player_folds_str_len;
 
-  if ((argc < 3) || (argc > 4)) {
+  if ((argc < 3) || (argc > 5)) {
     printf(usage);
     return 1;
   }
 
   bVerbose = false;
+  bPerfect = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-verbose")) {
       bVerbose = true;
       getcwd(save_dir,_MAX_PATH);
     }
+    else if (!strcmp(argv[curr_arg],"-perfect"))
+      bPerfect = true;
     else
       break;
   }
@@ -234,20 +238,24 @@ int main(int argc,char **argv)
 
   fclose(fptr0);
 
-  if (!num_showdowns)
-    pots_won_at_showdown_pct = (double)0;
-  else
-    pots_won_at_showdown_pct = (double)pots_won_at_showdown / (double)num_showdowns;
+  if (bPerfect && (pots_won_at_showdown != num_showdowns))
+    ;
+  else {
+    if (!num_showdowns)
+      pots_won_at_showdown_pct = (double)0;
+    else
+      pots_won_at_showdown_pct = (double)pots_won_at_showdown / (double)num_showdowns;
 
-  printf("%8.6lf ",
-    pots_won_at_showdown_pct);
-  printf("(%d %d)",
-    pots_won_at_showdown,num_showdowns);
+    printf("%8.6lf ",
+      pots_won_at_showdown_pct);
+    printf("(%d %d)",
+      pots_won_at_showdown,num_showdowns);
 
-  if (!bVerbose)
-    putchar(0x0a);
-  else
-    printf(" %s\n",save_dir);
+    if (!bVerbose)
+      putchar(0x0a);
+    else
+      printf(" %s\n",save_dir);
+  }
 
   return 0;
 }
