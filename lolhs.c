@@ -13,7 +13,7 @@ static char save_dir[_MAX_PATH];
 #define MAX_LINE_LEN 1024
 static char line[MAX_LINE_LEN];
 
-static char usage[] = "usage: lolhs (-verbose) filename\n";
+static char usage[] = "usage: lolhs (-verbose) (-win_loss) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
@@ -23,6 +23,7 @@ int main(int argc,char **argv)
 {
   int curr_arg;
   bool bVerbose;
+  bool bWinLoss;
   FILE *fptr;
   int retval;
   char *date_string;
@@ -35,17 +36,21 @@ int main(int argc,char **argv)
   int num;
   int denom;
   double lolhs;
+  int starting_balance;
 
-  if ((argc < 2) || (argc > 3)) {
+  if ((argc < 2) || (argc > 4)) {
     printf(usage);
     return 1;
   }
 
   bVerbose = false;
+  bWinLoss = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-verbose"))
       bVerbose = true;
+    else if (!strcmp(argv[curr_arg],"-win_loss"))
+      bWinLoss = true;
     else
       break;
   }
@@ -85,6 +90,7 @@ int main(int argc,char **argv)
       low = work;
       high = work;
       last = work;
+      starting_balance = work;
     }
     else {
       if (work < low)
@@ -103,10 +109,22 @@ int main(int argc,char **argv)
 
   lolhs = (double)num / (double)denom;
 
-  if (!bVerbose)
-    printf("%lf\t%s\n",lolhs,date_string);
-  else
-    printf("%lf (%d %d %d)\t%s\n",lolhs,low,high,last,date_string);
+  if (!bVerbose) {
+    if (!bWinLoss)
+      printf("%lf\t%s\n",lolhs,date_string);
+    else {
+      printf("%lf\t%s (%s)\n",lolhs,date_string,
+        (last > starting_balance ? "w" : "l"));
+    }
+  }
+  else {
+    if (!bWinLoss)
+      printf("%lf (%d %d %d)\t%s\n",lolhs,low,high,last,date_string);
+    else {
+      printf("%lf (%d %d %d)\t%s (%s)\n",lolhs,low,high,last,date_string,
+        (last > starting_balance ? "w" : "l"));
+    }
+  }
 
   return 0;
 }
