@@ -13,7 +13,7 @@ static char save_dir[_MAX_PATH];
 #define MAX_LINE_LEN 1024
 static char line[MAX_LINE_LEN];
 
-static char usage[] = "usage: lolhs (-debug) filename\n";
+static char usage[] = "usage: lolhs (-verbose) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
@@ -22,7 +22,7 @@ static int get_date_from_path(char *path,char slash_char,int num_slashes,char **
 int main(int argc,char **argv)
 {
   int curr_arg;
-  bool bDebug;
+  bool bVerbose;
   FILE *fptr;
   int retval;
   char *date_string;
@@ -41,11 +41,11 @@ int main(int argc,char **argv)
     return 1;
   }
 
-  bDebug = false;
+  bVerbose = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
-    if (!strcmp(argv[curr_arg],"-debug"))
-      bDebug = true;
+    if (!strcmp(argv[curr_arg],"-verbose"))
+      bVerbose = true;
     else
       break;
   }
@@ -103,7 +103,7 @@ int main(int argc,char **argv)
 
   lolhs = (double)num / (double)denom;
 
-  if (!bDebug)
+  if (!bVerbose)
     printf("%lf\t%s\n",lolhs,date_string);
   else
     printf("%lf (%d %d %d)\t%s\n",lolhs,low,high,last,date_string);
