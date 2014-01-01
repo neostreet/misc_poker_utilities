@@ -18,7 +18,8 @@ static char save_filename[MAX_FILENAME_LEN];
 static char line[MAX_LINE_LEN];
 
 static char usage[] =
-"usage: fending_balance (-debug) (-min) (-max) player_name filename\n";
+"usage: fending_balance (-debug) (-min) (-max) (-hand_number)\n"
+"  player_name filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char in_chips[] = " in chips";
@@ -58,6 +59,7 @@ int main(int argc,char **argv)
   bool bDebug;
   bool bMin;
   bool bMax;
+  bool bHandNumber;
   int player_name_ix;
   int player_name_len;
   FILE *fptr0;
@@ -83,7 +85,7 @@ int main(int argc,char **argv)
   char hole_cards[6];
   int save_ending_balance;
 
-  if ((argc < 3) || (argc > 6)) {
+  if ((argc < 3) || (argc > 7)) {
     printf(usage);
     return 1;
   }
@@ -91,6 +93,7 @@ int main(int argc,char **argv)
   bDebug = false;
   bMin = false;
   bMax = false;
+  bHandNumber = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-debug")) {
@@ -101,6 +104,8 @@ int main(int argc,char **argv)
       bMin = true;
     else if (!strcmp(argv[curr_arg],"-max"))
       bMax = true;
+    else if (!strcmp(argv[curr_arg],"-hand_number"))
+      bHandNumber = true;
     else
       break;
   }
@@ -287,10 +292,18 @@ int main(int argc,char **argv)
     ending_balance = starting_balance - spent_this_hand + collected_from_pot;
 
     if (!bMin && !bMax) {
-      if (!bDebug)
-        printf("%d\n",ending_balance);
-      else
-        printf("%10d %s %s/%s\n",ending_balance,hole_cards,save_dir,filename);
+      if (!bDebug) {
+        if (!bHandNumber)
+          printf("%d\n",ending_balance);
+        else
+          printf("%d (%d)\n",ending_balance,file_no);
+      }
+      else {
+        if (!bHandNumber)
+          printf("%10d %s %s/%s\n",ending_balance,hole_cards,save_dir,filename);
+        else
+          printf("%10d %s %s/%s (%d)\n",ending_balance,hole_cards,save_dir,filename,file_no);
+      }
     }
     else if (bMin) {
       if ((file_no == 1) || (ending_balance < save_ending_balance)) {
