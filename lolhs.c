@@ -13,7 +13,8 @@ static char save_dir[_MAX_PATH];
 #define MAX_LINE_LEN 1024
 static char line[MAX_LINE_LEN];
 
-static char usage[] = "usage: lolhs (-verbose) (-win_loss) filename\n";
+static char usage[] = "usage: lolhs (-verbose) (-win_loss)\n"
+"  (-only_won) (-only_lost) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
@@ -24,6 +25,8 @@ int main(int argc,char **argv)
   int curr_arg;
   bool bVerbose;
   bool bWinLoss;
+  bool bOnlyWon;
+  bool bOnlyLost;
   FILE *fptr;
   int retval;
   char *date_string;
@@ -38,19 +41,25 @@ int main(int argc,char **argv)
   double lolhs;
   int starting_balance;
 
-  if ((argc < 2) || (argc > 4)) {
+  if ((argc < 2) || (argc > 6)) {
     printf(usage);
     return 1;
   }
 
   bVerbose = false;
   bWinLoss = false;
+  bOnlyWon = false;
+  bOnlyLost = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-verbose"))
       bVerbose = true;
     else if (!strcmp(argv[curr_arg],"-win_loss"))
       bWinLoss = true;
+    else if (!strcmp(argv[curr_arg],"-only_won"))
+      bOnlyWon = true;
+    else if (!strcmp(argv[curr_arg],"-only_lost"))
+      bOnlyLost = true;
     else
       break;
   }
@@ -60,18 +69,23 @@ int main(int argc,char **argv)
     return 2;
   }
 
+  if (bOnlyWon && bOnlyLost) {
+    printf("can't specify both -only_won and -only_lost\n");
+    return 3;
+  }
+
   getcwd(save_dir,_MAX_PATH);
 
   retval = get_date_from_path(save_dir,'/',2,&date_string);
 
   if (retval) {
     printf("get_date_from_path() failed: %d\n",retval);
-    return 3;
+    return 4;
   }
 
   if ((fptr = fopen(argv[curr_arg],"r")) == NULL) {
     printf(couldnt_open,argv[curr_arg]);
-    return 4;
+    return 5;
   }
 
   line_no = 0;
@@ -108,6 +122,16 @@ int main(int argc,char **argv)
   denom = high - low;
 
   lolhs = (double)num / (double)denom;
+
+  if (bOnlyWon) {
+    if (last < starting_balance)
+      return 0;
+  }
+
+  if (bOnlyLost) {
+    if (last > starting_balance)
+      return 0;
+  }
 
   if (!bVerbose) {
     if (!bWinLoss)
