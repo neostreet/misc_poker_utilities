@@ -106,7 +106,7 @@ int main(int argc,char **argv)
   if (!bDebug)
     printf("%lf\t%s\n",lolhs,date_string);
   else
-    printf("%lf (%d %d)\t%s\n",lolhs,num,denom,date_string);
+    printf("%lf (%d %d %d)\t%s\n",lolhs,low,high,last,date_string);
 
   return 0;
 }
