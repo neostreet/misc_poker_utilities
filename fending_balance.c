@@ -19,7 +19,7 @@ static char line[MAX_LINE_LEN];
 
 static char usage[] =
 "usage: fending_balance (-debug) (-min) (-max) (-hand_number)\n"
-"  player_name filename\n";
+"  (-include_starting_balance) player_name filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char in_chips[] = " in chips";
@@ -60,6 +60,7 @@ int main(int argc,char **argv)
   bool bMin;
   bool bMax;
   bool bHandNumber;
+  bool bIncludeStartingBalance;
   int player_name_ix;
   int player_name_len;
   FILE *fptr0;
@@ -85,7 +86,7 @@ int main(int argc,char **argv)
   char hole_cards[6];
   int save_ending_balance;
 
-  if ((argc < 3) || (argc > 7)) {
+  if ((argc < 3) || (argc > 8)) {
     printf(usage);
     return 1;
   }
@@ -94,6 +95,7 @@ int main(int argc,char **argv)
   bMin = false;
   bMax = false;
   bHandNumber = false;
+  bIncludeStartingBalance = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-debug")) {
@@ -106,6 +108,8 @@ int main(int argc,char **argv)
       bMax = true;
     else if (!strcmp(argv[curr_arg],"-hand_number"))
       bHandNumber = true;
+    else if (!strcmp(argv[curr_arg],"-include_starting_balance"))
+      bIncludeStartingBalance = true;
     else
       break;
   }
@@ -184,6 +188,13 @@ int main(int argc,char **argv)
             ;
 
           sscanf(&line[ix+1],"%d",&starting_balance);
+
+          if (bIncludeStartingBalance && (file_no == 1)) {
+            if (!bHandNumber)
+              printf("%d\n",starting_balance);
+            else
+              printf("%d (%d)\n",starting_balance,file_no);
+          }
 
           continue;
         }
