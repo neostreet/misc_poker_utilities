@@ -19,7 +19,7 @@ static char line[MAX_LINE_LEN];
 static char usage[] =
 "usage: fdelta (-terse) (-verbose) (-debug) (-sum) (-avg) (-absolute_value)\n"
 "  (-winning_only) (-losing_only) (-pocket_pairs_only) (-file_names)\n"
-"  player_name filename\n";
+"  (-big_blind) player_name filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char in_chips[] = " in chips";
@@ -49,6 +49,11 @@ static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
 static int Contains(bool bCaseSens,char *line,int line_len,
   char *string,int string_len,int *index);
 int get_work_amount(char *line,int line_len);
+static int get_big_blind(
+  char *line,
+  int line_len,
+  int *big_blind_ptr
+);
 
 int main(int argc,char **argv)
 {
@@ -66,6 +71,8 @@ int main(int argc,char **argv)
   bool bLosingOnly;
   bool bPocketPairsOnly;
   bool bFileNames;
+  bool bBigBlind;
+  bool bAsterisk;
   int player_name_ix;
   int player_name_len;
   FILE *fptr0;
@@ -99,8 +106,11 @@ int main(int argc,char **argv)
   int sum_positive_deltas;
   int sum_negative_deltas;
   int sum_absolute_value_deltas;
+  int retval;
+  int curr_big_blind;
+  int last_big_blind;
 
-  if ((argc < 3) || (argc > 13)) {
+  if ((argc < 3) || (argc > 14)) {
     printf(usage);
     return 1;
   }
@@ -115,6 +125,7 @@ int main(int argc,char **argv)
   bLosingOnly = false;
   bPocketPairsOnly = false;
   bFileNames = false;
+  bBigBlind = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-terse"))
@@ -141,6 +152,8 @@ int main(int argc,char **argv)
       bFileNames = true;
       getcwd(save_dir,_MAX_PATH);
     }
+    else if (!strcmp(argv[curr_arg],"-big_blind"))
+      bBigBlind = true;
     else
       break;
   }
@@ -174,6 +187,7 @@ int main(int argc,char **argv)
   file_no = 0;
   dbg_file_no = -1;
   num_hands = 0;
+  bAsterisk = false;
 
   hole_cards[5] = 0;
 
@@ -227,7 +241,26 @@ int main(int argc,char **argv)
       if (bDebug)
         printf("line %d %s\n",line_no,line);
 
-      if (Contains(true,
+      if (!strncmp(line,"PokerStars ",11)) {
+        if (bBigBlind) {
+          retval = get_big_blind(line,line_len,&curr_big_blind);
+
+          if (retval) {
+            printf("%s: get_big_blind() failed on line %d: %d\n",filename,line_len,retval);
+            return 6;
+          }
+
+          if (file_no > 1) {
+            if (curr_big_blind != last_big_blind)
+              bAsterisk = true;
+            else
+              bAsterisk = false;
+          }
+
+          last_big_blind = curr_big_blind;
+        }
+      }
+      else if (Contains(true,
         line,line_len,
         argv[player_name_ix],player_name_len,
         &ix)) {
@@ -426,14 +459,39 @@ int main(int argc,char **argv)
       }
     }
     else {
-      if (bTerse)
-        printf("%d\n",delta);
-      else if (bFileNames)
-        printf("%10d %s/%s\n",delta,save_dir,filename);
-      else if (!bVerbose)
-        printf("%s %10d\n",hole_cards,delta);
-      else
-        printf("%s %10d %s/%s\n",hole_cards,delta,save_dir,filename);
+      if (bTerse) {
+        if (!bBigBlind)
+          printf("%d\n",delta);
+        else
+          printf("%d %d\n",delta,curr_big_blind);
+      }
+      else {
+        if (bFileNames) {
+          if (!bBigBlind)
+            printf("%10d %s/%s\n",delta,save_dir,filename);
+          else {
+            printf("%10d %5d%s %s/%s\n",delta,curr_big_blind,
+              (bAsterisk ? "*" : ""),save_dir,filename);
+          }
+        }
+        else if (!bVerbose) {
+          if (!bBigBlind)
+            printf("%s %10d\n",hole_cards,delta);
+          else {
+            printf("%s %10d %5d%s\n",hole_cards,delta,curr_big_blind,
+              (bAsterisk ? "*" : ""));
+          }
+        }
+        else {
+          if (!bBigBlind)
+            printf("%s %10d %s/%s\n",hole_cards,delta,save_dir,filename);
+          else {
+            printf("%s %10d %5d %s/%s\n",hole_cards,delta,
+              curr_big_blind,(bAsterisk ? "*" : ""),
+              save_dir,filename);
+          }
+        }
+      }
     }
   }
 
@@ -590,4 +648,35 @@ int get_work_amount(char *line,int line_len)
   sscanf(&line[ix+1],"%d",&work_amount);
 
   return work_amount;
+}
+
+static int get_big_blind(
+  char *line,
+  int line_len,
+  int *big_blind_ptr
+)
+{
+  int n;
+
+  for (n = 0; n < line_len; n++) {
+    if (line[n] == ')')
+      break;
+  }
+
+  if (n == line_len)
+    return 1;
+
+  for (n--; (n >= 0); n--) {
+    if (line[n] == '/')
+      break;
+  }
+
+  if (n < 0)
+    return 2;
+
+  n++;
+
+  sscanf(&line[n],"%d",big_blind_ptr);
+
+  return 0;
 }
