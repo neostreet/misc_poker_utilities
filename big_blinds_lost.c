@@ -14,7 +14,7 @@ static char save_dir[_MAX_PATH];
 char line[MAX_LINE_LEN];
 
 static char usage[] =
-"usage: big_blinds_lost (-debug) (-verbose) (-get_date_from_cwd) filename\n";
+"usage: big_blinds_lost (-debug) (-verbose) (-get_date_from_cwd) (-max) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
@@ -27,17 +27,19 @@ int main(int argc,char **argv)
   bool bVerbose;
   char *date_string;
   bool bGetDateFromCwd;
+  bool bMax;
   int retval;
   FILE *fptr;
   int linelen;
   int line_no;
   int work;
   int total;
+  int max_lost;
   int curr_big_blind;
   int last_big_blind;
   double big_blinds_lost;
 
-  if ((argc < 2) || (argc > 5)) {
+  if ((argc < 2) || (argc > 6)) {
     printf(usage);
     return 1;
   }
@@ -45,6 +47,7 @@ int main(int argc,char **argv)
   bDebug = false;
   bVerbose = false;
   bGetDateFromCwd = false;
+  bMax = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-debug"))
@@ -53,6 +56,8 @@ int main(int argc,char **argv)
       bVerbose = true;
     else if (!strcmp(argv[curr_arg],"-get_date_from_cwd"))
       bGetDateFromCwd = true;
+    else if (!strcmp(argv[curr_arg],"-max"))
+      bMax = true;
     else
       break;
   }
@@ -81,7 +86,10 @@ int main(int argc,char **argv)
 
   line_no = 0;
 
-  total = 0;
+  if (!bMax)
+    total = 0;
+  else
+    max_lost = 0;
 
   for ( ; ; ) {
     GetLine(fptr,line,&linelen,MAX_LINE_LEN);
@@ -103,16 +111,24 @@ int main(int argc,char **argv)
     last_big_blind = curr_big_blind;
 
     if (work < 0) {
-      total += work * - 1;
+      work *= -1;
 
-      if (bVerbose)
+      if (!bMax)
+        total += work;
+      else if (work > max_lost)
+        max_lost = work;
+
+      if (bVerbose && !bMax)
         printf("%d %s\n",total,line);
     }
   }
 
   fclose(fptr);
 
-  big_blinds_lost = (double)total / (double)last_big_blind;
+  if (!bMax)
+    big_blinds_lost = (double)total / (double)last_big_blind;
+  else
+    big_blinds_lost = (double)max_lost / (double)last_big_blind;
 
   if (!bVerbose) {
     if (!bDebug) {
