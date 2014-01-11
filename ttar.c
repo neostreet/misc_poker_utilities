@@ -13,9 +13,11 @@ static char save_dir[_MAX_PATH];
 #define MAX_LINE_LEN 1024
 static char line[MAX_LINE_LEN];
 
+static bool bAbs;
+
 static int *ints;
 
-static char usage[] = "usage: ttar (-second_pos) filename\n";
+static char usage[] = "usage: ttar (-second_pos) (-abs) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char malloc_failed[] = "malloc of %d ints failed\n";
@@ -36,16 +38,19 @@ int main(int argc,char **argv)
   int ix;
   double ttar;
 
-  if ((argc < 2) || (argc > 3)) {
+  if ((argc < 2) || (argc > 4)) {
     printf(usage);
     return 1;
   }
 
   bSecondPos = false;
+  bAbs = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-second_pos"))
       bSecondPos = true;
+    else if (!strcmp(argv[curr_arg],"-abs"))
+      bAbs = true;
     else
       break;
   }
@@ -146,13 +151,17 @@ int elem_compare(const void *elem1,const void *elem2)
 
   int1 = *(int *)elem1;
 
-  if (int1 < 0)
-    int1 *= -1;
+  if (bAbs) {
+    if (int1 < 0)
+      int1 *= -1;
+  }
 
   int2 = *(int *)elem2;
 
-  if (int2 < 0)
-    int2 *= -1;
+  if (bAbs) {
+    if (int2 < 0)
+      int2 *= -1;
+  }
 
   return int2 - int1;
 }
