@@ -25,7 +25,7 @@ struct session_info_struct {
 
 static char usage[] =
 "usage: session_moving_sum (-no_sort) (-ascending) (-absolute_value)\n"
-"  (-skip_interim) subset_size filename\n";
+"  (-skip_interim) (-terse) (-gesum) (-true_false) subset_size filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char malloc_failed1[] = "malloc of %d session info structures failed\n";
@@ -68,6 +68,10 @@ int main(int argc,char **argv)
   bool bNoSort;
   bool bAbsoluteValue;
   bool bSkipInterim;
+  bool bTerse;
+  bool bGeSum;
+  bool bTrueFalse;
+  int ge_sum;
   int curr_arg;
   int session_ix;
   int subset_size;
@@ -83,7 +87,7 @@ int main(int argc,char **argv)
   int retval;
   char *cpt;
 
-  if ((argc < 3) || (argc > 7)) {
+  if ((argc < 3) || (argc > 10)) {
     printf(usage);
     return 1;
   }
@@ -92,6 +96,9 @@ int main(int argc,char **argv)
   bAscending = false;
   bAbsoluteValue = false;
   bSkipInterim = false;
+  bTerse = false;
+  bGeSum = false;
+  bTrueFalse = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-no_sort"))
@@ -102,6 +109,14 @@ int main(int argc,char **argv)
       bAbsoluteValue = true;
     else if (!strcmp(argv[curr_arg],"-skip_interim"))
       bSkipInterim = true;
+    else if (!strcmp(argv[curr_arg],"-terse"))
+      bTerse = true;
+    else if (!strncmp(argv[curr_arg],"-ge",3)) {
+      bGeSum = true;
+      sscanf(&argv[curr_arg][3],"%d",&ge_sum);
+    }
+    else if (!strcmp(argv[curr_arg],"-true_false"))
+      bTrueFalse = true;
     else
       break;
   }
@@ -239,15 +254,34 @@ int main(int argc,char **argv)
     qsort(sort_ixs,num_sums,sizeof (int),elem_compare);
 
   for (n = 0; n < num_sums; n++) {
-    printf("%10d ",session_info[sort_ixs[n]].sum);
+    if (bGeSum) {
+      if (bTrueFalse) {
+        if (session_info[sort_ixs[n]].sum < ge_sum)
+          printf("0\n");
+        else
+          printf("1\n");
 
-    cpt = ctime(&session_info[sort_ixs[n]].start_date);
-    printf("%s ",format_date(cpt));
+        continue;
+      }
+      else {
+        if (session_info[sort_ixs[n]].sum < ge_sum)
+          continue;
+      }
+    }
 
-    cpt = ctime(&session_info[sort_ixs[n]].end_date);
-    printf("%s ",format_date(cpt));
+    if (bTerse)
+      printf("%10d\n",session_info[sort_ixs[n]].sum);
+    else {
+      printf("%10d ",session_info[sort_ixs[n]].sum);
 
-    printf("(%d)\n",session_info[sort_ixs[n]].num_winning_sessions);
+      cpt = ctime(&session_info[sort_ixs[n]].start_date);
+      printf("%s ",format_date(cpt));
+
+      cpt = ctime(&session_info[sort_ixs[n]].end_date);
+      printf("%s ",format_date(cpt));
+
+      printf("(%d)\n",session_info[sort_ixs[n]].num_winning_sessions);
+    }
   }
 
   fclose(fptr);
