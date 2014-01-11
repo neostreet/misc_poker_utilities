@@ -32,7 +32,6 @@ int main(int argc,char **argv)
   int line_len;
   int num_ints;
   int ix;
-  int work;
   double ttar;
 
   if (argc != 2) {
@@ -82,19 +81,14 @@ int main(int argc,char **argv)
     if (feof(fptr))
       break;
 
-    sscanf(line,"%d",&work);
-
-    if (work < 0)
-      work *= -1;
-
-    ints[ix++] = work;
+    sscanf(line,"%d",&ints[ix++]);
   }
 
   fclose(fptr);
 
   qsort(ints,num_ints,sizeof (int),elem_compare);
 
-  if ((num_ints >= 2) && (ints[1] != 0)) {
+  if ((num_ints >= 2) && (ints[0] > 0 ) && (ints[1] != 0)) {
     ttar = (double)ints[0] / (double)ints[1];
 
     printf("%lf\t%s\n",ttar,date_string);
@@ -135,7 +129,14 @@ int elem_compare(const void *elem1,const void *elem2)
   int int2;
 
   int1 = *(int *)elem1;
+
+  if (int1 < 0)
+    int1 *= -1;
+
   int2 = *(int *)elem2;
+
+  if (int2 < 0)
+    int2 *= -1;
 
   return int2 - int1;
 }
