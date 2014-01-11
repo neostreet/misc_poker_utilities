@@ -15,7 +15,7 @@ static char line[MAX_LINE_LEN];
 
 static int *ints;
 
-static char usage[] = "usage: ttar filename\n";
+static char usage[] = "usage: ttar (-second_pos) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char malloc_failed[] = "malloc of %d ints failed\n";
@@ -26,6 +26,8 @@ static int get_date_from_cwd(char *cwd,char **date_string_ptr);
 
 int main(int argc,char **argv)
 {
+  int curr_arg;
+  bool bSecondPos;
   FILE *fptr;
   int retval;
   char *date_string;
@@ -34,14 +36,28 @@ int main(int argc,char **argv)
   int ix;
   double ttar;
 
-  if (argc != 2) {
+  if ((argc < 2) || (argc > 3)) {
     printf(usage);
     return 1;
   }
 
-  if ((fptr = fopen(argv[1],"r")) == NULL) {
-    printf(couldnt_open,argv[1]);
+  bSecondPos = false;
+
+  for (curr_arg = 1; curr_arg < argc; curr_arg++) {
+    if (!strcmp(argv[curr_arg],"-second_pos"))
+      bSecondPos = true;
+    else
+      break;
+  }
+
+  if (argc - curr_arg != 1) {
+    printf(usage);
     return 2;
+  }
+
+  if ((fptr = fopen(argv[curr_arg],"r")) == NULL) {
+    printf(couldnt_open,argv[curr_arg]);
+    return 3;
   }
 
   getcwd(save_dir,_MAX_PATH);
@@ -50,7 +66,7 @@ int main(int argc,char **argv)
 
   if (retval) {
     printf("get_date_from_cwd() failed: %d\n",retval);
-    return 3;
+    return 4;
   }
 
   num_ints = 0;
@@ -70,7 +86,7 @@ int main(int argc,char **argv)
     num_ints * sizeof (int))) == NULL) {
     printf(malloc_failed,num_ints);
     fclose(fptr);
-    return 4;
+    return 5;
   }
 
   ix = 0;
@@ -88,7 +104,7 @@ int main(int argc,char **argv)
 
   qsort(ints,num_ints,sizeof (int),elem_compare);
 
-  if ((num_ints >= 2) && (ints[0] > 0 ) && (ints[1] != 0)) {
+  if ((num_ints >= 2) && (ints[0] > 0 ) && (!bSecondPos || (ints[1] > 0)) && (ints[1] != 0)) {
     ttar = (double)ints[0] / (double)ints[1];
 
     printf("%lf\t%s\n",ttar,date_string);
