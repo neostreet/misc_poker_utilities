@@ -94,10 +94,10 @@ int main(int argc,char **argv)
 
   qsort(ints,num_ints,sizeof (int),elem_compare);
 
-  if (num_ints >= 2) {
+  if ((num_ints >= 2) && (ints[1] != 0)) {
     ttar = (double)ints[0] / (double)ints[1];
 
-    printf("%lf\t%s",ttar,date_string);
+    printf("%lf\t%s\n",ttar,date_string);
   }
 
   free(ints);
