@@ -13,7 +13,8 @@ static char save_dir[_MAX_PATH];
 static char line[MAX_LINE_LEN];
 
 static char usage[] =
-"usage: agoal (-debug) (-verbose) (-mark_winning_session) (-mark_losing_session) filename\n";
+"usage: agoal (-debug) (-verbose) (-mark_winning_session) (-mark_losing_session)\n"
+"  (-silent) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
@@ -25,6 +26,7 @@ int main(int argc,char **argv)
   bool bVerbose;
   bool bMarkWinningSession;
   bool bMarkLosingSession;
+  bool bSilent;
   bool bWinningSession;
   FILE *fptr;
   int work;
@@ -38,7 +40,7 @@ int main(int argc,char **argv)
   int line_len;
   int line_no;
 
-  if ((argc < 2) || (argc > 6)) {
+  if ((argc < 2) || (argc > 7)) {
     printf(usage);
     return 1;
   }
@@ -47,6 +49,7 @@ int main(int argc,char **argv)
   bVerbose = false;
   bMarkWinningSession = false;
   bMarkLosingSession = false;
+  bSilent = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-debug")) {
@@ -59,6 +62,8 @@ int main(int argc,char **argv)
       bMarkWinningSession = true;
     else if (!strcmp(argv[curr_arg],"-mark_losing_session"))
       bMarkLosingSession = true;
+    else if (!strcmp(argv[curr_arg],"-silent"))
+      bSilent = true;
     else
       break;
   }
@@ -111,13 +116,21 @@ int main(int argc,char **argv)
   }
 
   if (!num_winning_hands) {
-    printf("no winning hands\n");
-    return 4;
+    if (!bSilent) {
+      printf("no winning hands\n");
+      return 4;
+    }
+    else
+      return 0;
   }
 
   if (!num_losing_hands) {
-    printf("no losing hands\n");
-    return 5;
+    if (!bSilent) {
+      printf("no losing hands\n");
+      return 5;
+    }
+    else
+      return 0;
   }
 
   avg_gain = (double)total_winning_delta / (double)num_winning_hands;
