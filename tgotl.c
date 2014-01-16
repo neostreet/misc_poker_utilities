@@ -13,7 +13,7 @@ static char save_dir[_MAX_PATH];
 #define MAX_LINE_LEN 1024
 static char line[MAX_LINE_LEN];
 
-static char usage[] = "usage: tgotl (-debug) (-verbose) filename\n";
+static char usage[] = "usage: tgotl (-debug) (-verbose) (-silent) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
@@ -24,6 +24,7 @@ int main(int argc,char **argv)
   int curr_arg;
   bool bDebug;
   bool bVerbose;
+  bool bSilent;
   int retval;
   char *date_string;
   FILE *fptr;
@@ -34,13 +35,14 @@ int main(int argc,char **argv)
   int line_len;
   int line_no;
 
-  if ((argc < 2) || (argc > 4)) {
+  if ((argc < 2) || (argc > 5)) {
     printf(usage);
     return 1;
   }
 
   bDebug = false;
   bVerbose = false;
+  bSilent = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-debug")) {
@@ -56,6 +58,8 @@ int main(int argc,char **argv)
     }
     else if (!strcmp(argv[curr_arg],"-verbose"))
       bVerbose = true;
+    else if (!strcmp(argv[curr_arg],"-silent"))
+      bSilent = true;
     else
       break;
   }
@@ -109,8 +113,12 @@ int main(int argc,char **argv)
   fclose(fptr);
 
   if (!total_losing_delta) {
-    printf("no losing hands\n");
-    return 5;
+    if (!bSilent) {
+      printf("no losing hands\n");
+      return 5;
+    }
+    else
+      return 0;
   }
 
   if (!bVerbose) {
