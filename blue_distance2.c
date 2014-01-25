@@ -5,7 +5,7 @@
 
 static char usage[] =
 "usage: blue_distance2 (-terse) (-verbose) (-initial_bal) (-no_dates)\n"
-"  (-only_blue) (-in_sessions) filename\n";
+"  (-only_blue) (-in_sessions) (-is_blue) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 int main(int argc,char **argv)
@@ -16,6 +16,7 @@ int main(int argc,char **argv)
   bool bNoDates;
   bool bOnlyBlue;
   bool bInSessions;
+  bool bIsBlue;
   int initial_bal;
   FILE *fptr;
   int line_len;
@@ -26,7 +27,7 @@ int main(int argc,char **argv)
   int max_balance;
   int max_balance_ix;
 
-  if ((argc < 2) || (argc > 8)) {
+  if ((argc < 2) || (argc > 9)) {
     printf(usage);
     return 1;
   }
@@ -36,6 +37,7 @@ int main(int argc,char **argv)
   bNoDates = false;
   bOnlyBlue = false;
   bInSessions = false;
+  bIsBlue = false;
   initial_bal = 0;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
@@ -51,6 +53,8 @@ int main(int argc,char **argv)
       bOnlyBlue = true;
     else if (!strcmp(argv[curr_arg],"-in_sessions"))
       bInSessions = true;
+    else if (!strcmp(argv[curr_arg],"-is_blue"))
+      bIsBlue = true;
     else
       break;
   }
@@ -112,11 +116,22 @@ int main(int argc,char **argv)
       if (!bNoDates) {
         if (!bOnlyBlue) {
           if (!bInSessions) {
-            if (!bVerbose)
-              printf("%s\t%d\n",str,max_balance - balance);
+            if (!bVerbose) {
+              if (!bIsBlue)
+                printf("%s\t%d\n",str,max_balance - balance);
+              else
+                printf("%s\t%d\n",str,((max_balance == balance) ? 1 : 0));
+            }
             else {
-              printf("%s\t%d (%d %d)\n",str,max_balance - balance,
-                max_balance,balance);
+              if (!bIsBlue) {
+                printf("%s\t%d (%d %d)\n",str,max_balance - balance,
+                  max_balance,balance);
+              }
+              else {
+                printf("%s\t%d (%d %d)\n",str,
+                  ((max_balance == balance) ? 1 : 0),
+                  max_balance,balance);
+              }
             }
           }
           else
