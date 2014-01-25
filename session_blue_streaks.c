@@ -26,7 +26,7 @@ struct session_info_struct {
 #define TAB 0x9
 
 static char usage[] =
-"usage: session_blue_streaks (-no_sort) (-ascending) filename\n";
+"usage: session_blue_streaks (-no_sort) (-ascending) (-not) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char malloc_failed1[] = "malloc of %d session info structures failed\n";
@@ -67,6 +67,7 @@ int main(int argc,char **argv)
   int m;
   int n;
   bool bNoSort;
+  bool bNot;
   int curr_arg;
   FILE *fptr;
   int line_len;
@@ -84,19 +85,22 @@ int main(int argc,char **argv)
   int cumulative_delta;
   int max_cumulative_delta;
 
-  if ((argc < 2) || (argc > 4)) {
+  if ((argc < 2) || (argc > 5)) {
     printf(usage);
     return 1;
   }
 
   bNoSort = false;
   bAscending = false;
+  bNot = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-no_sort"))
       bNoSort = true;
     else if (!strcmp(argv[curr_arg],"-ascending"))
       bAscending = true;
+    else if (!strcmp(argv[curr_arg],"-not"))
+      bNot = true;
     else
       break;
   }
@@ -136,11 +140,19 @@ int main(int argc,char **argv)
     cumulative_delta += delta;
 
     if (cumulative_delta > max_cumulative_delta) {
-      session_is_blue = 1;
+      if (!bNot)
+        session_is_blue = 1;
+      else
+        session_is_blue = 0;
+
       max_cumulative_delta = cumulative_delta;
     }
-    else
-      session_is_blue = 0;
+    else {
+      if (!bNot)
+        session_is_blue = 0;
+      else
+        session_is_blue = 1;
+    }
 
     if ((session_is_blue == 1) && ((num_sessions == 0) || (prev_session_is_blue == 0)))
       num_blue_streaks++;
@@ -212,11 +224,19 @@ int main(int argc,char **argv)
     cumulative_delta += session_info[session_ix].delta;
 
     if (cumulative_delta > max_cumulative_delta) {
-      session_info[session_ix].session_is_blue = 1;
+      if (!bNot)
+        session_info[session_ix].session_is_blue = 1;
+      else
+        session_info[session_ix].session_is_blue = 0;
+
       max_cumulative_delta = cumulative_delta;
     }
-    else
-      session_info[session_ix].session_is_blue = 0;
+    else {
+      if (!bNot)
+        session_info[session_ix].session_is_blue = 0;
+      else
+        session_info[session_ix].session_is_blue = 1;
+    }
 
     if ((session_info[session_ix].session_is_blue == 1) &&
         ((session_ix == 0) || (session_info[session_ix-1].session_is_blue == 0)))

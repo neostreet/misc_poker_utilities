@@ -96,7 +96,7 @@ int main(int argc,char **argv)
       bNoSort = true;
     else if (!strcmp(argv[curr_arg],"-ascending"))
       bAscending = true;
-    if (!strcmp(argv[curr_arg],"-not"))
+    else if (!strcmp(argv[curr_arg],"-not"))
       bNot = true;
     else
       break;
