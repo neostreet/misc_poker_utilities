@@ -25,7 +25,8 @@ struct session_info_struct {
 #define TAB 0x9
 
 static char usage[] =
-"usage: session_moving_blue_count (-no_sort) (-ascending) subset_size filename\n";
+"usage: session_moving_blue_count (-no_sort) (-ascending) (-not) subset_size\n"
+"  filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char malloc_failed1[] = "malloc of %d session info structures failed\n";
@@ -64,6 +65,7 @@ int main(int argc,char **argv)
   int m;
   int n;
   bool bNoSort;
+  bool bNot;
   int curr_arg;
   int session_ix;
   int subset_size;
@@ -80,19 +82,22 @@ int main(int argc,char **argv)
   int retval;
   char *cpt;
 
-  if ((argc < 3) || (argc > 5)) {
+  if ((argc < 3) || (argc > 6)) {
     printf(usage);
     return 1;
   }
 
   bNoSort = false;
   bAscending = false;
+  bNot = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-no_sort"))
       bNoSort = true;
     else if (!strcmp(argv[curr_arg],"-ascending"))
       bAscending = true;
+    if (!strcmp(argv[curr_arg],"-not"))
+      bNot = true;
     else
       break;
   }
@@ -188,11 +193,19 @@ int main(int argc,char **argv)
     sum_delta += session_info[n].delta;
 
     if (sum_delta > max_sum_delta) {
-      session_info[n].is_blue = 1;
+      if (!bNot)
+        session_info[n].is_blue = 1;
+      else
+        session_info[n].is_blue = 0;
+
       max_sum_delta = sum_delta;
     }
-    else
-      session_info[n].is_blue = 0;
+    else {
+      if (!bNot)
+        session_info[n].is_blue = 0;
+      else
+        session_info[n].is_blue = 1;
+    }
   }
 
   for (n = 0; n < num_blue_counts; n++) {
