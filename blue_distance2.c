@@ -5,7 +5,7 @@
 
 static char usage[] =
 "usage: blue_distance2 (-terse) (-verbose) (-initial_bal) (-no_dates)\n"
-"  (-only_blue) (-in_sessions) (-is_blue) filename\n";
+"  (-only_blue) (-from_nonblue) (-in_sessions) (-is_blue) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 int main(int argc,char **argv)
@@ -15,8 +15,10 @@ int main(int argc,char **argv)
   bool bVerbose;
   bool bNoDates;
   bool bOnlyBlue;
+  bool bFromNonblue;
   bool bInSessions;
   bool bIsBlue;
+  bool bPrevIsBlue;
   int initial_bal;
   FILE *fptr;
   int line_len;
@@ -27,7 +29,7 @@ int main(int argc,char **argv)
   int max_balance;
   int max_balance_ix;
 
-  if ((argc < 2) || (argc > 9)) {
+  if ((argc < 2) || (argc > 10)) {
     printf(usage);
     return 1;
   }
@@ -36,6 +38,7 @@ int main(int argc,char **argv)
   bVerbose = false;
   bNoDates = false;
   bOnlyBlue = false;
+  bFromNonblue = false;
   bInSessions = false;
   bIsBlue = false;
   initial_bal = 0;
@@ -51,6 +54,8 @@ int main(int argc,char **argv)
       bNoDates = true;
     else if (!strcmp(argv[curr_arg],"-only_blue"))
       bOnlyBlue = true;
+    else if (!strcmp(argv[curr_arg],"-from_nonblue"))
+      bFromNonblue = true;
     else if (!strcmp(argv[curr_arg],"-in_sessions"))
       bInSessions = true;
     else if (!strcmp(argv[curr_arg],"-is_blue"))
@@ -70,6 +75,7 @@ int main(int argc,char **argv)
   }
 
   line_no = 0;
+  bPrevIsBlue = true;
 
   for ( ; ; ) {
     fscanf(fptr,"%s\t%d",str,&delta);
@@ -139,11 +145,19 @@ int main(int argc,char **argv)
           else
             printf("%s\t%d\n",str,line_no - max_balance_ix);
         }
-        else if (line_no == max_balance_ix) {
-          if (!bVerbose)
-            printf("%10d %10d %s\n",delta,max_balance,str);
+        else {
+          if (line_no == max_balance_ix) {
+            if (!bFromNonblue || !bPrevIsBlue) {
+              if (!bVerbose)
+                printf("%10d %10d %s\n",delta,max_balance,str);
+              else
+                printf("%10d %10d %s (%d)\n",delta,max_balance,str,line_no);
+            }
+
+            bPrevIsBlue = true;
+          }
           else
-            printf("%10d %10d %s (%d)\n",delta,max_balance,str,line_no);
+            bPrevIsBlue = false;
         }
       }
       else {
