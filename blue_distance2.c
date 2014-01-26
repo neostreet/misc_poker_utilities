@@ -141,9 +141,9 @@ int main(int argc,char **argv)
         }
         else if (line_no == max_balance_ix) {
           if (!bVerbose)
-            printf("%s\t%d\n",str,max_balance);
+            printf("%10d %10d %s\n",delta,max_balance,str);
           else
-            printf("%s\t%d (%d %d)\n",str,max_balance,delta,line_no);
+            printf("%10d %10d %s (%d)\n",delta,max_balance,str,line_no);
         }
       }
       else {
