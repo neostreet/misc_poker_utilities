@@ -119,8 +119,10 @@ int main(int argc,char **argv)
             if (!bVerbose) {
               if (!bIsBlue)
                 printf("%s\t%d\n",str,max_balance - balance);
-              else
-                printf("%s\t%d\n",str,((max_balance == balance) ? 1 : 0));
+              else {
+                printf("%s\t%d %d %d\n",str,max_balance - balance,delta,
+                  ((max_balance == balance) ? 1 : 0));
+              }
             }
             else {
               if (!bIsBlue) {
@@ -128,9 +130,9 @@ int main(int argc,char **argv)
                   max_balance,balance);
               }
               else {
-                printf("%s\t%d (%d %d)\n",str,
-                  ((max_balance == balance) ? 1 : 0),
-                  max_balance,balance);
+                printf("%s\t%d (%d %d) %d %d\n",str,max_balance - balance,
+                  max_balance,balance,delta,
+                  ((max_balance == balance) ? 1 : 0));
               }
             }
           }
