@@ -16,22 +16,27 @@ static char filename[MAX_FILENAME_LEN];
 #define MAX_LINE_LEN 1024
 static char line[MAX_LINE_LEN];
 
-static char usage[] = "usage: fall_in_pct (-debug) (-verbose) player_name filename\n";
+static char usage[] =
+"usage: fall_in_pct (-debug) (-verbose) (-preflop) player_name filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char table[] = "Table '";
 #define TABLE_LEN (sizeof (table) - 1)
+static char flop[] = "*** FLOP *** [";
+#define FLOP_LEN (sizeof (flop) - 1)
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
 static int Contains(bool bCaseSens,char *line,int line_len,
   char *string,int string_len,int *index);
-int all_in(char *line,int line_len,int line_no,char *player_name,int player_name_len);
+int all_in(char *line,int line_len,int line_no,char *player_name,int player_name_len,bool bFlopSeen,bool bPreflop);
 
 int main(int argc,char **argv)
 {
   int curr_arg;
   bool bDebug;
   bool bVerbose;
+  bool bPreflop;
+  bool bFlopSeen;
   int player_name_ix;
   int player_name_len;
   FILE *fptr0;
@@ -44,13 +49,14 @@ int main(int argc,char **argv)
   double all_in_pct;
   int curr_file_num_hands;
 
-  if ((argc < 2) || (argc > 5)) {
+  if ((argc < 2) || (argc > 6)) {
     printf(usage);
     return 1;
   }
 
   bDebug = false;
   bVerbose = false;
+  bPreflop = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-debug")) {
@@ -59,6 +65,8 @@ int main(int argc,char **argv)
     }
     else if (!strcmp(argv[curr_arg],"-verbose"))
       bVerbose = true;
+    else if (!strcmp(argv[curr_arg],"-preflop"))
+      bPreflop = true;
     else
       break;
   }
@@ -101,9 +109,13 @@ int main(int argc,char **argv)
 
       line_no++;
 
-      if (!strncmp(line,table,TABLE_LEN))
+      if (!strncmp(line,table,TABLE_LEN)) {
         curr_file_num_hands++;
-      else if (all_in(line,line_len,line_no,argv[player_name_ix],player_name_len)) {
+        bFlopSeen = false;
+      }
+      else if (!strncmp(line,flop,FLOP_LEN))
+        bFlopSeen = true;
+      else if (all_in(line,line_len,line_no,argv[player_name_ix],player_name_len,bFlopSeen,bPreflop)) {
         all_ins++;
 
         if (bVerbose)
@@ -187,9 +199,12 @@ static int Contains(bool bCaseSens,char *line,int line_len,
   return false;
 }
 
-int all_in(char *line,int line_len,int line_no,char *player_name,int player_name_len)
+int all_in(char *line,int line_len,int line_no,char *player_name,int player_name_len,bool bFlopSeen,bool bPreflop)
 {
   int ix;
+
+  if (bPreflop && bFlopSeen)
+    return 0;
 
   if (Contains(true,
     line,line_len,
