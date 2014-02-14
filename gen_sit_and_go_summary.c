@@ -44,6 +44,7 @@ int main(int argc,char **argv)
   int place;
   int winnings;
   int delta;
+  int total_delta;
 
   if ((argc < 2) || (argc > 3)) {
     printf(usage);
@@ -68,7 +69,7 @@ int main(int argc,char **argv)
   num_players = 6;
 
   if (bDelta)
-    delta = 0;
+    total_delta = 0;
 
   printf("buy_in entry_fee num_players num_hands place winnings\n\n");
 
@@ -116,7 +117,7 @@ int main(int argc,char **argv)
     }
 
     if (bDelta)
-      delta -= (buy_in + entry_fee);
+      delta = (buy_in + entry_fee) * -1;
 
     retval = get_place_and_winnings(argv[curr_arg],strlen(argv[curr_arg]),fptr,&place,&winnings);
 
@@ -127,17 +128,22 @@ int main(int argc,char **argv)
 
     fclose(fptr);
 
-    if (bDelta)
+    if (!bDelta) {
+      printf("%6d %9d %11d %9d %5d %8d\n",
+        buy_in,entry_fee,num_players,num_hands,place,winnings);
+    }
+    else {
       delta += winnings;
-
-    printf("%6d %9d %11d %9d %5d %8d\n",
-      buy_in,entry_fee,num_players,num_hands,place,winnings);
+      printf("%6d %9d %11d %9d %5d %8d %8d\n",
+        buy_in,entry_fee,num_players,num_hands,place,winnings,delta);
+      total_delta += delta;
+    }
 
     letter++;
   }
 
   if (bDelta)
-    printf("\n%8d\n",delta);
+    printf("\n                                                      %8d\n",total_delta);
 
   return 0;
 }
