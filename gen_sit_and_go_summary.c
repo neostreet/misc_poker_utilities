@@ -10,7 +10,7 @@ static char filename[MAX_FILENAME_LEN];
 #define MAX_LINE_LEN 4096
 static char line[MAX_LINE_LEN];
 
-static char usage[] = "usage: sit_and_go_summary player_name\n";
+static char usage[] = "usage: sit_and_go_summary (-delta) player_name\n";
 static char couldnt_open[] = "couldn't open %s\n";
 static char unexpected_eof[] = "unexpected eof in %s\n";
 static char finished[] = "finished the tournament in ";
@@ -29,6 +29,8 @@ static int get_place_and_winnings(char *player_name,int player_name_len,FILE *fp
 
 int main(int argc,char **argv)
 {
+  int curr_arg;
+  bool bDelta;
   char letter;
   int n;
   FILE *fptr;
@@ -41,14 +43,32 @@ int main(int argc,char **argv)
   int num_hands;
   int place;
   int winnings;
+  int delta;
 
-  if (argc != 2) {
+  if ((argc < 2) || (argc > 3)) {
     printf(usage);
     return 1;
   }
 
+  bDelta = false;
+
+  for (curr_arg = 1; curr_arg < argc; curr_arg++) {
+    if (!strcmp(argv[curr_arg],"-delta"))
+      bDelta = true;
+    else
+      break;
+  }
+
+  if (argc - curr_arg != 1) {
+    printf(usage);
+    return 2;
+  }
+
   letter = 'a';
   num_players = 6;
+
+  if (bDelta)
+    delta = 0;
 
   printf("buy_in entry_fee num_players num_hands place winnings\n\n");
 
@@ -62,7 +82,7 @@ int main(int argc,char **argv)
 
     if (feof(fptr)) {
       printf(unexpected_eof,outer_filename);
-      return 2;
+      return 3;
     }
 
     fclose(fptr);
@@ -71,39 +91,53 @@ int main(int argc,char **argv)
 
     if (retval) {
       printf("get_num_hands failed: %d\n",retval);
-      return 3;
+      return 4;
     }
 
     sprintf(filename,"%c/%s",letter,line);
 
     if ((fptr = fopen(filename,"r")) == NULL) {
       printf(couldnt_open,filename);
-      return 4;
+      return 5;
     }
 
     GetLine(fptr,line,&line_len,MAX_LINE_LEN);
 
     if (feof(fptr)) {
       printf(unexpected_eof,filename);
-      return 5;
+      return 6;
     }
 
     retval = get_buy_in_and_entry_fee(line,line_len,&buy_in,&entry_fee);
 
     if (retval) {
-      printf("get_buy_in_and_entry_fee failed: %d\n",retval);
-      return 6;
+      printf("get_buy_in_and_entry_fee() failed: %d\n",retval);
+      return 7;
     }
 
-    retval = get_place_and_winnings(argv[1],strlen(argv[1]),fptr,&place,&winnings);
+    if (bDelta)
+      delta -= (buy_in + entry_fee);
+
+    retval = get_place_and_winnings(argv[curr_arg],strlen(argv[curr_arg]),fptr,&place,&winnings);
+
+    if (retval) {
+      printf("get_place_and_winnings() failed: %d\n",retval);
+      return 8;
+    }
 
     fclose(fptr);
+
+    if (bDelta)
+      delta += winnings;
 
     printf("%6d %9d %11d %9d %5d %8d\n",
       buy_in,entry_fee,num_players,num_hands,place,winnings);
 
     letter++;
   }
+
+  if (bDelta)
+    printf("\n%8d\n",delta);
 
   return 0;
 }
