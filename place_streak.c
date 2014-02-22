@@ -1,16 +1,20 @@
 #include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
 
 #define MAX_LINE_LEN 1024
 static char line[MAX_LINE_LEN];
 
-static char usage[] = "usage: place_streak lowest_place filename\n";
+static char usage[] =
+"usage: place_streak (-verbose) lowest_place filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
 
 int main(int argc,char **argv)
 {
+  int curr_arg;
+  bool bVerbose;
   int lowest_place;
   FILE *fptr;
   int line_len;
@@ -19,16 +23,30 @@ int main(int argc,char **argv)
   int streak_start;
   int streak_len;
 
-  if (argc != 3) {
+  if ((argc < 3) || (argc > 4)) {
     printf(usage);
     return 1;
   }
 
-  sscanf(argv[1],"%d",&lowest_place);
+  bVerbose = false;
 
-  if ((fptr = fopen(argv[2],"r")) == NULL) {
-    printf(couldnt_open,argv[2]);
+  for (curr_arg = 1; curr_arg < argc; curr_arg++) {
+    if (!strcmp(argv[curr_arg],"-verbose"))
+      bVerbose = true;
+    else
+      break;
+  }
+
+  if (argc - curr_arg != 2) {
+    printf(usage);
     return 2;
+  }
+
+  sscanf(argv[curr_arg],"%d",&lowest_place);
+
+  if ((fptr = fopen(argv[curr_arg+1],"r")) == NULL) {
+    printf(couldnt_open,argv[curr_arg+1]);
+    return 3;
   }
 
   line_no = 0;
@@ -51,7 +69,12 @@ int main(int argc,char **argv)
     }
     else if ((streak_start != -1) && (streak_len != 0) &&
       (streak_start + streak_len == line_no)) {
-      printf("%3d: %2d\n",streak_start,streak_len);
+
+      if (!bVerbose)
+        printf("%d\n",streak_len);
+      else
+        printf("%3d: %2d\n",streak_start,streak_len);
+
       streak_len = 0;
     }
 
