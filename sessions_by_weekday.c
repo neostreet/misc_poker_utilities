@@ -28,7 +28,6 @@ static char line[MAX_LINE_LEN];
 struct session_info_struct {
   time_t poker_session_date;
   int delta;
-  int starting_amount;
 };
 
 #define TAB 0x9
@@ -147,7 +146,6 @@ static int get_session_info(
   int line_len,
   struct session_info_struct *session_info)
 {
-  int m;
   int n;
 
   for (n = 0; n < line_len; n++) {
@@ -162,20 +160,7 @@ static int get_session_info(
 
   session_info->poker_session_date = cvt_date(line);
 
-  m = n;
-
-  for ( ; n < line_len; n++) {
-    if (line[n] == TAB)
-      break;
-  }
-
-  if (n == line_len)
-    return 1;
-
-  line[n++] = 0;
-
-  sscanf(&line[m],"%d",&session_info->delta);
-  sscanf(&line[n],"%d",&session_info->starting_amount);
+  sscanf(&line[n],"%d",&session_info->delta);
 
   return 0;
 }
