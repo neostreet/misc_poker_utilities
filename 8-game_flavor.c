@@ -4,9 +4,12 @@
 #define MAX_LINE_LEN 1024
 static char line[MAX_LINE_LEN];
 
-static char usage[] = "usage: 8-game_flavor filename\n";
+static char usage[] =
+"usage: 8-game_flavor (-debug) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
+static char pokerstars[] = "PokerStars ";
+#define POKERSTARS_LEN (sizeof (pokerstars) - 1)
 static char eight_game[] = "8-Game (";
 #define EIGHT_GAME_LEN (sizeof (eight_game) - 1)
 
@@ -17,22 +20,43 @@ char *get_8_game_flavor(char *line,int line_len,int ix);
 
 int main(int argc,char **argv)
 {
+  int curr_arg;
+  bool bDebug;
   FILE *fptr;
   int line_len;
   int line_no;
+  int hand;
+  int dbg_hand;
+  int dbg;
   int ix;
 
-  if (argc != 2) {
+  if ((argc < 2) || (argc > 3)) {
     printf(usage);
     return 1;
   }
 
-  if ((fptr = fopen(argv[1],"r")) == NULL) {
-    printf(couldnt_open,argv[1]);
+  bDebug = false;
+
+  for (curr_arg = 1; curr_arg < argc; curr_arg++) {
+    if (!strcmp(argv[curr_arg],"-debug"))
+      bDebug = true;
+    else
+      break;
+  }
+
+  if (argc - curr_arg != 1) {
+    printf(usage);
     return 2;
   }
 
+  if ((fptr = fopen(argv[curr_arg],"r")) == NULL) {
+    printf(couldnt_open,argv[curr_arg]);
+    return 3;
+  }
+
   line_no = 0;
+  hand = 0;
+  dbg_hand = -1;
 
   for ( ; ; ) {
     GetLine(fptr,line,&line_len,MAX_LINE_LEN);
@@ -42,13 +66,25 @@ int main(int argc,char **argv)
 
     line_no++;
 
-    if (!strncmp(line,"PokerStars ",11)) {
+    if (Contains(true,
+      line,line_len,
+      pokerstars,POKERSTARS_LEN,
+      &ix)) {
+
       if (Contains(true,
         line,line_len,
         eight_game,EIGHT_GAME_LEN,
         &ix)) {
 
-        printf("%s\n",get_8_game_flavor(line,line_len,ix));
+        hand++;
+
+        if (hand == dbg_hand)
+          dbg = 1;
+
+        if (!bDebug)
+          printf("%s\n",get_8_game_flavor(line,line_len,ix));
+        else
+          printf("%5d %5d %s\n",hand,line_no,get_8_game_flavor(line,line_len,ix));
       }
     }
   }
