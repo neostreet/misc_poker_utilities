@@ -29,6 +29,8 @@ static char summary[] = "*** SUMMARY ***";
 #define SUMMARY_LEN (sizeof (summary) - 1)
 static char street_marker[] = "*** ";
 #define STREET_MARKER_LEN (sizeof (street_marker) - 1)
+static char posts_the_ante[] = " posts the ante ";
+#define POSTS_THE_ANTE_LEN (sizeof (posts_the_ante) - 1)
 static char posts[] = " posts ";
 #define POSTS_LEN (sizeof (posts) - 1)
 static char dealt_to[] = "Dealt to ";
@@ -70,6 +72,7 @@ int main(int argc,char **argv)
   int street;
   int num_street_markers;
   int starting_balance;
+  int ante;
   int spent_this_street;
   int spent_this_hand;
   int end_ix;
@@ -174,6 +177,7 @@ int main(int argc,char **argv)
     line_no = 0;
     street = 0;
     num_street_markers = 0;
+    ante = 0;
     spent_this_street = 0;
     spent_this_hand = 0;
     uncalled_bet_amount = 0;
@@ -213,6 +217,14 @@ int main(int argc,char **argv)
                 starting_balance,ending_balance);
           }
 
+          continue;
+        }
+        else if (Contains(true,
+          line,line_len,
+          posts_the_ante,POSTS_THE_ANTE_LEN,
+          &ix)) {
+          ante = get_work_amount(line,line_len);
+          spent_this_hand = ante;
           continue;
         }
         else if (Contains(true,
@@ -353,6 +365,10 @@ int main(int argc,char **argv)
 
       printf("%s/%s\n",save_dir,filename);
       printf("%10d starting_balance\n",starting_balance);
+
+      if (ante)
+        printf("%10d ante\n",ante);
+
       printf("%10d wagered_amount\n",wagered_amount);
       printf("%10d uncalled_bet_amount\n",uncalled_bet_amount);
       printf("%10d spent_this_hand\n",spent_this_hand);
