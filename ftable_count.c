@@ -9,7 +9,7 @@ static char filename[MAX_FILENAME_LEN];
 static char line[MAX_LINE_LEN];
 
 static char usage[] =
-"usage: ftable_count (-genum) (-not) (-terse) (-sum) filename\n";
+"usage: ftable_count (-genum) (-not) (-terse) (-sum) (-early_exit) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
@@ -21,6 +21,7 @@ int main(int argc,char **argv)
   bool bNot;
   bool bTerse;
   bool bSum;
+  bool bEarlyExit;
   FILE *fptr0;
   int filename_len;
   int num_files;
@@ -31,7 +32,7 @@ int main(int argc,char **argv)
   int hand_count;
   bool bSkip;
 
-  if ((argc < 2) || (argc > 6)) {
+  if ((argc < 2) || (argc > 7)) {
     printf(usage);
     return 1;
   }
@@ -40,6 +41,7 @@ int main(int argc,char **argv)
   bNot = false;
   bTerse = false;
   bSum = false;
+  bEarlyExit = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strncmp(argv[curr_arg],"-ge",3))
@@ -50,6 +52,8 @@ int main(int argc,char **argv)
       bTerse = true;
     else if (!strcmp(argv[curr_arg],"-sum"))
       bSum = true;
+    else if (!strcmp(argv[curr_arg],"-early_exit"))
+      bEarlyExit = true;
     else
       break;
   }
@@ -130,7 +134,8 @@ int main(int argc,char **argv)
           }
         }
 
-        break;
+        if (bEarlyExit)
+          break;
       }
     }
 
