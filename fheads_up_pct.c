@@ -11,6 +11,9 @@ static char line[MAX_LINE_LEN];
 static char usage[] = "usage: fheads_up_pct (-terse) (-verbose) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
+static char street_marker[] = "*** ";
+#define STREET_MARKER_LEN (sizeof (street_marker) - 1)
+
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
 
 int main(int argc,char **argv)
@@ -95,7 +98,7 @@ int main(int argc,char **argv)
           if (feof(fptr))
             break;
 
-          if (!strncmp(line,"*** HOLE CARDS ***",18))
+          if (!strncmp(line,street_marker,STREET_MARKER_LEN))
             break;
 
           if (!strncmp(line,"Seat ",5))
