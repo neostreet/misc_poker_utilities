@@ -1,6 +1,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#ifdef WIN32
+#include <direct.h>
+#else
+#define _MAX_PATH 4096
+#include <unistd.h>
+#endif
+
+static char save_dir[_MAX_PATH];
 
 #define MAX_FILENAME_LEN 1024
 static char filename[MAX_FILENAME_LEN];
@@ -9,7 +17,7 @@ static char filename[MAX_FILENAME_LEN];
 static char line[MAX_LINE_LEN];
 
 static char usage[] =
-"usage: fhanded_count_pct (-terse) (-verbose) handed_count filename\n";
+"usage: fhanded_count_pct (-terse) (-verbose) (-debug) handed_count filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char street_marker[] = "*** ";
@@ -22,6 +30,7 @@ int main(int argc,char **argv)
   int curr_arg;
   bool bTerse;
   bool bVerbose;
+  bool bDebug;
   int handed_count;
   FILE *fptr0;
   int filename_len;
@@ -34,19 +43,24 @@ int main(int argc,char **argv)
   double handed_count_pct;
   int curr_file_num_hands;
 
-  if ((argc < 2) || (argc > 5)) {
+  if ((argc < 2) || (argc > 6)) {
     printf(usage);
     return 1;
   }
 
   bTerse = false;
   bVerbose = false;
+  bDebug = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-terse"))
       bTerse = true;
     else if (!strcmp(argv[curr_arg],"-verbose"))
       bVerbose = true;
+    else if (!strcmp(argv[curr_arg],"-debug")) {
+      bDebug = true;
+      getcwd(save_dir,_MAX_PATH);
+    }
     else
       break;
   }
@@ -129,8 +143,10 @@ int main(int argc,char **argv)
 
   if (bTerse)
     printf("%lf\n",handed_count_pct);
-  else
+  else if (!bDebug)
     printf("%lf (%d of %d)\n",handed_count_pct,num_handed_count_hands,num_hands);
+  else
+    printf("%lf (%d of %d) %s\n",handed_count_pct,num_handed_count_hands,num_hands,save_dir);
 
   return 0;
 }
