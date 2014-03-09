@@ -17,7 +17,7 @@ static char filename[MAX_FILENAME_LEN];
 static char line[MAX_LINE_LEN];
 
 static char usage[] =
-"usage: fhanded_count_pct (-terse) (-verbose) (-debug) handed_count filename\n";
+"usage: fhanded_counts (-terse) (-verbose) (-debug) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char street_marker[] = "*** ";
@@ -27,11 +27,11 @@ static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
 
 int main(int argc,char **argv)
 {
+  int n;
   int curr_arg;
   bool bTerse;
   bool bVerbose;
   bool bDebug;
-  int handed_count;
   FILE *fptr0;
   int filename_len;
   int num_files;
@@ -39,11 +39,11 @@ int main(int argc,char **argv)
   int line_len;
   int table_count;
   int num_hands;
-  int num_handed_count_hands;
+  int handed_counts[5];
   double handed_count_pct;
   int curr_file_num_hands;
 
-  if ((argc < 3) || (argc > 6)) {
+  if ((argc < 2) || (argc > 5)) {
     printf(usage);
     return 1;
   }
@@ -65,12 +65,10 @@ int main(int argc,char **argv)
       break;
   }
 
-  if (argc - curr_arg != 2) {
+  if (argc - curr_arg != 1) {
     printf(usage);
     return 2;
   }
-
-  sscanf(argv[curr_arg++],"%d",&handed_count);
 
   if (bTerse && bVerbose) {
     printf("can't specify both -terse and -verbose\n");
@@ -84,7 +82,9 @@ int main(int argc,char **argv)
 
   num_files = 0;
   num_hands = 0;
-  num_handed_count_hands = 0;
+
+  for (n = 0; n < 5; n++)
+    handed_counts[n] = 0;
 
   for ( ; ; ) {
     GetLine(fptr0,filename,&filename_len,MAX_FILENAME_LEN);
@@ -123,12 +123,7 @@ int main(int argc,char **argv)
             table_count++;
         }
 
-        if (table_count == handed_count) {
-          num_handed_count_hands++;
-
-          if (bVerbose)
-            printf("%s %d\n",filename,curr_file_num_hands);
-        }
+        handed_counts[table_count - 2]++;
       }
     }
 
@@ -139,14 +134,19 @@ int main(int argc,char **argv)
 
   fclose(fptr0);
 
-  handed_count_pct = (double)num_handed_count_hands / (double)num_hands;
+  for (n = 4; (n >= 0); n--) {
+    if (!handed_counts[n])
+      continue;
 
-  if (bTerse)
-    printf("%lf\n",handed_count_pct);
-  else if (!bDebug)
-    printf("%lf (%d of %d)\n",handed_count_pct,num_handed_count_hands,num_hands);
-  else
-    printf("%lf (%d of %d) %s\n",handed_count_pct,num_handed_count_hands,num_hands,save_dir);
+    handed_count_pct = (double)handed_counts[n] / (double)num_hands;
+
+    if (bTerse)
+      printf("%d %lf\n",n+2,handed_count_pct);
+    else if (!bDebug)
+      printf("%d %lf (%d of %d)\n",n+2,handed_count_pct,handed_counts[n],num_hands);
+    else
+      printf("%d %lf (%d of %d) %s\n",n+2,handed_count_pct,handed_counts[n],num_hands,save_dir);
+  }
 
   return 0;
 }
