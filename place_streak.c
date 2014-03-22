@@ -4,6 +4,8 @@
 
 #define MAX_LINE_LEN 1024
 static char line[MAX_LINE_LEN];
+static char save_line[MAX_LINE_LEN];
+static char max_streak_save_line[MAX_LINE_LEN];
 
 static char usage[] =
 "usage: place_streak (-verbose) lowest_place filename\n";
@@ -22,6 +24,7 @@ int main(int argc,char **argv)
   int place;
   int streak_start;
   int streak_len;
+  int max_streak_len;
 
   if ((argc < 3) || (argc > 4)) {
     printf(usage);
@@ -53,6 +56,9 @@ int main(int argc,char **argv)
   streak_start = -1;
   streak_len = 0;
 
+  if (bVerbose)
+    max_streak_len = 0;
+
   for ( ; ; ) {
     GetLine(fptr,line,&line_len,MAX_LINE_LEN);
 
@@ -66,6 +72,14 @@ int main(int argc,char **argv)
         streak_start = line_no;
 
       streak_len++;
+      strcpy(save_line,line);
+
+      if (bVerbose) {
+        if (streak_len > max_streak_len) {
+          max_streak_len = streak_len;
+          strcpy(max_streak_save_line,line);
+        }
+      }
     }
     else if ((streak_start != -1) && (streak_len != 0) &&
       (streak_start + streak_len == line_no)) {
@@ -73,7 +87,7 @@ int main(int argc,char **argv)
       if (!bVerbose)
         printf("%d\n",streak_len);
       else
-        printf("%3d: %2d\n",streak_start,streak_len);
+        printf("%2d %s\n",streak_len,save_line);
 
       streak_len = 0;
     }
@@ -81,10 +95,17 @@ int main(int argc,char **argv)
     line_no++;
   }
 
-  if (streak_len)
-    printf("%3d: %2d\n",streak_start,streak_len);
+  if (streak_len) {
+    if (!bVerbose)
+      printf("%d\n",streak_len);
+    else
+      printf("%2d %s\n",streak_len,save_line);
+  }
 
   fclose(fptr);
+
+  if (bVerbose)
+    printf("\n%2d %s\n",max_streak_len,max_streak_save_line);
 
   return 0;
 }
