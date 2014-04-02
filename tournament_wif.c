@@ -9,7 +9,7 @@ struct tournament_info {
 };
 
 static char usage[] =
-"usage: tournament_wif (-right_justify) tournament_info_file\n"
+"usage: tournament_wif (-verbose) (-right_justify) tournament_info_file\n"
 "  num_first_places num_second_places num_tournaments\n";
 
 int tournament_wif(
@@ -22,6 +22,7 @@ int tournament_wif(
 int main(int argc,char **argv)
 {
   int curr_arg;
+  bool bVerbose;
   bool bRightJustify;
   FILE *fptr;
   struct tournament_info tournament;
@@ -31,15 +32,18 @@ int main(int argc,char **argv)
   int delta;
   int retval;
 
-  if ((argc < 5) || (argc > 6)) {
+  if ((argc < 5) || (argc > 7)) {
     printf(usage);
     return 1;
   }
 
+  bVerbose = false;
   bRightJustify = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
-    if (!strcmp(argv[curr_arg],"-right_justify"))
+    if (!strcmp(argv[curr_arg],"-verbose"))
+      bVerbose = true;
+    else if (!strcmp(argv[curr_arg],"-right_justify"))
       bRightJustify = true;
     else
       break;
@@ -74,10 +78,14 @@ int main(int argc,char **argv)
     return 4;
   }
 
-  if (!bRightJustify)
-    printf("%d\n",delta);
+  if (!bVerbose) {
+    if (!bRightJustify)
+      printf("%d\n",delta);
+    else
+      printf("%7d\n",delta);
+  }
   else
-    printf("%7d\n",delta);
+    printf("%7d %2d %2d %2d\n",delta,num_first_places,num_second_places,num_tournaments);
 
   return 0;
 }
