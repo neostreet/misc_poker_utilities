@@ -17,7 +17,7 @@ static char filename[MAX_FILENAME_LEN];
 static char line[MAX_LINE_LEN];
 
 static char usage[] =
-"usage: feliminations (-terse) (-verbose) (-debug) player_name filename\n";
+"usage: feliminations (-terse) (-verbose) (-debug) (-include_zeroes) player_name filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char in_chips[] = " in chips";
@@ -57,6 +57,7 @@ int main(int argc,char **argv)
   bool bTerse;
   bool bVerbose;
   bool bDebug;
+  bool bIncludeZeroes;
   int player_name_ix;
   int player_name_len;
   FILE *fptr0;
@@ -85,7 +86,7 @@ int main(int argc,char **argv)
   int num_finished;
   int num_eliminations;
 
-  if ((argc < 3) || (argc > 6)) {
+  if ((argc < 3) || (argc > 7)) {
     printf(usage);
     return 1;
   }
@@ -93,6 +94,7 @@ int main(int argc,char **argv)
   bTerse = false;
   bVerbose = false;
   bDebug = false;
+  bIncludeZeroes = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-terse"))
@@ -103,6 +105,8 @@ int main(int argc,char **argv)
     }
     else if (!strcmp(argv[curr_arg],"-debug"))
       bDebug = true;
+    else if (!strcmp(argv[curr_arg],"-include_zeroes"))
+      bIncludeZeroes = true;
     else
       break;
   }
@@ -340,10 +344,12 @@ int main(int argc,char **argv)
 
   fclose(fptr0);
 
-  if (num_eliminations) {
-    if (!bVerbose)
+  if (!bVerbose) {
+    if (bIncludeZeroes || num_eliminations)
       printf("%d\n",num_eliminations);
-    else
+  }
+  else {
+    if (bIncludeZeroes || num_eliminations)
       printf("%d %s\n",num_eliminations,save_dir);
   }
 
