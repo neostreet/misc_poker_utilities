@@ -82,16 +82,6 @@ int main(int argc,char **argv)
   int num_hands;
   int dbg;
   int work;
-  double dwork1;
-  double dwork2;
-  double sum_deltas_dwork;
-  int sum_deltas;
-  int sum_positive_deltas;
-  int sum_negative_deltas;
-  int sum_absolute_value_deltas;
-  int retval;
-  int curr_big_blind;
-  int last_big_blind;
   int num_finished;
   int num_eliminations;
 
