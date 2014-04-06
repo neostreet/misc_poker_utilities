@@ -90,9 +90,9 @@ int main(int argc,char **argv)
   }
 
   bNoSort = false;
+  bTotal = false;
   bAscending = false;
   bSortBySumDelta = false;
-  bAscending = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-no_sort"))
