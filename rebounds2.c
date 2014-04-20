@@ -16,7 +16,6 @@ static char line[MAX_LINE_LEN];
 struct session_info_struct {
   time_t poker_session_date;
   int delta;
-  int starting_amount;
 };
 
 struct rebound_struct {
@@ -185,14 +184,10 @@ int main(int argc,char **argv)
             break;
         }
       }
-
-      continue;
     }
     else {
       if (session_info[n].delta < 0)
         in_losing_streak = 1;
-
-      continue;
     }
   }
 
@@ -322,20 +317,7 @@ static int get_session_info(
 
   session_info->poker_session_date = cvt_date(line);
 
-  m = n;
-
-  for ( ; n < line_len; n++) {
-    if (line[n] == TAB)
-      break;
-  }
-
-  if (n == line_len)
-    return 1;
-
-  line[n++] = 0;
-
-  sscanf(&line[m],"%d",&session_info->delta);
-  sscanf(&line[n],"%d",&session_info->starting_amount);
+  sscanf(&line[n],"%d",&session_info->delta);
 
   return 0;
 }
