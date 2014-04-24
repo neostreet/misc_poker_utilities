@@ -3,10 +3,15 @@
 
 #define MAX_STR_LEN 256
 
+#define MAX_LINE_LEN 1024
+static char line[MAX_LINE_LEN];
+
 static char usage[] =
 "usage: blue_distance2 (-terse) (-verbose) (-initial_bal) (-no_dates)\n"
 "  (-only_blue) (-from_nonblue) (-in_sessions) (-is_blue) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
+
+static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
 
 int main(int argc,char **argv)
 {
@@ -78,10 +83,12 @@ int main(int argc,char **argv)
   bPrevIsBlue = true;
 
   for ( ; ; ) {
-    fscanf(fptr,"%s\t%d",str,&delta);
+    GetLine(fptr,line,&line_len,MAX_LINE_LEN);
 
     if (feof(fptr))
       break;
+
+    sscanf(line,"%s\t%d",str,&delta);
 
     if (!line_no) {
       if (initial_bal) {
@@ -124,34 +131,34 @@ int main(int argc,char **argv)
           if (!bInSessions) {
             if (!bVerbose) {
               if (!bIsBlue)
-                printf("%s\t%d\n",str,max_balance - balance);
+                printf("%d\t%s\n",max_balance - balance,line);
               else {
-                printf("%s\t%d %d %d\n",str,max_balance - balance,delta,
-                  ((max_balance == balance) ? 1 : 0));
+                printf("%d %d %d\t\%s\n",max_balance - balance,delta,
+                  ((max_balance == balance) ? 1 : 0),line);
               }
             }
             else {
               if (!bIsBlue) {
-                printf("%s\t%d (%d %d)\n",str,max_balance - balance,
-                  max_balance,balance);
+                printf("%d (%d %d)\t%s\n",max_balance - balance,
+                  max_balance,balance,line);
               }
               else {
-                printf("%s\t%d (%d %d) %d %d\n",str,max_balance - balance,
+                printf("%d (%d %d) %d %d\t%s\n",max_balance - balance,
                   max_balance,balance,delta,
-                  ((max_balance == balance) ? 1 : 0));
+                  ((max_balance == balance) ? 1 : 0),line);
               }
             }
           }
           else
-            printf("%s\t%d\n",str,line_no - max_balance_ix);
+            printf("%d\t%s\n",line_no - max_balance_ix,line);
         }
         else {
           if (line_no == max_balance_ix) {
             if (!bFromNonblue || !bPrevIsBlue) {
               if (!bVerbose)
-                printf("%10d %10d %s\n",delta,max_balance,str);
+                printf("%10d %10d %s\n",delta,max_balance,line);
               else
-                printf("%10d %10d %s (%d)\n",delta,max_balance,str,line_no);
+                printf("%10d %10d %s (%d)\n",delta,max_balance,line,line_no);
             }
 
             bPrevIsBlue = true;
@@ -180,9 +187,9 @@ int main(int argc,char **argv)
   if (bTerse) {
     if (!bNoDates) {
       if (!bInSessions)
-        printf("%s\t%d\n",str,max_balance - balance);
+        printf("%d\t%s\n",max_balance - balance,line);
       else
-        printf("%s\t%d\n",str,line_no - max_balance_ix);
+        printf("%d\t%s\n",line_no - max_balance_ix,line);
     }
     else {
       if (!bInSessions)
@@ -195,4 +202,28 @@ int main(int argc,char **argv)
   fclose(fptr);
 
   return 0;
+}
+
+static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen)
+{
+  int chara;
+  int local_line_len;
+
+  local_line_len = 0;
+
+  for ( ; ; ) {
+    chara = fgetc(fptr);
+
+    if (feof(fptr))
+      break;
+
+    if (chara == '\n')
+      break;
+
+    if (local_line_len < maxllen - 1)
+      line[local_line_len++] = (char)chara;
+  }
+
+  line[local_line_len] = 0;
+  *line_len = local_line_len;
 }
