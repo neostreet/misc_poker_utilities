@@ -16,7 +16,7 @@ static char line[MAX_LINE_LEN];
 
 static char usage[] =
 "usage: ffelted3 (-debug) (-reverse) (-count) (-exact_countn) (-reupped)\n"
-"  player_name filename\n";
+"  (-consecutive) player_name filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char in_chips[] = " in chips";
@@ -56,7 +56,9 @@ int main(int argc,char **argv)
   bool bCount;
   bool bExactCount;
   bool bReupped;
+  bool bConsecutive;
   int hit_felt_count;
+  int consecutive_hit_felt_count;
   int exact_count;
   int player_name_ix;
   int player_name_len;
@@ -87,7 +89,7 @@ int main(int argc,char **argv)
   int max_hit_felt_hand;
   int max_positive_ending_balance_hand;
 
-  if ((argc < 3) || (argc > 8)) {
+  if ((argc < 3) || (argc > 9)) {
     printf(usage);
     return 1;
   }
@@ -97,6 +99,7 @@ int main(int argc,char **argv)
   bCount = false;
   bExactCount = false;
   bReupped = false;
+  bConsecutive = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-debug"))
@@ -111,6 +114,8 @@ int main(int argc,char **argv)
     }
     else if (!strcmp(argv[curr_arg],"-reupped"))
       bReupped = true;
+    else if (!strcmp(argv[curr_arg],"-consecutive"))
+      bConsecutive = true;
     else
       break;
   }
@@ -130,6 +135,9 @@ int main(int argc,char **argv)
 
   file_no = 0;
   dbg_file_no = -1;
+
+  if (bConsecutive)
+    consecutive_hit_felt_count = 0;
 
   for ( ; ; ) {
     GetLine(fptr0,filename,&filename_len,MAX_FILENAME_LEN);
@@ -355,7 +363,15 @@ int main(int argc,char **argv)
 
     if (!bReverse) {
       if (bReupped && (max_positive_ending_balance_hand < max_hit_felt_hand))
-         ;
+        ;
+      else if (bConsecutive) {
+        consecutive_hit_felt_count += hit_felt_count;
+
+        if (ending_balance) {
+          printf("%7d %s\n",consecutive_hit_felt_count,filename);
+          consecutive_hit_felt_count = 0;
+        }
+      }
       else if (hit_felt_count && (!bExactCount || (hit_felt_count == exact_count))) {
         if (!bCount)
           printf("%s\n",filename);
