@@ -367,7 +367,7 @@ int main(int argc,char **argv)
       else if (bConsecutive) {
         consecutive_hit_felt_count += hit_felt_count;
 
-        if (ending_balance) {
+        if (ending_balance && (consecutive_hit_felt_count > 0)) {
           printf("%7d %s\n",consecutive_hit_felt_count,filename);
           consecutive_hit_felt_count = 0;
         }
