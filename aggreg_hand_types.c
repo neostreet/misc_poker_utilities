@@ -110,8 +110,12 @@ int main(int argc,char **argv)
     totals[n] = 0;
 
   for (n = 0; n < hand_types.num_elems; n++) {
-    work = (double)(work_elem->int3 + work_elem->int4) /
-      (double)(work_elem->int1 + work_elem->int2);
+    if (work_elem->int1 + work_elem->int2 == 0)
+      work = (double)0;
+    else {
+      work = (double)(work_elem->int3 + work_elem->int4) /
+        (double)(work_elem->int1 + work_elem->int2);
+    }
 
     printf("%10d %10d %10d %5d %5d %5d %11.2lf   %s\n",
       work_elem->int3 + work_elem->int4,
