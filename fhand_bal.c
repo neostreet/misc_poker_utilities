@@ -20,7 +20,7 @@ static char line[MAX_LINE_LEN];
 
 static char usage[] =
 "usage: fhand_bal (-debug) (-consistency) (-delta) (-starting_balance) (-terse)\n"
-"  player_name filename\n";
+"  (-double_zero) player_name filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char in_chips[] = " in chips";
@@ -61,6 +61,7 @@ int main(int argc,char **argv)
   bool bDelta;
   bool bStartingBalance;
   bool bTerse;
+  bool bDoubleZero;
   int player_name_ix;
   int player_name_len;
   FILE *fptr0;
@@ -93,8 +94,9 @@ int main(int argc,char **argv)
   int dbg;
   int work;
   double dwork;
+  int prev_ending_balance;
 
-  if ((argc < 3) || (argc > 8)) {
+  if ((argc < 3) || (argc > 9)) {
     printf(usage);
     return 1;
   }
@@ -104,6 +106,7 @@ int main(int argc,char **argv)
   bDelta = false;
   bStartingBalance = false;
   bTerse = false;
+  bDoubleZero = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-debug")) {
@@ -118,6 +121,8 @@ int main(int argc,char **argv)
       bStartingBalance = true;
     else if (!strcmp(argv[curr_arg],"-terse"))
       bTerse = true;
+    else if (!strcmp(argv[curr_arg],"-double_zero"))
+      bDoubleZero = true;
     else
       break;
   }
@@ -141,6 +146,7 @@ int main(int argc,char **argv)
   }
 
   ending_balance = -1;
+  prev_ending_balance = -1;
 
   if (bDelta) {
     max_delta = -1;
@@ -348,6 +354,17 @@ int main(int argc,char **argv)
       }
     }
 
+    if (bDoubleZero) {
+      if ((prev_ending_balance == 0) && (ending_balance == 0))
+        ;
+      else {
+        prev_ending_balance = ending_balance;
+        continue;
+      }
+    }
+
+    prev_ending_balance = ending_balance;
+
     if (!bDebug) {
       if (bTerse) {
         printf("%10d %10d %10d %s/%s\n",
@@ -385,6 +402,13 @@ int main(int argc,char **argv)
         printf("%10.2lf starting_balance_multiplier\n",dwork);
       }
     }
+  }
+
+  if (bDoubleZero) {
+    if ((prev_ending_balance == 0) && (ending_balance == 0))
+      ;
+    else
+      return 0;
   }
 
   if (bDelta) {
