@@ -404,12 +404,8 @@ int main(int argc,char **argv)
     }
   }
 
-  if (bDoubleZero) {
-    if ((prev_ending_balance == 0) && (ending_balance == 0))
-      ;
-    else
-      return 0;
-  }
+  if (bDoubleZero)
+    return 0;
 
   if (bDelta) {
     if (max_delta != -1)
