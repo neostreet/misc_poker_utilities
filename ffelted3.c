@@ -10,6 +10,7 @@
 
 #define MAX_FILENAME_LEN 1024
 static char filename[MAX_FILENAME_LEN];
+static char prev_filename[MAX_FILENAME_LEN];
 
 #define MAX_LINE_LEN 1024
 static char line[MAX_LINE_LEN];
@@ -145,6 +146,7 @@ int main(int argc,char **argv)
     if (feof(fptr0))
       break;
 
+    strcpy(prev_filename,filename);
     file_no++;
 
     if (dbg_file_no == file_no)
@@ -386,6 +388,9 @@ int main(int argc,char **argv)
 
     fclose(fptr);
   }
+
+  if (bConsecutive && (consecutive_hit_felt_count > 0))
+    printf("%7d %s\n",consecutive_hit_felt_count,prev_filename);
 
   fclose(fptr0);
 
