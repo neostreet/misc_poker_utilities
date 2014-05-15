@@ -17,7 +17,7 @@ static char line[MAX_LINE_LEN];
 
 static char usage[] =
 "usage: ffelted3 (-debug) (-reverse) (-count) (-exact_countn) (-reupped)\n"
-"  (-consecutive) player_name filename\n";
+"  (-consecutive) (-show_zero) player_name filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char in_chips[] = " in chips";
@@ -58,6 +58,7 @@ int main(int argc,char **argv)
   bool bExactCount;
   bool bReupped;
   bool bConsecutive;
+  bool bShowZero;
   int hit_felt_count;
   int consecutive_hit_felt_count;
   int exact_count;
@@ -90,7 +91,7 @@ int main(int argc,char **argv)
   int max_hit_felt_hand;
   int max_positive_ending_balance_hand;
 
-  if ((argc < 3) || (argc > 9)) {
+  if ((argc < 3) || (argc > 10)) {
     printf(usage);
     return 1;
   }
@@ -101,6 +102,7 @@ int main(int argc,char **argv)
   bExactCount = false;
   bReupped = false;
   bConsecutive = false;
+  bShowZero = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-debug"))
@@ -117,6 +119,10 @@ int main(int argc,char **argv)
       bReupped = true;
     else if (!strcmp(argv[curr_arg],"-consecutive"))
       bConsecutive = true;
+    else if (!strcmp(argv[curr_arg],"-show_zero")) {
+      bShowZero = true;
+      bCount = true;
+    }
     else
       break;
   }
@@ -374,7 +380,7 @@ int main(int argc,char **argv)
           consecutive_hit_felt_count = 0;
         }
       }
-      else if (hit_felt_count && (!bExactCount || (hit_felt_count == exact_count))) {
+      else if ((bShowZero || hit_felt_count) && (!bExactCount || (hit_felt_count == exact_count))) {
         if (!bCount)
           printf("%s\n",filename);
         else
