@@ -13,7 +13,8 @@ static char save_dir[_MAX_PATH];
 #define MAX_LINE_LEN 1024
 static char line[MAX_LINE_LEN];
 
-static char usage[] = "usage: penultimate_is_top filename\n";
+static char usage[] =
+"usage: penultimate_is_top (-verbose) (-date_string) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
@@ -21,6 +22,9 @@ static int get_date_from_path(char *path,char slash_char,int num_slashes,char **
 
 int main(int argc,char **argv)
 {
+  int curr_arg;
+  bool bVerbose;
+  bool bDateString;
   FILE *fptr;
   int line_len;
   int line_no;
@@ -31,14 +35,31 @@ int main(int argc,char **argv)
   int ending_balance;
   int max_ending_balance;
 
-  if (argc != 2) {
+  if ((argc < 2) || (argc > 4)) {
     printf(usage);
     return 1;
   }
 
-  if ((fptr = fopen(argv[1],"r")) == NULL) {
-    printf(couldnt_open,argv[1]);
+  bVerbose = false;
+  bDateString = false;
+
+  for (curr_arg = 1; curr_arg < argc; curr_arg++) {
+    if (!strcmp(argv[curr_arg],"-verbose"))
+      bVerbose = true;
+    else if (!strcmp(argv[curr_arg],"-date_string"))
+      bDateString = true;
+    else
+      break;
+  }
+
+  if (argc - curr_arg != 1) {
+    printf(usage);
     return 2;
+  }
+
+  if ((fptr = fopen(argv[curr_arg],"r")) == NULL) {
+    printf(couldnt_open,argv[curr_arg]);
+    return 3;
   }
 
   getcwd(save_dir,_MAX_PATH);
@@ -47,7 +68,7 @@ int main(int argc,char **argv)
 
   if (retval) {
     printf("get_date_from_path() failed: %d\n",retval);
-    return 3;
+    return 4;
   }
 
   line_no = 0;
@@ -94,8 +115,20 @@ int main(int argc,char **argv)
 
   fclose(fptr);
 
-  if (ending_balance == max_ending_balance)
-    printf("%10d %s\n",ending_balance,date_string);
+  if (ending_balance == max_ending_balance) {
+    if (!bVerbose) {
+      if (!bDateString)
+        printf("%s/%s\n",save_dir,argv[curr_arg]);
+      else
+        printf("%s\n",date_string);
+    }
+    else {
+      if (!bDateString)
+        printf("%10d %s/%s\n",ending_balance,save_dir,argv[curr_arg]);
+      else
+        printf("%10d %s\n",ending_balance,date_string);
+    }
+  }
 
   return 0;
 }
