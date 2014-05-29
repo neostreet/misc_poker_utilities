@@ -19,6 +19,7 @@ static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
 static int get_date_from_path(char *path,char slash_char,int num_slashes,char **date_string_ptr);
+static bool zero_crossing(int prev_val,int val);
 
 int main(int argc,char **argv)
 {
@@ -63,11 +64,13 @@ int main(int argc,char **argv)
 
   getcwd(save_dir,_MAX_PATH);
 
-  retval = get_date_from_path(save_dir,'/',2,&date_string);
+  if (bVerbose) {
+    retval = get_date_from_path(save_dir,'/',2,&date_string);
 
-  if (retval) {
-    printf("get_date_from_path() failed: %d\n",retval);
-    return 4;
+    if (retval) {
+      printf("get_date_from_path() failed: %d\n",retval);
+      return 4;
+    }
   }
 
   line_no = 0;
@@ -83,7 +86,7 @@ int main(int argc,char **argv)
 
     sscanf(line,"%d",&val);
 
-    if ((line_no > 1) && (val * prev_val < 0))
+    if ((line_no > 1) && zero_crossing(prev_val,val))
       zero_crossings++;
 
     prev_val = val;
@@ -91,10 +94,14 @@ int main(int argc,char **argv)
 
   fclose(fptr);
 
-  if (!bDateString)
-    printf("%10d %s/%s\n",zero_crossings,save_dir,argv[curr_arg]);
-  else
-    printf("%10d %s\n",zero_crossings,date_string);
+  if (!bVerbose)
+    printf("%3d\n",zero_crossings);
+  else {
+    if (!bDateString)
+      printf("%3d %s/%s\n",zero_crossings,save_dir,argv[curr_arg]);
+    else
+      printf("%3d %s\n",zero_crossings,date_string);
+  }
 
   return 0;
 }
@@ -159,4 +166,15 @@ static int get_date_from_path(char *path,char slash_char,int num_slashes,char **
   *date_string_ptr = sql_date_string;
 
   return 0;
+}
+
+static bool zero_crossing(int prev_val,int val)
+{
+  if ((prev_val > 0) && (val < 0))
+    return true;
+
+  if ((val > 0) && (prev_val < 0))
+    return true;
+
+  return false;
 }
