@@ -76,7 +76,11 @@ int main(int argc,char **argv)
       balance += delta;
 
       if (balance > max_balance) {
-        printf("%d\t%s\n",balance - max_balance,line);
+        if (!bVerbose)
+          printf("%d\t%s\n",balance - max_balance,line);
+        else
+          printf("%6d %10d %s\n",balance - max_balance,balance,line);
+
         max_balance = balance;
       }
     }
