@@ -7,7 +7,7 @@
 static char line[MAX_LINE_LEN];
 
 static char usage[] =
-"usage: blue_jumps (-verbose) filename\n";
+"usage: blue_jumps (-verbose) (-initial_bal) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
@@ -16,7 +16,6 @@ int main(int argc,char **argv)
 {
   int curr_arg;
   bool bVerbose;
-  bool bPrevIsBlue;
   int initial_bal;
   FILE *fptr;
   int line_len;
@@ -26,7 +25,7 @@ int main(int argc,char **argv)
   int balance;
   int max_balance;
 
-  if ((argc < 2) || (argc > 3)) {
+  if ((argc < 2) || (argc > 4)) {
     printf(usage);
     return 1;
   }
@@ -37,6 +36,8 @@ int main(int argc,char **argv)
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-verbose"))
       bVerbose = true;
+    else if (!strncmp(argv[curr_arg],"-initial_bal",12))
+      sscanf(&argv[curr_arg][12],"%d",&initial_bal);
     else
       break;
   }
@@ -52,7 +53,6 @@ int main(int argc,char **argv)
   }
 
   line_no = 0;
-  bPrevIsBlue = true;
 
   for ( ; ; ) {
     GetLine(fptr,line,&line_len,MAX_LINE_LEN);
@@ -63,14 +63,8 @@ int main(int argc,char **argv)
     sscanf(line,"%s\t%d",str,&delta);
 
     if (!line_no) {
-      if (delta < 0) {
-        max_balance = delta * -1;
-        balance = 0;
-      }
-      else {
-        max_balance = delta;
-        balance = max_balance;
-      }
+      balance = initial_bal + delta;
+      max_balance = balance;
     }
     else {
       balance += delta;
