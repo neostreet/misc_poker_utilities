@@ -12,7 +12,8 @@ static char save_dir[_MAX_PATH];
 #define MAX_LINE_LEN 1024
 static char line[MAX_LINE_LEN];
 
-static char usage[] = "usage: underwater_count (-debug) (-diffval) filename\n";
+static char usage[] =
+"usage: underwater_count (-debug) (-diffval) (-reverse) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
@@ -22,22 +23,24 @@ int main(int argc,char **argv)
   int curr_arg;
   bool bDebug;
   bool bDiff;
+  bool bReverse;
   int val;
   FILE *fptr;
   int line_len;
   int line_no;
-  int underwater_count;
+  int count;
   int work;
   int starting_amount;
-  double underwater_pct;
+  double pct;
 
-  if ((argc < 2) || (argc > 4)) {
+  if ((argc < 2) || (argc > 5)) {
     printf(usage);
     return 1;
   }
 
   bDebug = false;
   bDiff = false;
+  bReverse = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-debug")) {
@@ -48,6 +51,8 @@ int main(int argc,char **argv)
       bDiff = true;
       sscanf(&argv[curr_arg][5],"%d",&val);
     }
+    else if (!strcmp(argv[curr_arg],"-reverse"))
+      bReverse = true;
     else
       break;
   }
@@ -63,7 +68,7 @@ int main(int argc,char **argv)
   }
 
   line_no = 0;
-  underwater_count = 0;
+  count = 0;
 
   for ( ; ; ) {
     GetLine(fptr,line,&line_len,MAX_LINE_LEN);
@@ -77,19 +82,27 @@ int main(int argc,char **argv)
 
     if (line_no == 1)
       starting_amount = work;
-    else if (work < starting_amount)
-      underwater_count++;
+    else {
+      if (!bReverse) {
+        if (work < starting_amount)
+          count++;
+      }
+      else {
+        if (work > starting_amount)
+          count++;
+      }
+    }
   }
 
   fclose(fptr);
 
-  underwater_pct = (double)underwater_count / (double)line_no;
+  pct = (double)count / (double)line_no;
 
-  if (!bDiff || (line_no - underwater_count == val)) {
+  if (!bDiff || (line_no - count == val)) {
     if (!bDebug)
-      printf("%lf %3d %3d\n",underwater_pct,underwater_count,line_no);
+      printf("%lf %3d %3d\n",pct,count,line_no);
     else {
-      printf("%lf %3d %3d %s\n",underwater_pct,underwater_count,line_no,
+      printf("%lf %3d %3d %s\n",pct,count,line_no,
         save_dir);
     }
   }
