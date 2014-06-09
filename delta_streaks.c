@@ -228,10 +228,10 @@ int main(int argc,char **argv)
     printf("%10d %3d ",streaks[n].sum,streaks[n].num_deltas);
 
     cpt = ctime(&streaks[n].start_date);
-    printf("%s %d ",format_date(cpt),streaks[n].start_hand);
+    printf("%s %3d ",format_date(cpt),streaks[n].start_hand);
 
     cpt = ctime(&streaks[n].end_date);
-    printf("%s %d\n",format_date(cpt),streaks[n].end_hand);
+    printf("%s %3d\n",format_date(cpt),streaks[n].end_hand);
 
     if (bTotal) {
       total_deltas += streaks[n].num_deltas;
