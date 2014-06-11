@@ -127,8 +127,12 @@ int main(int argc,char **argv)
             dbg = 1;
 
           if ((line_len == 1) && (line[0] == '\r')) {
-            if (showdown_hands)
+            if (showdown_hands) {
+              if (bVerbose)
+                printf(" %s %3d",filename,num_hands);
+
               putchar(0x0a);
+            }
 
             break;
           }
