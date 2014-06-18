@@ -17,7 +17,7 @@ static char filename[MAX_FILENAME_LEN];
 static char line[MAX_LINE_LEN];
 
 static char usage[] =
-"usage: fpocket_pairs (-debug) (-getcwd) player_name filename\n";
+"usage: fpocket_pairs (-debug) (-getcwd) (-count) player_name filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char dealt_to[] = "Dealt to ";
@@ -34,6 +34,7 @@ int main(int argc,char **argv)
   int curr_arg;
   bool bDebug;
   bool bGetCwd;
+  bool bCount;
   int player_name_ix;
   int player_name_len;
   FILE *fptr0;
@@ -44,14 +45,17 @@ int main(int argc,char **argv)
   int ix;
   int file_no;
   int hand_no;
+  int pock_count;
+  double dwork;
 
-  if ((argc < 3) || (argc > 5)) {
+  if ((argc < 3) || (argc > 6)) {
     printf(usage);
     return 1;
   }
 
   bDebug = false;
   bGetCwd = false;
+  bCount = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-debug"))
@@ -60,6 +64,8 @@ int main(int argc,char **argv)
       bGetCwd = true;
       getcwd(save_dir,_MAX_PATH);
     }
+    else if (!strcmp(argv[curr_arg],"-count"))
+      bCount = true;
     else
       break;
   }
@@ -95,6 +101,9 @@ int main(int argc,char **argv)
     line_no = 0;
     hand_no = 0;
 
+    if (bCount)
+      pock_count = 0;
+
     for ( ; ; ) {
       GetLine(fptr,line,&line_len,MAX_LINE_LEN);
 
@@ -128,7 +137,9 @@ int main(int argc,char **argv)
               line[m] = 0;
 
               if (line[n] == line[n+3]) {
-                if (!bDebug) {
+                if (bCount)
+                  pock_count++;
+                else if (!bDebug) {
                   if (!bGetCwd)
                     printf("%s\n",&line[n]);
                   else
@@ -148,7 +159,29 @@ int main(int argc,char **argv)
     }
 
     fclose(fptr);
+
+    if (bCount) {
+      if (!bDebug) {
+        if (!bGetCwd)
+          printf("%2d %s\n",pock_count,filename);
+        else
+          printf("%2d %s/%s\n",pock_count,save_dir,filename);
+      }
+      else {
+        if (pock_count)
+          dwork = (double)hand_no / (double)pock_count;
+        else
+          dwork = (double)0;
+
+        if (!bGetCwd)
+          printf("%2d %3d %4.1lf %s\n",pock_count,hand_no,dwork,filename);
+        else
+          printf("%2d %3d %4.1lf %s/%s\n",pock_count,hand_no,dwork,save_dir,filename);
+      }
+    }
   }
+
+  fclose(fptr0);
 
   return 0;
 }
