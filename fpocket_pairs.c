@@ -16,7 +16,8 @@ static char filename[MAX_FILENAME_LEN];
 #define MAX_LINE_LEN 1024
 static char line[MAX_LINE_LEN];
 
-static char usage[] = "usage: fpocket_pairs (-debug) player_name filename\n";
+static char usage[] =
+"usage: fpocket_pairs (-debug) (-getcwd) player_name filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char dealt_to[] = "Dealt to ";
@@ -32,6 +33,7 @@ int main(int argc,char **argv)
   int n;
   int curr_arg;
   bool bDebug;
+  bool bGetCwd;
   int player_name_ix;
   int player_name_len;
   FILE *fptr0;
@@ -43,16 +45,19 @@ int main(int argc,char **argv)
   int file_no;
   int hand_no;
 
-  if ((argc < 3) || (argc > 4)) {
+  if ((argc < 3) || (argc > 5)) {
     printf(usage);
     return 1;
   }
 
   bDebug = false;
+  bGetCwd = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
-    if (!strcmp(argv[curr_arg],"-debug")) {
+    if (!strcmp(argv[curr_arg],"-debug"))
       bDebug = true;
+    else if (!strcmp(argv[curr_arg],"-getcwd")) {
+      bGetCwd = true;
       getcwd(save_dir,_MAX_PATH);
     }
     else
@@ -123,10 +128,18 @@ int main(int argc,char **argv)
               line[m] = 0;
 
               if (line[n] == line[n+3]) {
-                if (!bDebug)
-                  printf("%s\n",&line[n]);
-                else
-                  printf("%s %s/%s %3d\n",&line[n],save_dir,filename,hand_no);
+                if (!bDebug) {
+                  if (!bGetCwd)
+                    printf("%s\n",&line[n]);
+                  else
+                    printf("%s %s/%s\n",&line[n],save_dir,filename);
+                }
+                else {
+                  if (!bGetCwd)
+                    printf("%s %s %3d\n",&line[n],filename,hand_no);
+                  else
+                    printf("%s %s/%s %3d\n",&line[n],save_dir,filename,hand_no);
+                }
               }
             }
           }
