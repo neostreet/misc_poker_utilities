@@ -13,7 +13,8 @@ static char save_dir[_MAX_PATH];
 #define MAX_LINE_LEN 1024
 static char line[MAX_LINE_LEN];
 
-static char usage[] = "usage: avg_end_balance (-debug) filename\n";
+static char usage[] =
+"usage: avg_end_balance (-debug) (-verbose) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
@@ -23,6 +24,7 @@ int main(int argc,char **argv)
 {
   int curr_arg;
   bool bDebug;
+  bool bVerbose;
   FILE *fptr;
   int retval;
   char *date_string;
@@ -33,16 +35,19 @@ int main(int argc,char **argv)
   int sum_end_balances;
   double dwork;
 
-  if ((argc < 2) || (argc > 3)) {
+  if ((argc < 2) || (argc > 4)) {
     printf(usage);
     return 1;
   }
 
   bDebug = false;
+  bVerbose = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-debug"))
       bDebug = true;
+    else if (!strcmp(argv[curr_arg],"-verbose"))
+      bVerbose = true;
     else
       break;
   }
@@ -91,7 +96,11 @@ int main(int argc,char **argv)
   fclose(fptr);
 
   dwork = (double)sum_end_balances / (double)line_no;
-  printf("%lf %s\n",dwork,date_string);
+
+  if (!bVerbose)
+    printf("%lf %s\n",dwork,date_string);
+  else
+    printf("%lf (%d %d) %s\n",dwork,sum_end_balances,line_no,date_string);
 
   return 0;
 }
