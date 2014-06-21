@@ -13,7 +13,8 @@ static char save_dir[_MAX_PATH];
 #define MAX_LINE_LEN 1024
 static char line[MAX_LINE_LEN];
 
-static char usage[] = "usage: max_balance (-initial_balbal) filename\n";
+static char usage[] =
+"usage: max_balance (-debug) (-verbose) (-initial_balbal) (-get_date_from_cwd) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
@@ -22,6 +23,9 @@ static int get_date_from_cwd(char *cwd,char **date_string_ptr);
 int main(int argc,char **argv)
 {
   int curr_arg;
+  bool bDebug;
+  bool bVerbose;
+  bool bGetDateFromCwd;
   FILE *fptr;
   int retval;
   char *date_string;
@@ -31,16 +35,25 @@ int main(int argc,char **argv)
   int balance;
   int max_balance;
 
-  if ((argc < 2) || (argc > 3)) {
+  if ((argc < 2) || (argc > 6)) {
     printf(usage);
     return 1;
   }
 
+  bDebug = false;
+  bVerbose = false;
   balance = 0;
+  bGetDateFromCwd = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
-    if (!strncmp(argv[curr_arg],"-initial_bal",12))
+    if (!strcmp(argv[curr_arg],"-debug"))
+      bDebug = true;
+    else if (!strcmp(argv[curr_arg],"-verbose"))
+      bVerbose = true;
+    else if (!strncmp(argv[curr_arg],"-initial_bal",12))
       sscanf(&argv[curr_arg][12],"%d",&balance);
+    else if (!strcmp(argv[curr_arg],"-get_date_from_cwd"))
+      bGetDateFromCwd = true;
     else
       break;
   }
@@ -55,13 +68,15 @@ int main(int argc,char **argv)
     return 3;
   }
 
-  getcwd(save_dir,_MAX_PATH);
+  if (bGetDateFromCwd) {
+    getcwd(save_dir,_MAX_PATH);
 
-  retval = get_date_from_cwd(save_dir,&date_string);
+    retval = get_date_from_cwd(save_dir,&date_string);
 
-  if (retval) {
-    printf("get_date_from_cwd() failed: %d\n",retval);
-    return 4;
+    if (retval) {
+      printf("get_date_from_cwd() failed: %d\n",retval);
+      return 4;
+    }
   }
 
   line_no = 0;
@@ -78,13 +93,23 @@ int main(int argc,char **argv)
 
     balance += delta;
 
+    if (bDebug) {
+      if (!bVerbose)
+        printf("%d\n",balance);
+      else
+        printf("%10d %10d\n",delta,balance);
+    }
+
     if ((line_no == 1) || (balance > max_balance))
       max_balance = balance;
   }
 
   fclose(fptr);
 
-  printf("%10d %s\n",max_balance,date_string);
+  if (!bGetDateFromCwd)
+    printf("%d\n",max_balance);
+  else
+    printf("%10d %s\n",max_balance,date_string);
 
   return 0;
 }
