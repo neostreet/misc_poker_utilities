@@ -296,9 +296,6 @@ int main(int argc,char **argv)
 
           ending_balance = starting_balance - spent_this_hand + collected_from_pot;
 
-          if (!ending_balance)
-            hit_felt_count++;
-
           continue;
         }
         else if (Contains(true,
