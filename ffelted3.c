@@ -17,7 +17,7 @@ static char line[MAX_LINE_LEN];
 
 static char usage[] =
 "usage: ffelted3 (-debug) (-reverse) (-count) (-exact_countn) (-reupped)\n"
-"  (-consecutive) (-show_zero) player_name filename\n";
+"  (-consecutive) (-show_zero) (-one_and_done) player_name filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char in_chips[] = " in chips";
@@ -59,6 +59,7 @@ int main(int argc,char **argv)
   bool bReupped;
   bool bConsecutive;
   bool bShowZero;
+  bool bOneAndDone;
   int hit_felt_count;
   int consecutive_hit_felt_count;
   int exact_count;
@@ -91,7 +92,7 @@ int main(int argc,char **argv)
   int max_hit_felt_hand;
   int max_positive_ending_balance_hand;
 
-  if ((argc < 3) || (argc > 10)) {
+  if ((argc < 3) || (argc > 11)) {
     printf(usage);
     return 1;
   }
@@ -103,6 +104,7 @@ int main(int argc,char **argv)
   bReupped = false;
   bConsecutive = false;
   bShowZero = false;
+  bOneAndDone = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-debug"))
@@ -123,6 +125,8 @@ int main(int argc,char **argv)
       bShowZero = true;
       bCount = true;
     }
+    else if (!strcmp(argv[curr_arg],"-one_and_done"))
+      bOneAndDone = true;
     else
       break;
   }
@@ -132,12 +136,17 @@ int main(int argc,char **argv)
     return 2;
   }
 
+  if (bExactCount && bOneAndDone) {
+    printf("can't specify boht -exact_countn and -one_and_done\n");
+    return 3;
+  }
+
   player_name_ix = curr_arg++;
   player_name_len = strlen(argv[player_name_ix]);
 
   if ((fptr0 = fopen(argv[curr_arg],"r")) == NULL) {
     printf(couldnt_open,argv[curr_arg]);
-    return 3;
+    return 4;
   }
 
   file_no = 0;
@@ -369,7 +378,11 @@ int main(int argc,char **argv)
       }
     }
 
-    if (!bReverse) {
+    if (bOneAndDone) {
+      if ((hit_felt_count == 1) && (ending_balance == 0))
+        printf("%s\n",filename);
+    }
+    else if (!bReverse) {
       if (bReupped && (max_positive_ending_balance_hand < max_hit_felt_hand))
         ;
       else if (bConsecutive) {
