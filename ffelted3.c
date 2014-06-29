@@ -61,6 +61,7 @@ int main(int argc,char **argv)
   bool bShowZero;
   bool bOneAndDone;
   int hit_felt_count;
+  int reupped_count;
   int consecutive_hit_felt_count;
   int exact_count;
   int player_name_ix;
@@ -89,8 +90,6 @@ int main(int argc,char **argv)
   double dwork1;
   double dwork2;
   bool bSkipping;
-  int max_hit_felt_hand;
-  int max_positive_ending_balance_hand;
 
   if ((argc < 3) || (argc > 11)) {
     printf(usage);
@@ -174,11 +173,8 @@ int main(int argc,char **argv)
 
     line_no = 0;
     hit_felt_count = 0;
-
-    if (bReupped) {
-      max_hit_felt_hand = 0;
-      max_positive_ending_balance_hand = 0;
-    }
+    ending_balance = -1;
+    reupped_count = 0;
 
     for ( ; ; ) {
       GetLine(fptr,line,&line_len,MAX_LINE_LEN);
@@ -205,6 +201,9 @@ int main(int argc,char **argv)
           &ix)) {
 
           bSkipping = false;
+
+          if (ending_balance == 0)
+            reupped_count++;
 
           street = 0;
           num_street_markers = 0;
@@ -297,12 +296,8 @@ int main(int argc,char **argv)
 
           ending_balance = starting_balance - spent_this_hand + collected_from_pot;
 
-          if (!ending_balance) {
+          if (!ending_balance)
             hit_felt_count++;
-            max_hit_felt_hand = line_no;
-          }
-          else
-            max_positive_ending_balance_hand = line_no;
 
           continue;
         }
@@ -354,12 +349,8 @@ int main(int argc,char **argv)
 
           ending_balance = starting_balance - spent_this_hand + collected_from_pot;
 
-          if (!ending_balance) {
+          if (!ending_balance)
             hit_felt_count++;
-            max_hit_felt_hand = line_no;
-          }
-          else
-            max_positive_ending_balance_hand = line_no;
 
           continue;
         }
@@ -383,7 +374,7 @@ int main(int argc,char **argv)
         printf("%s\n",filename);
     }
     else if (!bReverse) {
-      if (bReupped && (max_positive_ending_balance_hand < max_hit_felt_hand))
+      if (bReupped && (reupped_count == 0))
         ;
       else if (bConsecutive) {
         consecutive_hit_felt_count += hit_felt_count;
