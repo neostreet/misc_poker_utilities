@@ -16,7 +16,7 @@ static char prev_filename[MAX_FILENAME_LEN];
 static char line[MAX_LINE_LEN];
 
 static char usage[] =
-"usage: freupped3 (-debug) (-show_zero) player_name filename\n";
+"usage: freupped3 (-debug) (-count) (-show_zero) player_name filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char in_chips[] = " in chips";
@@ -52,6 +52,7 @@ int main(int argc,char **argv)
   int p;
   int curr_arg;
   bool bDebug;
+  bool bCount;
   bool bShowZero;
   int reupped_count;
   int player_name_ix;
@@ -81,19 +82,24 @@ int main(int argc,char **argv)
   double dwork2;
   bool bSkipping;
 
-  if ((argc < 3) || (argc > 5)) {
+  if ((argc < 3) || (argc > 6)) {
     printf(usage);
     return 1;
   }
 
   bDebug = false;
+  bCount = false;
   bShowZero = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-debug"))
       bDebug = true;
-    else if (!strcmp(argv[curr_arg],"-show_zero"))
+    else if (!strcmp(argv[curr_arg],"-count"))
+      bCount = true;
+    else if (!strcmp(argv[curr_arg],"-show_zero")) {
       bShowZero = true;
+      bCount = true;
+    }
     else
       break;
   }
@@ -322,8 +328,12 @@ int main(int argc,char **argv)
       }
     }
 
-    if (bShowZero || reupped_count)
-      printf("%7d %s\n",reupped_count,filename);
+    if (bShowZero || reupped_count) {
+      if (!bCount)
+        printf("%s\n",filename);
+      else
+        printf("%7d %s\n",reupped_count,filename);
+    }
 
     fclose(fptr);
   }
