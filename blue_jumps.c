@@ -7,7 +7,7 @@
 static char line[MAX_LINE_LEN];
 
 static char usage[] =
-"usage: blue_jumps (-verbose) (-initial_bal) filename\n";
+"usage: blue_jumps (-verbose) (-initial_balbal) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
@@ -20,6 +20,7 @@ int main(int argc,char **argv)
   FILE *fptr;
   int line_len;
   int line_no;
+  int prev_blue_jump_line_no;
   char str[MAX_STR_LEN];
   int delta;
   int balance;
@@ -53,6 +54,7 @@ int main(int argc,char **argv)
   }
 
   line_no = 0;
+  prev_blue_jump_line_no = -1;
 
   for ( ; ; ) {
     GetLine(fptr,line,&line_len,MAX_LINE_LEN);
@@ -65,6 +67,7 @@ int main(int argc,char **argv)
     if (!line_no) {
       balance = initial_bal + delta;
       max_balance = balance;
+      prev_blue_jump_line_no = line_no;
     }
     else {
       balance += delta;
@@ -72,10 +75,13 @@ int main(int argc,char **argv)
       if (balance > max_balance) {
         if (!bVerbose)
           printf("%d\t%s\n",balance - max_balance,line);
-        else
-          printf("%6d %10d %s\n",balance - max_balance,balance,line);
+        else {
+          printf("%6d %10d (%3d) %s\n",balance - max_balance,
+            balance,line_no - prev_blue_jump_line_no - 1,line);
+        }
 
         max_balance = balance;
+        prev_blue_jump_line_no = line_no;
       }
     }
 
