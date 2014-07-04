@@ -13,6 +13,7 @@ static char filename[MAX_FILENAME_LEN];
 
 #define MAX_LINE_LEN 1024
 static char line[MAX_LINE_LEN];
+static char buf[MAX_LINE_LEN];
 
 static char usage[] =
 "usage: fshowdown_hands3 (-verbose) (-debug) filename\n";
@@ -24,7 +25,7 @@ static char summary[] = "*** SUMMARY ***";
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
 static int Contains(bool bCaseSens,char *line,int line_len,
   char *string,int string_len,int *index);
-static char *get_showdown_hand(char *line,int line_len);
+static char *get_bracketed_string(char *line,int line_len);
 
 int main(int argc,char **argv)
 {
@@ -114,6 +115,7 @@ int main(int argc,char **argv)
       if (!strncmp(line,summary,SUMMARY_LEN)) {
         num_hands++;
         showdown_hands = 0;
+        buf[0] = 0;
 
         for ( ; ; ) {
           GetLine(fptr,line,&line_len,MAX_LINE_LEN);
@@ -129,22 +131,26 @@ int main(int argc,char **argv)
           if ((line_len == 1) && (line[0] == '\r')) {
             if (showdown_hands) {
               if (bVerbose)
-                printf(" %s %3d",filename,num_hands);
-
-              putchar(0x0a);
+                printf("%s %s %3d (%d)\n",buf,filename,num_hands,file_no);
+              else
+                printf("%s\n",buf);
             }
 
             break;
           }
 
-          if (!strncmp(line,"Seat ",5)) {
-            cpt = get_showdown_hand(line,line_len);
+          if (!strncmp(line,"Board ",6)) {
+            cpt = get_bracketed_string(line,line_len);
+
+            if (cpt != NULL)
+              strcat(buf,cpt);
+          }
+          else if (!strncmp(line,"Seat ",5)) {
+            cpt = get_bracketed_string(line,line_len);
 
             if (cpt != NULL) {
-              if (!showdown_hands)
-                printf("%s",cpt);
-              else
-                printf(" %s",cpt);
+              strcat(buf," ");
+              strcat(buf,cpt);
 
               showdown_hands++;
             }
@@ -220,7 +226,7 @@ static int Contains(bool bCaseSens,char *line,int line_len,
   return false;
 }
 
-static char *get_showdown_hand(char *line,int line_len)
+static char *get_bracketed_string(char *line,int line_len)
 {
   int m;
   int n;
