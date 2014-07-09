@@ -40,7 +40,7 @@ int main(int argc,char **argv)
       case 0:
         sscanf(line,"%d",&hands);
 
-        printf("During current Stud session you were dealt %d hands and\n",hands);
+        printf("During current Stud session you were dealt %d hands and:\n",hands);
 
         break;
       case 1:
