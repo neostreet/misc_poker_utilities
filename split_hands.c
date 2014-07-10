@@ -3,6 +3,7 @@
 
 #define MAX_LINE_LEN 1024
 static char line[MAX_LINE_LEN];
+static char filename[MAX_LINE_LEN];
 
 static char usage[] = "usage: split_hands filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
@@ -66,12 +67,16 @@ int main(int argc,char **argv)
   if (hand) {
     fclose(fptr[1]);
 
-    if ((fptr[0] = fopen("hands.lst","w")) == NULL) {
+    sprintf(filename,"%s.lst",argv[1]);
+
+    if ((fptr[0] = fopen(filename,"w")) == NULL) {
       printf(couldnt_open,buf);
       return 4;
     }
 
-    if ((fptr[1] = fopen("hands.ls0","w")) == NULL) {
+    sprintf(filename,"%s.ls0",argv[1]);
+
+    if ((fptr[1] = fopen(filename,"w")) == NULL) {
       fclose(fptr[0]);
       printf(couldnt_open,buf);
       return 5;
