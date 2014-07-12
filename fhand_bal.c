@@ -20,7 +20,7 @@ static char line[MAX_LINE_LEN];
 
 static char usage[] =
 "usage: fhand_bal (-debug) (-consistency) (-delta) (-starting_balance) (-terse)\n"
-"  (-double_zero) player_name filename\n";
+"  (-double_zero) (-stud) player_name filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char in_chips[] = " in chips";
@@ -31,6 +31,8 @@ static char street_marker[] = "*** ";
 #define STREET_MARKER_LEN (sizeof (street_marker) - 1)
 static char posts_the_ante[] = " posts the ante ";
 #define POSTS_THE_ANTE_LEN (sizeof (posts_the_ante) - 1)
+static char brings_in_for[] = " brings in for ";
+#define BRINGS_IN_FOR_LEN (sizeof (brings_in_for) - 1)
 static char posts[] = " posts ";
 #define POSTS_LEN (sizeof (posts) - 1)
 static char dealt_to[] = "Dealt to ";
@@ -62,6 +64,7 @@ int main(int argc,char **argv)
   bool bStartingBalance;
   bool bTerse;
   bool bDoubleZero;
+  bool bStud;
   int player_name_ix;
   int player_name_len;
   FILE *fptr0;
@@ -72,8 +75,10 @@ int main(int argc,char **argv)
   int ix;
   int street;
   int num_street_markers;
+  int max_streets;
   int starting_balance;
   int ante;
+  int bring_in;
   int spent_this_street;
   int spent_this_hand;
   int end_ix;
@@ -96,7 +101,7 @@ int main(int argc,char **argv)
   double dwork;
   int prev_ending_balance;
 
-  if ((argc < 3) || (argc > 9)) {
+  if ((argc < 3) || (argc > 10)) {
     printf(usage);
     return 1;
   }
@@ -107,6 +112,7 @@ int main(int argc,char **argv)
   bStartingBalance = false;
   bTerse = false;
   bDoubleZero = false;
+  bStud = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-debug")) {
@@ -123,6 +129,8 @@ int main(int argc,char **argv)
       bTerse = true;
     else if (!strcmp(argv[curr_arg],"-double_zero"))
       bDoubleZero = true;
+    else if (!strcmp(argv[curr_arg],"-stud"))
+      bStud = true;
     else
       break;
   }
@@ -144,6 +152,11 @@ int main(int argc,char **argv)
     printf(couldnt_open,argv[curr_arg]);
     return 4;
   }
+
+  if (!bStud)
+    max_streets = 3;
+  else
+    max_streets = 4;
 
   ending_balance = -1;
   prev_ending_balance = -1;
@@ -184,6 +197,7 @@ int main(int argc,char **argv)
     street = 0;
     num_street_markers = 0;
     ante = 0;
+    bring_in = 0;
     spent_this_street = 0;
     spent_this_hand = 0;
     uncalled_bet_amount = 0;
@@ -231,6 +245,14 @@ int main(int argc,char **argv)
           &ix)) {
           ante = get_work_amount(line,line_len);
           spent_this_hand = ante;
+          continue;
+        }
+        else if (bStud && Contains(true,
+          line,line_len,
+          brings_in_for,BRINGS_IN_FOR_LEN,
+          &ix)) {
+          bring_in = get_work_amount(line,line_len);
+          spent_this_street += bring_in;
           continue;
         }
         else if (Contains(true,
@@ -305,7 +327,7 @@ int main(int argc,char **argv)
           num_street_markers++;
 
           if (num_street_markers > 1) {
-            if (street <= 3)
+            if (street <= max_streets)
               spent_this_hand += spent_this_street;
 
             street++;
@@ -385,6 +407,9 @@ int main(int argc,char **argv)
 
       if (ante)
         printf("%10d ante\n",ante);
+
+      if (bring_in)
+        printf("%10d bring_in\n",bring_in);
 
       printf("%10d wagered_amount\n",wagered_amount);
       printf("%10d uncalled_bet_amount\n",uncalled_bet_amount);
