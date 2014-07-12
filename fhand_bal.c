@@ -389,8 +389,12 @@ int main(int argc,char **argv)
 
     if (!bDebug) {
       if (bTerse) {
-        printf("%10d %10d %10d %s/%s\n",
-          starting_balance,delta,ending_balance,save_dir,filename);
+        if (bDelta)
+          printf("%d\n",delta);
+        else {
+          printf("%10d %10d %10d %s/%s\n",
+            starting_balance,delta,ending_balance,save_dir,filename);
+        }
       }
       else if (bDelta)
         printf("%10d %s/%s\n",delta,save_dir,filename);
@@ -429,7 +433,9 @@ int main(int argc,char **argv)
     }
   }
 
-  if (bDoubleZero)
+  fclose(fptr0);
+
+  if (bDoubleZero || bTerse)
     return 0;
 
   if (bDelta) {
