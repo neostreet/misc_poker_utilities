@@ -89,6 +89,7 @@ int main(int argc,char **argv)
   int ix;
   int street;
   int num_street_markers;
+  int max_streets;
   int starting_balance;
   int ante;
   int bring_in;
@@ -191,6 +192,11 @@ int main(int argc,char **argv)
     printf(couldnt_open,argv[curr_arg]);
     return 5;
   }
+
+  if (!bStud)
+    max_streets = 3;
+  else
+    max_streets = 4;
 
   ending_balance = -1;
 
@@ -451,7 +457,7 @@ int main(int argc,char **argv)
           num_street_markers++;
 
           if (num_street_markers > 1) {
-            if (street <= 3)
+            if (street <= max_streets)
               spent_this_hand += spent_this_street;
 
             street++;
