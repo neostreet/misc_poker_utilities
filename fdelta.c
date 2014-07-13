@@ -19,7 +19,7 @@ static char line[MAX_LINE_LEN];
 static char usage[] =
 "usage: fdelta (-terse) (-verbose) (-debug) (-sum) (-avg) (-absolute_value)\n"
 "  (-winning_only) (-losing_only) (-pocket_pairs_only) (-file_names)\n"
-"  (-big_blind) player_name filename\n";
+"  (-big_blind) (-stud) player_name filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char in_chips[] = " in chips";
@@ -28,6 +28,10 @@ static char summary[] = "*** SUMMARY ***";
 #define SUMMARY_LEN (sizeof (summary) - 1)
 static char street_marker[] = "*** ";
 #define STREET_MARKER_LEN (sizeof (street_marker) - 1)
+static char posts_the_ante[] = " posts the ante ";
+#define POSTS_THE_ANTE_LEN (sizeof (posts_the_ante) - 1)
+static char brings_in_for[] = " brings in for ";
+#define BRINGS_IN_FOR_LEN (sizeof (brings_in_for) - 1)
 static char posts[] = " posts ";
 #define POSTS_LEN (sizeof (posts) - 1)
 static char dealt_to[] = "Dealt to ";
@@ -72,6 +76,7 @@ int main(int argc,char **argv)
   bool bPocketPairsOnly;
   bool bFileNames;
   bool bBigBlind;
+  bool bStud;
   bool bAsterisk;
   int player_name_ix;
   int player_name_len;
@@ -85,6 +90,8 @@ int main(int argc,char **argv)
   int street;
   int num_street_markers;
   int starting_balance;
+  int ante;
+  int bring_in;
   int spent_this_street;
   int spent_this_hand;
   int end_ix;
@@ -110,7 +117,7 @@ int main(int argc,char **argv)
   int curr_big_blind;
   int last_big_blind;
 
-  if ((argc < 3) || (argc > 14)) {
+  if ((argc < 3) || (argc > 15)) {
     printf(usage);
     return 1;
   }
@@ -126,6 +133,7 @@ int main(int argc,char **argv)
   bPocketPairsOnly = false;
   bFileNames = false;
   bBigBlind = false;
+  bStud = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-terse"))
@@ -154,6 +162,8 @@ int main(int argc,char **argv)
     }
     else if (!strcmp(argv[curr_arg],"-big_blind"))
       bBigBlind = true;
+    else if (!strcmp(argv[curr_arg],"-stud"))
+      bStud = true;
     else
       break;
   }
@@ -221,6 +231,8 @@ int main(int argc,char **argv)
     line_no = 0;
     street = 0;
     num_street_markers = 0;
+    ante = 0;
+    bring_in = 0;
     spent_this_street = 0;
     spent_this_hand = 0;
     uncalled_bet_amount = 0;
@@ -280,6 +292,22 @@ int main(int argc,char **argv)
           if (bDebug)
             printf("line %d starting_balance = %d\n",line_no,starting_balance);
 
+          continue;
+        }
+        else if (Contains(true,
+          line,line_len,
+          posts_the_ante,POSTS_THE_ANTE_LEN,
+          &ix)) {
+          ante = get_work_amount(line,line_len);
+          spent_this_hand = ante;
+          continue;
+        }
+        else if (bStud && Contains(true,
+          line,line_len,
+          brings_in_for,BRINGS_IN_FOR_LEN,
+          &ix)) {
+          bring_in = get_work_amount(line,line_len);
+          spent_this_street += bring_in;
           continue;
         }
         else if (Contains(true,
