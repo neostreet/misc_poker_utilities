@@ -13,7 +13,7 @@ static char save_dir[_MAX_PATH];
 static char line[MAX_LINE_LEN];
 
 static char usage[] =
-"usage: underwater_count (-debug) (-diffval) (-reverse) filename\n";
+"usage: underwater_count (-debug) (-diffval) (-reverse) (-only_zero) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
@@ -24,6 +24,7 @@ int main(int argc,char **argv)
   bool bDebug;
   bool bDiff;
   bool bReverse;
+  bool bOnlyZero;
   int val;
   FILE *fptr;
   int line_len;
@@ -33,7 +34,7 @@ int main(int argc,char **argv)
   int starting_amount;
   double pct;
 
-  if ((argc < 2) || (argc > 5)) {
+  if ((argc < 2) || (argc > 6)) {
     printf(usage);
     return 1;
   }
@@ -41,6 +42,7 @@ int main(int argc,char **argv)
   bDebug = false;
   bDiff = false;
   bReverse = false;
+  bOnlyZero = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-debug")) {
@@ -53,6 +55,8 @@ int main(int argc,char **argv)
     }
     else if (!strcmp(argv[curr_arg],"-reverse"))
       bReverse = true;
+    else if (!strcmp(argv[curr_arg],"-only_zero"))
+      bOnlyZero = true;
     else
       break;
   }
@@ -99,11 +103,13 @@ int main(int argc,char **argv)
   pct = (double)count / (double)line_no;
 
   if (!bDiff || (line_no - count == val)) {
-    if (!bDebug)
-      printf("%lf %3d %3d\n",pct,count,line_no);
-    else {
-      printf("%lf %3d %3d %s\n",pct,count,line_no,
-        save_dir);
+    if (!bOnlyZero || (count == 0)) {
+      if (!bDebug)
+        printf("%lf %3d %3d\n",pct,count,line_no);
+      else {
+        printf("%lf %3d %3d %s\n",pct,count,line_no,
+          save_dir);
+      }
     }
   }
 
