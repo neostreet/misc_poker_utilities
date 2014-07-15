@@ -13,7 +13,8 @@ static char save_dir[_MAX_PATH];
 static char line[MAX_LINE_LEN];
 
 static char usage[] =
-"usage: underwater_count (-debug) (-diffval) (-reverse) (-only_zero) filename\n";
+"usage: underwater_count (-debug) (-verbose) (-diffval) (-reverse) (-only_zero)\n"
+"  filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
@@ -22,6 +23,7 @@ int main(int argc,char **argv)
 {
   int curr_arg;
   bool bDebug;
+  bool bVerbose;
   bool bDiff;
   bool bReverse;
   bool bOnlyZero;
@@ -34,21 +36,25 @@ int main(int argc,char **argv)
   int starting_amount;
   double pct;
 
-  if ((argc < 2) || (argc > 6)) {
+  if ((argc < 2) || (argc > 7)) {
     printf(usage);
     return 1;
   }
 
   bDebug = false;
+  bVerbose = false;
   bDiff = false;
   bReverse = false;
   bOnlyZero = false;
+  starting_amount = 0;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-debug")) {
       bDebug = true;
       getcwd(save_dir,_MAX_PATH);
     }
+    else if (!strcmp(argv[curr_arg],"-verbose"))
+      bVerbose = true;
     else if (!strncmp(argv[curr_arg],"-diff",5)) {
       bDiff = true;
       sscanf(&argv[curr_arg][5],"%d",&val);
@@ -84,16 +90,20 @@ int main(int argc,char **argv)
 
     sscanf(line,"%d",&work);
 
-    if (line_no == 1)
-      starting_amount = work;
-    else {
-      if (!bReverse) {
-        if (work < starting_amount)
-          count++;
+    if (!bReverse) {
+      if (work < starting_amount) {
+        if (bVerbose)
+          printf("%d (%d)\n",work,line_no);
+
+        count++;
       }
-      else {
-        if (work > starting_amount)
-          count++;
+    }
+    else {
+      if (work > starting_amount) {
+        if (bVerbose)
+          printf("%d (%d)\n",work,line_no);
+
+        count++;
       }
     }
   }
