@@ -8,8 +8,6 @@
 #include <unistd.h>
 #endif
 
-static char save_dir[_MAX_PATH];
-
 #define MAX_FILENAME_LEN 1024
 static char filename[MAX_FILENAME_LEN];
 static char dealt_to_filename[MAX_FILENAME_LEN];
@@ -19,7 +17,7 @@ static char line[MAX_LINE_LEN];
 static char dealt_to_line[MAX_LINE_LEN];
 
 static char usage[] =
-"usage: fdealt_to3 (-debug) (-stud) (-hand_numbers) player_name filename\n";
+"usage: fdealt_to3 (-debug) player_name filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char dealt_to[] = "Dealt to ";
@@ -32,7 +30,6 @@ void do_print_dealt_to(
   char *dealt_to_line,
   int dealt_to_line_line_len,
   bool bDebug,
-  bool bHandNumbers,
   int dealt_to_line_hand_number
 );
 void print_dealt_to(char *str,int len);
@@ -43,8 +40,6 @@ int main(int argc,char **argv)
   int n;
   int curr_arg;
   bool bDebug;
-  bool bStud;
-  bool bHandNumbers;
   bool bHaveDealtToLine;
   int player_name_ix;
   int player_name_len;
@@ -62,24 +57,16 @@ int main(int argc,char **argv)
   int num_hands;
   int hand_number;
 
-  if ((argc < 3) || (argc > 6)) {
+  if ((argc < 3) || (argc > 4)) {
     printf(usage);
     return 1;
   }
 
   bDebug = false;
-  bStud = false;
-  bHandNumbers = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
-    if (!strcmp(argv[curr_arg],"-debug")) {
+    if (!strcmp(argv[curr_arg],"-debug"))
       bDebug = true;
-      getcwd(save_dir,_MAX_PATH);
-    }
-    else if (!strcmp(argv[curr_arg],"-stud"))
-      bStud = true;
-    else if (!strcmp(argv[curr_arg],"-hand_numbers"))
-      bHandNumbers = true;
     else
       break;
   }
@@ -135,7 +122,7 @@ int main(int argc,char **argv)
 
         if (bHaveDealtToLine) {
           do_print_dealt_to(dealt_to_line,dealt_to_line_line_len,bDebug,
-            bHandNumbers,dealt_to_line_hand_number);
+            dealt_to_line_hand_number);
           bHaveDealtToLine = false;
         }
       }
@@ -160,7 +147,7 @@ int main(int argc,char **argv)
 
     if (bHaveDealtToLine) {
       do_print_dealt_to(dealt_to_line,dealt_to_line_line_len,bDebug,
-        bHandNumbers,dealt_to_line_hand_number);
+        dealt_to_line_hand_number);
     }
 
     fclose(fptr);
@@ -237,7 +224,6 @@ void do_print_dealt_to(
   char *dealt_to_line,
   int dealt_to_line_line_len,
   bool bDebug,
-  bool bHandNumbers,
   int dealt_to_line_hand_number
 )
 {
@@ -260,18 +246,10 @@ void do_print_dealt_to(
     if (m < dealt_to_line_line_len) {
       print_dealt_to(&dealt_to_line[n],m-n);
 
-      if (!bDebug) {
-        if (!bHandNumbers)
-          putchar(0x0a);
-        else
-          printf(" (%d)\n",dealt_to_line_hand_number);
-      }
-      else {
-        if (!bHandNumbers)
-          printf(" %s/%s\n",save_dir,dealt_to_filename);
-        else
-          printf(" %s/%s (%d)\n",save_dir,dealt_to_filename,dealt_to_line_hand_number);
-      }
+      if (!bDebug)
+        putchar(0x0a);
+      else
+        printf(" %s %d\n",dealt_to_filename,dealt_to_line_hand_number);
     }
   }
 }
