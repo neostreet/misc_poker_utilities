@@ -12,11 +12,14 @@ static char save_dir[_MAX_PATH];
 
 #define MAX_FILENAME_LEN 1024
 static char filename[MAX_FILENAME_LEN];
+static char dealt_to_filename[MAX_FILENAME_LEN];
 
 #define MAX_LINE_LEN 1024
 static char line[MAX_LINE_LEN];
+static char dealt_to_line[MAX_LINE_LEN];
 
-static char usage[] = "usage: fdealt_to3 (-debug) player_name filename\n";
+static char usage[] =
+"usage: fdealt_to3 (-debug) (-stud) (-hand_numbers) player_name filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char dealt_to[] = "Dealt to ";
@@ -25,6 +28,14 @@ static char dealt_to[] = "Dealt to ";
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
 static int Contains(bool bCaseSens,char *line,int line_len,
   char *string,int string_len,int *index);
+void do_print_dealt_to(
+  char *dealt_to_line,
+  int dealt_to_line_line_len,
+  bool bDebug,
+  bool bHandNumbers,
+  int dealt_to_line_hand_number
+);
+void print_dealt_to(char *str,int len);
 
 int main(int argc,char **argv)
 {
@@ -32,28 +43,43 @@ int main(int argc,char **argv)
   int n;
   int curr_arg;
   bool bDebug;
+  bool bStud;
+  bool bHandNumbers;
+  bool bHaveDealtToLine;
   int player_name_ix;
   int player_name_len;
   FILE *fptr0;
   int filename_len;
   FILE *fptr;
   int line_len;
+  int dealt_to_line_line_len;
+  int dealt_to_line_hand_number;
   int line_no;
+  int dbg_line_no;
+  int dbg;
   int ix;
   int file_no;
+  int num_hands;
+  int hand_number;
 
-  if ((argc < 3) || (argc > 4)) {
+  if ((argc < 3) || (argc > 6)) {
     printf(usage);
     return 1;
   }
 
   bDebug = false;
+  bStud = false;
+  bHandNumbers = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-debug")) {
       bDebug = true;
       getcwd(save_dir,_MAX_PATH);
     }
+    else if (!strcmp(argv[curr_arg],"-stud"))
+      bStud = true;
+    else if (!strcmp(argv[curr_arg],"-hand_numbers"))
+      bHandNumbers = true;
     else
       break;
   }
@@ -72,6 +98,8 @@ int main(int argc,char **argv)
   }
 
   file_no = 0;
+  num_hands = 0;
+  dbg_line_no = -1;
 
   for ( ; ; ) {
     GetLine(fptr0,filename,&filename_len,MAX_FILENAME_LEN);
@@ -87,6 +115,8 @@ int main(int argc,char **argv)
     }
 
     line_no = 0;
+    bHaveDealtToLine = false;
+    hand_number = 0;
 
     for ( ; ; ) {
       GetLine(fptr,line,&line_len,MAX_LINE_LEN);
@@ -96,42 +126,47 @@ int main(int argc,char **argv)
 
       line_no++;
 
-      if (Contains(true,
+      if (line_no == dbg_line_no)
+        dbg = 1;
+
+      if (!strncmp(line,"PokerStars ",11)) {
+        num_hands++;
+        hand_number++;
+
+        if (bHaveDealtToLine) {
+          do_print_dealt_to(dealt_to_line,dealt_to_line_line_len,bDebug,
+            bHandNumbers,dealt_to_line_hand_number);
+          bHaveDealtToLine = false;
+        }
+      }
+      else if (Contains(true,
         line,line_len,
         argv[player_name_ix],player_name_len,
         &ix)) {
 
         if (!strncmp(line,dealt_to,DEALT_TO_LEN)) {
-          for (n = 0; n < line_len; n++) {
-            if (line[n] == '[')
-              break;
+          strcpy(dealt_to_line,line);
+
+          if (!bHaveDealtToLine) {
+            strcpy(dealt_to_filename,filename);
+            bHaveDealtToLine = true;
           }
 
-          if (n < line_len) {
-            n++;
-
-            for (m = n; m < line_len; m++) {
-              if (line[m] == ']')
-                break;
-            }
-
-            if (m < line_len) {
-              line[m] = 0;
-
-              if (!bDebug)
-                printf("%s\n",&line[n]);
-              else
-                printf("%s %s/%s\n",&line[n],save_dir,filename);
-
-              continue;
-            }
-          }
+          dealt_to_line_line_len = line_len;
+          dealt_to_line_hand_number = hand_number;
         }
       }
     }
 
+    if (bHaveDealtToLine) {
+      do_print_dealt_to(dealt_to_line,dealt_to_line_line_len,bDebug,
+        bHandNumbers,dealt_to_line_hand_number);
+    }
+
     fclose(fptr);
   }
+
+  fclose(fptr0);
 
   return 0;
 }
@@ -151,6 +186,9 @@ static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen)
 
     if (chara == '\n')
       break;
+
+    if ((chara == 0xef) || (chara == 0xbb) || (chara == 0xbf))
+      continue;
 
     if (local_line_len < maxllen - 1)
       line[local_line_len++] = (char)chara;
@@ -193,4 +231,60 @@ static int Contains(bool bCaseSens,char *line,int line_len,
   }
 
   return false;
+}
+
+void do_print_dealt_to(
+  char *dealt_to_line,
+  int dealt_to_line_line_len,
+  bool bDebug,
+  bool bHandNumbers,
+  int dealt_to_line_hand_number
+)
+{
+  int m;
+  int n;
+
+  for (n = 0; n < dealt_to_line_line_len; n++) {
+    if (dealt_to_line[n] == '[')
+      break;
+  }
+
+  if (n < dealt_to_line_line_len) {
+    n++;
+
+    for (m = dealt_to_line_line_len - 1; m >= 0; m--) {
+      if (dealt_to_line[m] == ']')
+        break;
+    }
+
+    if (m < dealt_to_line_line_len) {
+      print_dealt_to(&dealt_to_line[n],m-n);
+
+      if (!bDebug) {
+        if (!bHandNumbers)
+          putchar(0x0a);
+        else
+          printf(" (%d)\n",dealt_to_line_hand_number);
+      }
+      else {
+        if (!bHandNumbers)
+          printf(" %s/%s\n",save_dir,dealt_to_filename);
+        else
+          printf(" %s/%s (%d)\n",save_dir,dealt_to_filename,dealt_to_line_hand_number);
+      }
+    }
+  }
+}
+
+void print_dealt_to(char *str,int len)
+{
+  int n;
+  int chara;
+
+  for (n = 0; n < len; n++) {
+    chara = str[n];
+
+    if ((chara != '[') && (chara != ']'))
+      putchar(chara);
+  }
 }
