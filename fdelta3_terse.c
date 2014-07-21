@@ -60,6 +60,8 @@ int main(int argc,char **argv)
   int p;
   int curr_arg;
   bool bStud;
+  bool bFolded;
+  bool bSkipping;
   int player_name_ix;
   int player_name_len;
   FILE *fptr0;
@@ -156,15 +158,8 @@ int main(int argc,char **argv)
     num_hands++;
 
     line_no = 0;
-    street = 0;
-    num_street_markers = 0;
-    ante = 0;
-    bring_in = 0;
-    spent_this_street = 0;
-    spent_this_hand = 0;
-    uncalled_bet_amount = 0;
-    collected_from_pot = 0;
-    collected_from_pot_count = 0;
+    bFolded = false;
+    bSkipping = false;
 
     for ( ; ; ) {
       GetLine(fptr,line,&line_len,MAX_LINE_LEN);
@@ -187,6 +182,19 @@ int main(int argc,char **argv)
           in_chips,IN_CHIPS_LEN,
           &ix)) {
 
+          bFolded = false;
+          bSkipping = false;
+
+          street = 0;
+          num_street_markers = 0;
+          ante = 0;
+          bring_in = 0;
+          spent_this_street = 0;
+          spent_this_hand = 0;
+          uncalled_bet_amount = 0;
+          collected_from_pot = 0;
+          collected_from_pot_count = 0;
+
           line[ix] = 0;
 
           for (ix--; (ix >= 0) && (line[ix] != '('); ix--)
@@ -196,6 +204,8 @@ int main(int argc,char **argv)
 
           continue;
         }
+        else if (bSkipping)
+          continue;
         else if (Contains(true,
           line,line_len,
           posts_the_ante,POSTS_THE_ANTE_LEN,
@@ -257,7 +267,10 @@ int main(int argc,char **argv)
           &ix)) {
           spent_this_hand += spent_this_street;
 
-          break;
+          bFolded = true;
+
+          ending_balance = starting_balance - spent_this_hand + collected_from_pot;
+          delta = ending_balance - starting_balance;
         }
         else if (Contains(true,
           line,line_len,
@@ -282,10 +295,17 @@ int main(int argc,char **argv)
         }
       }
       else {
-        if (!strncmp(line,summary,SUMMARY_LEN))
-          break;
+        if (!strncmp(line,summary,SUMMARY_LEN)) {
+          bSkipping = true;
 
-        if (!strncmp(line,street_marker,STREET_MARKER_LEN)) {
+          if (!bFolded) {
+            ending_balance = starting_balance - spent_this_hand + collected_from_pot;
+            delta = ending_balance - starting_balance;
+          }
+
+          printf("%d\n",delta);
+        }
+        else if (!strncmp(line,street_marker,STREET_MARKER_LEN)) {
           num_street_markers++;
 
           if (num_street_markers > 1) {
@@ -300,11 +320,6 @@ int main(int argc,char **argv)
     }
 
     fclose(fptr);
-
-    ending_balance = starting_balance - spent_this_hand + collected_from_pot;
-    delta = ending_balance - starting_balance;
-
-    printf("%d\n",delta);
   }
 
   fclose(fptr0);
