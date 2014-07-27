@@ -15,20 +15,10 @@ static char *weekdays[] = {
 };
 #define NUM_WEEKDAYS 7
 
-struct stats {
-  int winning_sessions;
-  int num_sessions;
-};
-
-static struct stats weekday_stats[NUM_WEEKDAYS];
+static int weekday_num_sessions[NUM_WEEKDAYS];
 
 #define MAX_LINE_LEN 1024
 static char line[MAX_LINE_LEN];
-
-struct session_info_struct {
-  time_t poker_session_date;
-  int delta;
-};
 
 #define TAB 0x9
 
@@ -46,13 +36,7 @@ static struct digit_range date_checks[3] = {
   1, 31     /* day */
 };
 
-static struct session_info_struct *session_info;
-
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
-static int get_session_info(
-  char *line,
-  int line_len,
-  struct session_info_struct *session_info);
 static time_t cvt_date(char *date_str);
 static int get_weekday(char *cpt,int *ix);
 
@@ -63,7 +47,7 @@ int main(int argc,char **argv)
   int line_len;
   int line_no;
   int retval;
-  struct session_info_struct work_session;
+  time_t poker_session_date;
   char *cpt;
   int ix;
 
@@ -85,14 +69,9 @@ int main(int argc,char **argv)
     if (feof(fptr))
       break;
 
-    retval = get_session_info(line,line_len,&work_session);
+    poker_session_date = cvt_date(line);
 
-    if (retval) {
-      printf("get_session_info() failed on line %d: %d\n",line_no+1,retval);
-      return 3;
-    }
-
-    cpt = ctime(&work_session.poker_session_date);
+    cpt = ctime(&poker_session_date);
 
     retval = get_weekday(cpt,&ix);
 
@@ -101,10 +80,7 @@ int main(int argc,char **argv)
       return 4;
     }
 
-    if (work_session.delta > 0)
-      weekday_stats[ix].winning_sessions++;
-
-    weekday_stats[ix].num_sessions++;
+    weekday_num_sessions[ix]++;
 
     line_no++;
   }
@@ -112,7 +88,7 @@ int main(int argc,char **argv)
   fclose(fptr);
 
   for (n = 0; n < NUM_WEEKDAYS; n++)
-    printf("%s: %5d\n",weekdays[n],weekday_stats[n].num_sessions);
+    printf("%s: %5d\n",weekdays[n],weekday_num_sessions[n]);
 
   return 0;
 }
@@ -139,30 +115,6 @@ static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen)
 
   line[local_line_len] = 0;
   *line_len = local_line_len;
-}
-
-static int get_session_info(
-  char *line,
-  int line_len,
-  struct session_info_struct *session_info)
-{
-  int n;
-
-  for (n = 0; n < line_len; n++) {
-    if (line[n] == TAB)
-      break;
-  }
-
-  if (n == line_len)
-    return 1;
-
-  line[n++] = 0;
-
-  session_info->poker_session_date = cvt_date(line);
-
-  sscanf(&line[n],"%d",&session_info->delta);
-
-  return 0;
 }
 
 static time_t cvt_date(char *date_str)
