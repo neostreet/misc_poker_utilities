@@ -205,7 +205,8 @@ int main(int argc,char **argv)
   num_hands = 0;
   bAsterisk = false;
 
-  hole_cards[5] = 0;
+  if (!bStud)
+    hole_cards[5] = 0;
 
   if (bSum || bAvg) {
     sum_deltas = 0;
@@ -344,7 +345,7 @@ int main(int argc,char **argv)
                 break;
             }
 
-            if (m < line_len) {
+            if ((m < line_len) && !bStud) {
               for (p = 0; p < 5; p++)
                 hole_cards[p] = line[n+p];
 
@@ -469,7 +470,7 @@ int main(int argc,char **argv)
 
     fclose(fptr);
 
-    if (bPocketPairsOnly)
+    if (bPocketPairsOnly && !bStud)
       if (hole_cards[0] != hole_cards[3])
         continue;
 
@@ -509,20 +510,41 @@ int main(int argc,char **argv)
           }
         }
         else if (!bVerbose) {
-          if (!bBigBlind)
-            printf("%s %10d\n",hole_cards,delta);
+          if (!bBigBlind) {
+            if (!bStud)
+              printf("%s %10d\n",hole_cards,delta);
+            else
+              printf("%10d\n",delta);
+          }
           else {
-            printf("%s %10d %5d%s\n",hole_cards,delta,curr_big_blind,
-              (bAsterisk ? "*" : ""));
+            if (!bStud) {
+              printf("%s %10d %5d%s\n",hole_cards,delta,curr_big_blind,
+                (bAsterisk ? "*" : ""));
+            }
+            else {
+              printf("%10d %5d%s\n",delta,curr_big_blind,
+                (bAsterisk ? "*" : ""));
+            }
           }
         }
         else {
-          if (!bBigBlind)
-            printf("%s %10d %s/%s\n",hole_cards,delta,save_dir,filename);
+          if (!bBigBlind) {
+            if (!bStud)
+              printf("%s %10d %s/%s\n",hole_cards,delta,save_dir,filename);
+            else
+              printf("%10d %s/%s\n",delta,save_dir,filename);
+          }
           else {
-            printf("%s %10d %5d %s/%s\n",hole_cards,delta,
-              curr_big_blind,(bAsterisk ? "*" : ""),
-              save_dir,filename);
+            if (!bStud) {
+              printf("%s %10d %5d %s/%s\n",hole_cards,delta,
+                curr_big_blind,(bAsterisk ? "*" : ""),
+                save_dir,filename);
+            }
+            else {
+              printf("%10d %5d %s/%s\n",delta,
+                curr_big_blind,(bAsterisk ? "*" : ""),
+                save_dir,filename);
+            }
           }
         }
       }
