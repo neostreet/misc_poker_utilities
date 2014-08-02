@@ -15,7 +15,9 @@ int main(int argc,char **argv)
   int line_no;
   int delta;
   int curr_winning_streak;
+  int curr_winning_streak_sum_delta;
   int longest_winning_streak;
+  int longest_winning_streak_sum_delta;
 
   if (argc != 2) {
     printf(usage);
@@ -29,7 +31,9 @@ int main(int argc,char **argv)
 
   line_no = 0;
   curr_winning_streak = 0;
+  curr_winning_streak_sum_delta = 0;
   longest_winning_streak = 0;
+  longest_winning_streak_sum_delta = 0;
 
   for ( ; ; ) {
     GetLine(fptr,line,&line_len,MAX_LINE_LEN);
@@ -41,21 +45,26 @@ int main(int argc,char **argv)
 
     sscanf(line,"%d",&delta);
 
-    if (delta > 0)
+    if (delta > 0) {
       curr_winning_streak++;
+      curr_winning_streak_sum_delta += delta;
+    }
     else {
       if (curr_winning_streak) {
-        if (curr_winning_streak > longest_winning_streak)
+        if (curr_winning_streak > longest_winning_streak) {
           longest_winning_streak = curr_winning_streak;
+          longest_winning_streak_sum_delta = curr_winning_streak_sum_delta;
+        }
 
         curr_winning_streak = 0;
+        curr_winning_streak_sum_delta = 0;
       }
     }
   }
 
   fclose(fptr);
 
-  printf("%d\n",longest_winning_streak);
+  printf("%d (%d)\n",longest_winning_streak,longest_winning_streak_sum_delta);
 
   return 0;
 }
