@@ -13,8 +13,8 @@ static char save_dir[_MAX_PATH];
 static char line[MAX_LINE_LEN];
 
 static char usage[] =
-"usage: underwater_count (-debug) (-verbose) (-diffval) (-reverse) (-only_zero)\n"
-"  filename\n";
+"usage: underwater_count (-debug) (-verbose) (-diffval) (-reverse)\n"
+"  (-only_none) (-only_all) (-only_winning) (-only_losing) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
@@ -26,17 +26,19 @@ int main(int argc,char **argv)
   bool bVerbose;
   bool bDiff;
   bool bReverse;
-  bool bOnlyZero;
+  bool bOnlyNone;
+  bool bOnlyAll;
+  bool bOnlyWinning;
+  bool bOnlyLosing;
   int val;
   FILE *fptr;
   int line_len;
   int line_no;
   int count;
   int work;
-  int starting_amount;
   double pct;
 
-  if ((argc < 2) || (argc > 7)) {
+  if ((argc < 2) || (argc > 10)) {
     printf(usage);
     return 1;
   }
@@ -45,8 +47,10 @@ int main(int argc,char **argv)
   bVerbose = false;
   bDiff = false;
   bReverse = false;
-  bOnlyZero = false;
-  starting_amount = 0;
+  bOnlyNone = false;
+  bOnlyAll = false;
+  bOnlyWinning = false;
+  bOnlyLosing = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-debug")) {
@@ -61,8 +65,14 @@ int main(int argc,char **argv)
     }
     else if (!strcmp(argv[curr_arg],"-reverse"))
       bReverse = true;
-    else if (!strcmp(argv[curr_arg],"-only_zero"))
-      bOnlyZero = true;
+    else if (!strcmp(argv[curr_arg],"-only_none"))
+      bOnlyNone = true;
+    else if (!strcmp(argv[curr_arg],"-only_all"))
+      bOnlyAll = true;
+    else if (!strcmp(argv[curr_arg],"-only_winning"))
+      bOnlyWinning = true;
+    else if (!strcmp(argv[curr_arg],"-only_losing"))
+      bOnlyLosing = true;
     else
       break;
   }
@@ -75,6 +85,26 @@ int main(int argc,char **argv)
   if ((fptr = fopen(argv[curr_arg],"r")) == NULL) {
     printf(couldnt_open,argv[curr_arg]);
     return 3;
+  }
+
+  if (bOnlyNone && bOnlyAll) {
+    printf("can't specify both -only_none and -only_all\n");
+    return 4;
+  }
+
+  if (bOnlyWinning && bOnlyLosing) {
+    printf("can't specify both -only_winning and -only_losing\n");
+    return 5;
+  }
+
+  if (bOnlyNone && bOnlyLosing) {
+    printf("can't specify both -only_none and -only_losing\n");
+    return 6;
+  }
+
+  if (bOnlyAll && bOnlyWinning) {
+    printf("can't specify both -only_all and -only_winning\n");
+    return 7;
   }
 
   line_no = 0;
@@ -91,7 +121,7 @@ int main(int argc,char **argv)
     sscanf(line,"%d",&work);
 
     if (!bReverse) {
-      if (work < starting_amount) {
+      if (work < 0) {
         if (bVerbose)
           printf("%d (%d)\n",work,line_no);
 
@@ -99,7 +129,7 @@ int main(int argc,char **argv)
       }
     }
     else {
-      if (work > starting_amount) {
+      if (work > 0) {
         if (bVerbose)
           printf("%d (%d)\n",work,line_no);
 
@@ -113,12 +143,18 @@ int main(int argc,char **argv)
   pct = (double)count / (double)line_no;
 
   if (!bDiff || (line_no - count == val)) {
-    if (!bOnlyZero || (count == 0)) {
-      if (!bDebug)
-        printf("%lf %3d %3d\n",pct,count,line_no);
-      else {
-        printf("%lf %3d %3d %s\n",pct,count,line_no,
-          save_dir);
+    if (!bOnlyNone || (count == 0)) {
+      if (!bOnlyAll || (count == line_no)) {
+        if (!bOnlyWinning || (work > 0)) {
+          if (!bOnlyLosing || (work < 0)) {
+            if (!bDebug)
+              printf("%lf %3d %3d\n",pct,count,line_no);
+            else {
+              printf("%lf %3d %3d %s\n",pct,count,line_no,
+                save_dir);
+            }
+          }
+        }
       }
     }
   }
