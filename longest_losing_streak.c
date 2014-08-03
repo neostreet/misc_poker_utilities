@@ -13,7 +13,7 @@ static char save_dir[_MAX_PATH];
 static char line[MAX_LINE_LEN];
 
 static char usage[] =
-"usage: longest_losing_streak (-verbose) filename\n";
+"usage: longest_losing_streak (-verbose) (-count_zero_delta_as_loss) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
@@ -22,6 +22,7 @@ int main(int argc,char **argv)
 {
   int curr_arg;
   bool bVerbose;
+  bool bCountZeroDeltaAsLoss;
   FILE *fptr;
   int line_len;
   int line_no;
@@ -31,16 +32,19 @@ int main(int argc,char **argv)
   int longest_losing_streak;
   int longest_losing_streak_sum_delta;
 
-  if ((argc < 2) || (argc > 3)) {
+  if ((argc < 2) || (argc > 4)) {
     printf(usage);
     return 1;
   }
 
   bVerbose = false;
+  bCountZeroDeltaAsLoss = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-verbose"))
       bVerbose = true;
+    else if (!strcmp(argv[curr_arg],"-count_zero_delta_as_loss"))
+      bCountZeroDeltaAsLoss = true;
     else
       break;
   }
@@ -74,7 +78,7 @@ int main(int argc,char **argv)
 
     sscanf(line,"%d",&delta);
 
-    if (delta < 0) {
+    if ((delta < 0) || (bCountZeroDeltaAsLoss && (delta == 0))) {
       curr_losing_streak++;
       curr_losing_streak_sum_delta += delta;
     }
