@@ -29,8 +29,10 @@ int main(int argc,char **argv)
   int delta;
   int curr_losing_streak;
   int curr_losing_streak_sum_delta;
+  int curr_losing_streak_start_ix;
   int longest_losing_streak;
   int longest_losing_streak_sum_delta;
+  int longest_losing_streak_start_ix;
 
   if ((argc < 2) || (argc > 4)) {
     printf(usage);
@@ -81,12 +83,16 @@ int main(int argc,char **argv)
     if ((delta < 0) || (bCountZeroDeltaAsLoss && (delta == 0))) {
       curr_losing_streak++;
       curr_losing_streak_sum_delta += delta;
+
+      if (curr_losing_streak == 1)
+        curr_losing_streak_start_ix = line_no - 1;
     }
     else {
       if (curr_losing_streak) {
         if (curr_losing_streak > longest_losing_streak) {
           longest_losing_streak = curr_losing_streak;
           longest_losing_streak_sum_delta = curr_losing_streak_sum_delta;
+          longest_losing_streak_start_ix = curr_losing_streak_start_ix;
         }
 
         curr_losing_streak = 0;
@@ -100,8 +106,8 @@ int main(int argc,char **argv)
   if (!bVerbose)
     printf("%d (%d)\n",longest_losing_streak,longest_losing_streak_sum_delta);
   else {
-    printf("%d (%d) %s\n",longest_losing_streak,longest_losing_streak_sum_delta,
-      save_dir);
+    printf("%d (%d) %s hand %d\n",longest_losing_streak,longest_losing_streak_sum_delta,
+      save_dir,longest_losing_streak_start_ix + 1);
   }
 
   return 0;

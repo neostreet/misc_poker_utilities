@@ -30,7 +30,9 @@ int main(int argc,char **argv)
   int line_no;
   int count;
   int work;
+  int streak_start_ix;
   int max_streak;
+  int max_streak_start_ix;
 
   if ((argc < 2) || (argc > 5)) {
     printf(usage);
@@ -83,11 +85,17 @@ int main(int argc,char **argv)
 
     sscanf(line,"%d",&work);
 
-    if (work < 0)
+    if (work < 0) {
       count++;
+
+      if (count == 1)
+        streak_start_ix = line_no - 1;
+    }
     else {
-      if (count > max_streak)
+      if (count > max_streak) {
         max_streak = count;
+        max_streak_start_ix = streak_start_ix;
+      }
 
       count = 0;
     }
@@ -100,7 +108,7 @@ int main(int argc,char **argv)
       if (!bDebug)
         printf("%3d\n",max_streak);
       else
-        printf("%3d %s\n",max_streak,save_dir);
+        printf("%3d %s hand %d\n",max_streak,save_dir,max_streak_start_ix + 1);
     }
   }
 

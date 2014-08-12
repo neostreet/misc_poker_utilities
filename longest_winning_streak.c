@@ -28,8 +28,10 @@ int main(int argc,char **argv)
   int delta;
   int curr_winning_streak;
   int curr_winning_streak_sum_delta;
+  int curr_winning_streak_start_ix;
   int longest_winning_streak;
   int longest_winning_streak_sum_delta;
+  int longest_winning_streak_start_ix;
 
   if ((argc < 2) || (argc > 3)) {
     printf(usage);
@@ -77,12 +79,16 @@ int main(int argc,char **argv)
     if (delta > 0) {
       curr_winning_streak++;
       curr_winning_streak_sum_delta += delta;
+
+      if (curr_winning_streak == 1)
+        curr_winning_streak_start_ix = line_no - 1;
     }
     else {
       if (curr_winning_streak) {
         if (curr_winning_streak > longest_winning_streak) {
           longest_winning_streak = curr_winning_streak;
           longest_winning_streak_sum_delta = curr_winning_streak_sum_delta;
+          longest_winning_streak_start_ix = curr_winning_streak_start_ix;
         }
 
         curr_winning_streak = 0;
@@ -96,8 +102,8 @@ int main(int argc,char **argv)
   if (!bVerbose)
     printf("%d (%d)\n",longest_winning_streak,longest_winning_streak_sum_delta);
   else {
-    printf("%d (%d) %s\n",longest_winning_streak,longest_winning_streak_sum_delta,
-      save_dir);
+    printf("%d (%d) %s hand %d\n",longest_winning_streak,longest_winning_streak_sum_delta,
+      save_dir,longest_winning_streak_start_ix + 1);
   }
 
   return 0;
