@@ -17,7 +17,7 @@ static char filename[MAX_FILENAME_LEN];
 static char line[MAX_LINE_LEN];
 
 static char usage[] =
-"usage: fnumdecs (-debug) player_name filename\n";
+"usage: f_action_pct (-debug) player_name filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char in_chips[] = " in chips";
@@ -62,6 +62,8 @@ int main(int argc,char **argv)
   char hole_cards[6];
   int tot_numdecs;
   int numdecs;
+  int tot_action_decs;
+  int action_decs;
   double dwork;
 
   if ((argc < 3) || (argc > 4)) {
@@ -99,6 +101,7 @@ int main(int argc,char **argv)
   hole_cards[5] = 0;
 
   tot_numdecs = 0;
+  tot_action_decs = 0;
 
   for ( ; ; ) {
     GetLine(fptr0,filename,&filename_len,MAX_FILENAME_LEN);
@@ -118,6 +121,7 @@ int main(int argc,char **argv)
 
     line_no = 0;
     numdecs = 0;
+    action_decs = 0;
 
     for ( ; ; ) {
       GetLine(fptr,line,&line_len,MAX_LINE_LEN);
@@ -165,6 +169,7 @@ int main(int argc,char **argv)
           bets,BETS_LEN,
           &ix)) {
           numdecs++;
+          action_decs++;
         }
         else if (Contains(true,
           line,line_len,
@@ -177,6 +182,7 @@ int main(int argc,char **argv)
           raises,RAISES_LEN,
           &ix)) {
           numdecs++;
+          action_decs++;
         }
         else if (Contains(true,
           line,line_len,
@@ -194,9 +200,10 @@ int main(int argc,char **argv)
     fclose(fptr);
 
     if (bDebug)
-      printf("%d %s %s/%s\n",numdecs,hole_cards,save_dir,filename);
+      printf("%d %s %s/%s\n",action_decs,hole_cards,save_dir,filename);
 
     tot_numdecs += numdecs;
+    tot_action_decs += action_decs;
   }
 
   fclose(fptr0);
@@ -204,9 +211,9 @@ int main(int argc,char **argv)
   if (bDebug)
     putchar(0x0a);
 
-  dwork = (double)tot_numdecs / (double)file_no;
+  dwork = (double)tot_action_decs / (double)tot_numdecs;
 
-  printf("%5d %5d %5.2lf %s\n",tot_numdecs,file_no,dwork,save_dir);
+  printf("%5d %5d %6.4lf %s\n",tot_action_decs,tot_numdecs,dwork,save_dir);
 
   return 0;
 }
