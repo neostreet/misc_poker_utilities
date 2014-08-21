@@ -17,7 +17,7 @@ static char line[MAX_LINE_LEN];
 
 static char usage[] =
 "usage: ffelted3 (-debug) (-reverse) (-count) (-exact_countn) (-reupped)\n"
-"  (-consecutive) (-show_zero) (-one_and_done) player_name filename\n";
+"  (-consecutive) (-show_zero) (-one_and_done) (-stud) player_name filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char in_chips[] = " in chips";
@@ -26,6 +26,10 @@ static char summary[] = "*** SUMMARY ***";
 #define SUMMARY_LEN (sizeof (summary) - 1)
 static char street_marker[] = "*** ";
 #define STREET_MARKER_LEN (sizeof (street_marker) - 1)
+static char posts_the_ante[] = " posts the ante ";
+#define POSTS_THE_ANTE_LEN (sizeof (posts_the_ante) - 1)
+static char brings_in_for[] = " brings in for ";
+#define BRINGS_IN_FOR_LEN (sizeof (brings_in_for) - 1)
 static char posts[] = " posts ";
 #define POSTS_LEN (sizeof (posts) - 1)
 static char folds[] = " folds ";
@@ -60,6 +64,7 @@ int main(int argc,char **argv)
   bool bConsecutive;
   bool bShowZero;
   bool bOneAndDone;
+  bool bStud;
   int hit_felt_count;
   int reupped_count;
   int consecutive_hit_felt_count;
@@ -75,7 +80,10 @@ int main(int argc,char **argv)
   int ix;
   int street;
   int num_street_markers;
+  int max_streets;
   int starting_balance;
+  int ante;
+  int bring_in;
   int spent_this_street;
   int spent_this_hand;
   int end_ix;
@@ -91,7 +99,7 @@ int main(int argc,char **argv)
   double dwork2;
   bool bSkipping;
 
-  if ((argc < 3) || (argc > 11)) {
+  if ((argc < 3) || (argc > 12)) {
     printf(usage);
     return 1;
   }
@@ -104,6 +112,7 @@ int main(int argc,char **argv)
   bConsecutive = false;
   bShowZero = false;
   bOneAndDone = false;
+  bStud = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-debug"))
@@ -126,6 +135,8 @@ int main(int argc,char **argv)
     }
     else if (!strcmp(argv[curr_arg],"-one_and_done"))
       bOneAndDone = true;
+    else if (!strcmp(argv[curr_arg],"-stud"))
+      bStud = true;
     else
       break;
   }
@@ -147,6 +158,11 @@ int main(int argc,char **argv)
     printf(couldnt_open,argv[curr_arg]);
     return 4;
   }
+
+  if (!bStud)
+    max_streets = 3;
+  else
+    max_streets = 4;
 
   file_no = 0;
   dbg_file_no = -1;
@@ -227,6 +243,15 @@ int main(int argc,char **argv)
         }
         else if (bSkipping)
           continue;
+        else if (Contains(true,
+          line,line_len,
+          posts_the_ante,POSTS_THE_ANTE_LEN,
+          &ix)) {
+          ante = get_work_amount(line,line_len);
+          spent_this_hand = ante;
+
+          continue;
+        }
         else if (Contains(true,
           line,line_len,
           posts,POSTS_LEN,
@@ -334,6 +359,14 @@ int main(int argc,char **argv)
               line_no,street,work,spent_this_street);
           }
         }
+        else if (bStud && Contains(true,
+          line,line_len,
+          brings_in_for,BRINGS_IN_FOR_LEN,
+          &ix)) {
+          bring_in = get_work_amount(line,line_len);
+          spent_this_street += bring_in;
+          continue;
+        }
       }
       else if (bSkipping)
         continue;
@@ -356,7 +389,7 @@ int main(int argc,char **argv)
           num_street_markers++;
 
           if (num_street_markers > 1) {
-            if (street <= 3)
+            if (street <= num_street_markers)
               spent_this_hand += spent_this_street;
 
             street++;
