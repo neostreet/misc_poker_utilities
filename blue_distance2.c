@@ -8,7 +8,7 @@ static char line[MAX_LINE_LEN];
 
 static char usage[] =
 "usage: blue_distance2 (-terse) (-verbose) (-initial_bal) (-no_dates)\n"
-"  (-only_blue) (-from_nonblue) (-in_sessions) (-is_blue) filename\n";
+"  (-only_blue) (-from_nonblue) (-in_sessions) (-is_blue) (-skyfall) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
@@ -23,6 +23,7 @@ int main(int argc,char **argv)
   bool bFromNonblue;
   bool bInSessions;
   bool bIsBlue;
+  bool bSkyfall;
   bool bPrevIsBlue;
   int initial_bal;
   FILE *fptr;
@@ -34,7 +35,7 @@ int main(int argc,char **argv)
   int max_balance;
   int max_balance_ix;
 
-  if ((argc < 2) || (argc > 10)) {
+  if ((argc < 2) || (argc > 11)) {
     printf(usage);
     return 1;
   }
@@ -46,6 +47,7 @@ int main(int argc,char **argv)
   bFromNonblue = false;
   bInSessions = false;
   bIsBlue = false;
+  bSkyfall = false;
   initial_bal = 0;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
@@ -65,6 +67,8 @@ int main(int argc,char **argv)
       bInSessions = true;
     else if (!strcmp(argv[curr_arg],"-is_blue"))
       bIsBlue = true;
+    else if (!strcmp(argv[curr_arg],"-skyfall"))
+      bSkyfall = true;
     else
       break;
   }
@@ -74,9 +78,14 @@ int main(int argc,char **argv)
     return 2;
   }
 
+  if (bIsBlue && bSkyfall) {
+    printf("can't specify both -is_blue and -skyfall\n");
+    return 3;
+  }
+
   if ((fptr = fopen(argv[curr_arg],"r")) == NULL) {
     printf(couldnt_open,argv[curr_arg]);
-    return 3;
+    return 4;
   }
 
   line_no = 0;
@@ -130,8 +139,10 @@ int main(int argc,char **argv)
         if (!bOnlyBlue) {
           if (!bInSessions) {
             if (!bVerbose) {
-              if (!bIsBlue)
-                printf("%d\t%s\n",max_balance - balance,line);
+              if (!bIsBlue) {
+                if (!bSkyfall || ((delta < 0) && (line_no == max_balance_ix + 1)))
+                  printf("%d\t%s\n",max_balance - balance,line);
+              }
               else {
                 printf("%d %d %d\t\%s\n",max_balance - balance,delta,
                   ((max_balance == balance) ? 1 : 0),line);
