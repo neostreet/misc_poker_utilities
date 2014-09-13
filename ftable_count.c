@@ -103,7 +103,7 @@ int main(int argc,char **argv)
           if (feof(fptr))
             break;
 
-          if (!strncmp(line,"*** HOLE CARDS ***",18))
+          if (!strncmp(line,"*** ",4))
             break;
 
           if (!strncmp(line,"Seat ",5))
