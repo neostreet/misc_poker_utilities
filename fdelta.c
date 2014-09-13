@@ -19,9 +19,13 @@ static char line[MAX_LINE_LEN];
 static char usage[] =
 "usage: fdelta (-terse) (-verbose) (-debug) (-sum) (-avg) (-absolute_value)\n"
 "  (-winning_only) (-losing_only) (-pocket_pairs_only) (-file_names)\n"
-"  (-big_blind) (-stud) player_name filename\n";
+"  (-big_blind) player_name filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
+static char pokerstars[] = "PokerStars";
+#define POKERSTARS_LEN (sizeof (pokerstars) - 1)
+static char stud[] = "7 Card Stud";
+#define STUD_LEN (sizeof (stud) - 1)
 static char in_chips[] = " in chips";
 #define IN_CHIPS_LEN (sizeof (in_chips) - 1)
 static char summary[] = "*** SUMMARY ***";
@@ -118,7 +122,7 @@ int main(int argc,char **argv)
   int curr_big_blind;
   int last_big_blind;
 
-  if ((argc < 3) || (argc > 15)) {
+  if ((argc < 3) || (argc > 14)) {
     printf(usage);
     return 1;
   }
@@ -134,7 +138,6 @@ int main(int argc,char **argv)
   bPocketPairsOnly = false;
   bFileNames = false;
   bBigBlind = false;
-  bStud = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-terse"))
@@ -163,8 +166,6 @@ int main(int argc,char **argv)
     }
     else if (!strcmp(argv[curr_arg],"-big_blind"))
       bBigBlind = true;
-    else if (!strcmp(argv[curr_arg],"-stud"))
-      bStud = true;
     else
       break;
   }
@@ -193,11 +194,6 @@ int main(int argc,char **argv)
     return 5;
   }
 
-  if (!bStud)
-    max_streets = 3;
-  else
-    max_streets = 4;
-
   ending_balance = -1;
 
   file_no = 0;
@@ -205,8 +201,7 @@ int main(int argc,char **argv)
   num_hands = 0;
   bAsterisk = false;
 
-  if (!bStud)
-    hole_cards[5] = 0;
+  hole_cards[5] = 0;
 
   if (bSum || bAvg) {
     sum_deltas = 0;
@@ -260,7 +255,24 @@ int main(int argc,char **argv)
       if (bDebug)
         printf("line %d %s\n",line_no,line);
 
-      if (!strncmp(line,"PokerStars ",11)) {
+      if (Contains(true,
+        line,line_len,
+        pokerstars,POKERSTARS_LEN,
+        &ix)) {
+
+        if (Contains(true,
+          line,line_len,
+          stud,STUD_LEN,
+          &ix)) {
+
+          bStud = true;
+          max_streets = 4;
+        }
+        else {
+          bStud = false;
+          max_streets = 3;
+        }
+
         if (bBigBlind) {
           retval = get_big_blind(line,line_len,&curr_big_blind);
 
