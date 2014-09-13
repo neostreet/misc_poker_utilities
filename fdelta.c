@@ -16,16 +16,21 @@ static char filename[MAX_FILENAME_LEN];
 #define MAX_LINE_LEN 1024
 static char line[MAX_LINE_LEN];
 
+#define MAX_GAME_NAME_LEN 50
+static char game_name[MAX_GAME_NAME_LEN+1];
+
 static char usage[] =
 "usage: fdelta (-terse) (-verbose) (-debug) (-sum) (-avg) (-absolute_value)\n"
 "  (-winning_only) (-losing_only) (-pocket_pairs_only) (-file_names)\n"
-"  (-big_blind) player_name filename\n";
+"  (-big_blind) (-8game) player_name filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char pokerstars[] = "PokerStars";
 #define POKERSTARS_LEN (sizeof (pokerstars) - 1)
 static char stud[] = "7 Card Stud";
 #define STUD_LEN (sizeof (stud) - 1)
+static char eight_game[] = "8-Game";
+#define EIGHT_GAME_LEN (sizeof (eight_game) - 1)
 static char in_chips[] = " in chips";
 #define IN_CHIPS_LEN (sizeof (in_chips) - 1)
 static char summary[] = "*** SUMMARY ***";
@@ -62,6 +67,11 @@ static int get_big_blind(
   int line_len,
   int *big_blind_ptr
 );
+int get_game_name(
+  char *line,
+  int line_len,
+  char *game_name,
+  int max_game_name_len);
 
 int main(int argc,char **argv)
 {
@@ -82,6 +92,7 @@ int main(int argc,char **argv)
   bool bBigBlind;
   bool bStud;
   bool bAsterisk;
+  bool b8game;
   int player_name_ix;
   int player_name_len;
   FILE *fptr0;
@@ -122,7 +133,7 @@ int main(int argc,char **argv)
   int curr_big_blind;
   int last_big_blind;
 
-  if ((argc < 3) || (argc > 14)) {
+  if ((argc < 3) || (argc > 15)) {
     printf(usage);
     return 1;
   }
@@ -138,6 +149,7 @@ int main(int argc,char **argv)
   bPocketPairsOnly = false;
   bFileNames = false;
   bBigBlind = false;
+  b8game = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-terse"))
@@ -166,6 +178,8 @@ int main(int argc,char **argv)
     }
     else if (!strcmp(argv[curr_arg],"-big_blind"))
       bBigBlind = true;
+    else if (!strcmp(argv[curr_arg],"-8game"))
+      b8game = true;
     else
       break;
   }
@@ -273,12 +287,27 @@ int main(int argc,char **argv)
           max_streets = 3;
         }
 
+        if (b8game) {
+          if (Contains(true,
+            line,line_len,
+            eight_game,EIGHT_GAME_LEN,
+            &ix)) {
+
+            retval = get_game_name(line,line_len,game_name,MAX_GAME_NAME_LEN);
+
+            if (retval) {
+              printf("get_game_name() failed on line %d: %d\n",line_no,retval);
+              return 6;
+            }
+          }
+        }
+
         if (bBigBlind) {
           retval = get_big_blind(line,line_len,&curr_big_blind);
 
           if (retval) {
             printf("%s: get_big_blind() failed on line %d: %d\n",filename,line_len,retval);
-            return 6;
+            return 7;
           }
 
           if (file_no > 1) {
@@ -507,8 +536,12 @@ int main(int argc,char **argv)
     }
     else {
       if (bTerse) {
-        if (!bBigBlind)
-          printf("%d\n",delta);
+        if (!bBigBlind) {
+          if (!b8game)
+            printf("%d\n",delta);
+          else
+            printf("%d %s\n",delta,game_name);
+        }
         else
           printf("%d %d\n",delta,curr_big_blind);
       }
@@ -745,6 +778,42 @@ static int get_big_blind(
   n++;
 
   sscanf(&line[n],"%d",big_blind_ptr);
+
+  return 0;
+}
+
+int get_game_name(
+  char *line,
+  int line_len,
+  char *game_name,
+  int max_game_name_len)
+{
+  int m;
+  int n;
+
+  for (n = 0; n < line_len; n++) {
+    if (line[n] == '(')
+      break;
+  }
+
+  if (n == line_len)
+    return 1;
+
+  n++;
+  m = 0;
+
+  for ( ; n < line_len; n++) {
+    if (line[n] == ')')
+      break;
+
+    if (m < max_game_name_len) {
+      game_name[m++] = line[n];
+    }
+    else
+      return 2;
+  }
+
+  game_name[m] = 0;
 
   return 0;
 }
