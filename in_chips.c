@@ -4,9 +4,16 @@
 #define MAX_LINE_LEN 1024
 static char line[MAX_LINE_LEN];
 
-static char usage[] = "usage: in_chips player_name filename\n";
+#define MAX_GAME_NAME_LEN 50
+static char game_name[MAX_GAME_NAME_LEN+1];
+
+static char usage[] = "usage: in_chips (-verbose) player_name filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
+static char pokerstars[] = "PokerStars";
+#define POKERSTARS_LEN (sizeof (pokerstars) - 1)
+static char eight_game[] = "8-Game";
+#define EIGHT_GAME_LEN (sizeof (eight_game) - 1)
 static char in_chips[] = " in chips";
 #define IN_CHIPS_LEN (sizeof (in_chips) - 1)
 
@@ -14,27 +21,50 @@ static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
 static int Contains(bool bCaseSens,char *line,int line_len,
   char *string,int string_len,int *index);
 static char *chips(char *line,int ix);
+int get_game_name(
+  char *line,
+  int line_len,
+  char *game_name,
+  int max_game_name_len);
 
 int main(int argc,char **argv)
 {
+  int curr_arg;
+  bool bVerbose;
   FILE *fptr;
   int line_len;
   int line_no;
   int player_name_ix;
   int player_name_len;
   int ix;
+  bool bHaveGameName;
+  int retval;
 
-  if (argc != 3) {
+  if ((argc < 3) || (argc > 4)) {
     printf(usage);
     return 1;
   }
 
-  player_name_ix = 1;
+  bVerbose = false;
+
+  for (curr_arg = 1; curr_arg < argc; curr_arg++) {
+    if (!strcmp(argv[curr_arg],"-verbose"))
+      bVerbose = true;
+    else
+      break;
+  }
+
+  if (argc - curr_arg != 2) {
+    printf(usage);
+    return 2;
+  }
+
+  player_name_ix = curr_arg;
   player_name_len = strlen(argv[player_name_ix]);
 
-  if ((fptr = fopen(argv[2],"r")) == NULL) {
-    printf(couldnt_open,argv[2]);
-    return 2;
+  if ((fptr = fopen(argv[curr_arg + 1],"r")) == NULL) {
+    printf(couldnt_open,argv[curr_arg + 1]);
+    return 3;
   }
 
   line_no = 0;
@@ -49,6 +79,28 @@ int main(int argc,char **argv)
 
     if (Contains(true,
       line,line_len,
+      pokerstars,POKERSTARS_LEN,
+      &ix)) {
+
+      bHaveGameName = false;
+
+      if (Contains(true,
+        line,line_len,
+        eight_game,EIGHT_GAME_LEN,
+        &ix)) {
+
+        retval = get_game_name(line,line_len,game_name,MAX_GAME_NAME_LEN);
+
+        if (retval) {
+          printf("get_game_name() failed on line %d: %d\n",line_no,retval);
+          return 4;
+        }
+
+        bHaveGameName = true;
+      }
+    }
+    else if (Contains(true,
+      line,line_len,
       argv[player_name_ix],player_name_len,
       &ix)) {
 
@@ -57,7 +109,10 @@ int main(int argc,char **argv)
         in_chips,IN_CHIPS_LEN,
         &ix)) {
 
-        printf("%s\n",chips(line,ix));
+        if (!bVerbose || !bHaveGameName)
+          printf("%s\n",chips(line,ix));
+        else
+          printf("%s %s\n",chips(line,ix),game_name);
       }
     }
   }
@@ -138,4 +193,40 @@ static char *chips(char *line,int ix)
   }
 
   return &line[n+1];
+}
+
+int get_game_name(
+  char *line,
+  int line_len,
+  char *game_name,
+  int max_game_name_len)
+{
+  int m;
+  int n;
+
+  for (n = 0; n < line_len; n++) {
+    if (line[n] == '(')
+      break;
+  }
+
+  if (n == line_len)
+    return 1;
+
+  n++;
+  m = 0;
+
+  for ( ; n < line_len; n++) {
+    if (line[n] == ')')
+      break;
+
+    if (m < max_game_name_len) {
+      game_name[m++] = line[n];
+    }
+    else
+      return 2;
+  }
+
+  game_name[m] = 0;
+
+  return 0;
 }
