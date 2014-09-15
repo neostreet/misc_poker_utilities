@@ -29,6 +29,8 @@ static char pokerstars[] = "PokerStars";
 #define POKERSTARS_LEN (sizeof (pokerstars) - 1)
 static char stud[] = "7 Card Stud";
 #define STUD_LEN (sizeof (stud) - 1)
+static char razz[] = "Razz";
+#define RAZZ_LEN (sizeof (razz) - 1)
 static char eight_game[] = "8-Game";
 #define EIGHT_GAME_LEN (sizeof (eight_game) - 1)
 static char in_chips[] = " in chips";
@@ -91,6 +93,7 @@ int main(int argc,char **argv)
   bool bFileNames;
   bool bBigBlind;
   bool bStud;
+  bool bRazz;
   bool bAsterisk;
   bool b8game;
   int player_name_ix;
@@ -274,18 +277,28 @@ int main(int argc,char **argv)
         pokerstars,POKERSTARS_LEN,
         &ix)) {
 
+        bStud = false;
+        bRazz = false;
+
         if (Contains(true,
           line,line_len,
           stud,STUD_LEN,
           &ix)) {
 
           bStud = true;
+        }
+        else if (Contains(true,
+          line,line_len,
+          razz,RAZZ_LEN,
+          &ix)) {
+
+          bRazz = true;
+        }
+
+        if (bStud || bRazz)
           max_streets = 4;
-        }
-        else {
-          bStud = false;
+        else
           max_streets = 3;
-        }
 
         if (b8game) {
           if (Contains(true,
@@ -350,7 +363,7 @@ int main(int argc,char **argv)
           spent_this_hand = ante;
           continue;
         }
-        else if (bStud && Contains(true,
+        else if ((bStud || bRazz) && Contains(true,
           line,line_len,
           brings_in_for,BRINGS_IN_FOR_LEN,
           &ix)) {
@@ -386,7 +399,7 @@ int main(int argc,char **argv)
                 break;
             }
 
-            if ((m < line_len) && !bStud) {
+            if ((m < line_len) && !bStud && !bRazz) {
               for (p = 0; p < 5; p++)
                 hole_cards[p] = line[n+p];
 
@@ -511,7 +524,7 @@ int main(int argc,char **argv)
 
     fclose(fptr);
 
-    if (bPocketPairsOnly && !bStud)
+    if (bPocketPairsOnly && !bStud && !bRazz)
       if (hole_cards[0] != hole_cards[3])
         continue;
 
@@ -556,13 +569,13 @@ int main(int argc,char **argv)
         }
         else if (!bVerbose) {
           if (!bBigBlind) {
-            if (!bStud)
+            if (!bStud && !bRazz)
               printf("%s %10d\n",hole_cards,delta);
             else
               printf("%10d\n",delta);
           }
           else {
-            if (!bStud) {
+            if (!bStud && !bRazz) {
               printf("%s %10d %5d%s\n",hole_cards,delta,curr_big_blind,
                 (bAsterisk ? "*" : ""));
             }
@@ -574,13 +587,13 @@ int main(int argc,char **argv)
         }
         else {
           if (!bBigBlind) {
-            if (!bStud)
+            if (!bStud && !bRazz)
               printf("%s %10d %s/%s\n",hole_cards,delta,save_dir,filename);
             else
               printf("%10d %s/%s\n",delta,save_dir,filename);
           }
           else {
-            if (!bStud) {
+            if (!bStud && !bRazz) {
               printf("%s %10d %5d %s/%s\n",hole_cards,delta,
                 curr_big_blind,(bAsterisk ? "*" : ""),
                 save_dir,filename);
