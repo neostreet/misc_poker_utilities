@@ -1,6 +1,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#ifdef WIN32
+#include <direct.h>
+#else
+#define _MAX_PATH 4096
+#include <unistd.h>
+#endif
+
+static char save_dir[_MAX_PATH];
 
 #define MAX_FILENAME_LEN 1024
 static char filename[MAX_FILENAME_LEN];
@@ -8,20 +16,28 @@ static char filename[MAX_FILENAME_LEN];
 #define MAX_LINE_LEN 1024
 static char line[MAX_LINE_LEN];
 
+#define MAX_PLAYERS 6
+
 static char usage[] =
-"usage: ftable_count (-genum) (-not) (-terse) (-sum) (-early_exit) filename\n";
+"usage: ftable_count (-genum) (-not) (-terse) (-sum) (-early_exit)\n"
+"  (-exact_countn) (-agg_by_count) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
 
 int main(int argc,char **argv)
 {
+  int n;
   int curr_arg;
   int ge_num;
   bool bNot;
   bool bTerse;
   bool bSum;
   bool bEarlyExit;
+  bool bExactCount;
+  int exact_count;
+  bool bAggByCount;
+  char counts[MAX_PLAYERS];
   FILE *fptr0;
   int filename_len;
   int num_files;
@@ -32,7 +48,7 @@ int main(int argc,char **argv)
   int hand_count;
   bool bSkip;
 
-  if ((argc < 2) || (argc > 7)) {
+  if ((argc < 2) || (argc > 9)) {
     printf(usage);
     return 1;
   }
@@ -42,6 +58,8 @@ int main(int argc,char **argv)
   bTerse = false;
   bSum = false;
   bEarlyExit = false;
+  bExactCount = false;
+  bAggByCount = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strncmp(argv[curr_arg],"-ge",3))
@@ -54,6 +72,12 @@ int main(int argc,char **argv)
       bSum = true;
     else if (!strcmp(argv[curr_arg],"-early_exit"))
       bEarlyExit = true;
+    else if (!strncmp(argv[curr_arg],"-exact_count",12)) {
+      bExactCount = true;
+      sscanf(&argv[curr_arg][12],"%d",&exact_count);
+    }
+    else if (!strcmp(argv[curr_arg],"-agg_by_count"))
+      bAggByCount = true;
     else
       break;
   }
@@ -68,8 +92,15 @@ int main(int argc,char **argv)
     return 3;
   }
 
+  getcwd(save_dir,_MAX_PATH);
+
   if (bSum)
     sum_table_count = 0;
+
+  if (bAggByCount) {
+    for (n = 0; n < MAX_PLAYERS; n++)
+      counts[n] = 0;
+  }
 
   num_files = 0;
 
@@ -115,7 +146,18 @@ int main(int argc,char **argv)
         else {
           bSkip = false;
 
-          if (ge_num != -1) {
+          if (bAggByCount) {
+            bSkip = true;
+
+            if (table_count > MAX_PLAYERS) {
+              printf("%s: table count is too high\n",filename);
+              return 4;
+            }
+
+            table_count--;
+            counts[table_count]++;
+          }
+          else if (ge_num != -1) {
             if (!bNot) {
               if (table_count < ge_num)
                 bSkip = true;
@@ -125,6 +167,8 @@ int main(int argc,char **argv)
                 bSkip = true;
             }
           }
+          else if (bExactCount && (table_count != exact_count))
+            bSkip = true;
 
           if (!bSkip) {
             if (bTerse)
@@ -146,6 +190,16 @@ int main(int argc,char **argv)
 
   if (bSum)
     printf("%d\n",sum_table_count);
+  else if (bAggByCount) {
+    if (bExactCount)
+      printf("%d %s\n",counts[exact_count - 1],save_dir);
+    else {
+      for (n = 0; n < MAX_PLAYERS; n++) {
+        if (counts[n])
+          printf("%d %s\n",counts[n],save_dir);
+      }
+    }
+  }
 
   return 0;
 }
