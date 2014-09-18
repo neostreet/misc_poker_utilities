@@ -194,9 +194,9 @@ int main(int argc,char **argv)
     if (bExactCount)
       printf("%d %s\n",counts[exact_count - 1],save_dir);
     else {
-      for (n = 0; n < MAX_PLAYERS; n++) {
+      for (n = MAX_PLAYERS - 1; (n >= 0); n--) {
         if (counts[n])
-          printf("%d %s\n",counts[n],save_dir);
+          printf("%d %d %s\n",n+1,counts[n],save_dir);
       }
     }
   }
