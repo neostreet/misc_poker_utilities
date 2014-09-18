@@ -74,7 +74,7 @@ int main(int argc,char **argv)
   printf("buy_in entry_fee num_players num_hands place winnings\n\n");
 
   for (n = 0; n < MAX_SIT_AND_GOS; n++) {
-    sprintf(outer_filename,"%c/hands.ls0",letter);
+    sprintf(outer_filename,"%c/sng_hands.ls0",letter);
 
     if ((fptr = fopen(outer_filename,"r")) == NULL)
       break;
