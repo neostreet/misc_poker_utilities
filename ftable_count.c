@@ -150,7 +150,7 @@ int main(int argc,char **argv)
             bSkip = true;
 
             if (table_count > MAX_PLAYERS) {
-              printf("%s: table count is too high\n",filename);
+              printf("%s/%s: table count is too high\n",save_dir,filename);
               return 4;
             }
 
@@ -197,8 +197,12 @@ int main(int argc,char **argv)
     }
     else {
       for (n = MAX_PLAYERS - 1; (n >= 0); n--) {
-        if (counts[n])
-          printf("%d %d %s\n",n+1,counts[n],save_dir);
+        printf("%3d",counts[n]);
+
+        if (n > 0)
+          putchar(' ');
+        else
+          printf(" %s\n",save_dir);
       }
     }
   }
