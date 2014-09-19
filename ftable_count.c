@@ -191,8 +191,10 @@ int main(int argc,char **argv)
   if (bSum)
     printf("%d\n",sum_table_count);
   else if (bAggByCount) {
-    if (bExactCount)
-      printf("%d %s\n",counts[exact_count - 1],save_dir);
+    if (bExactCount) {
+      if (counts[exact_count - 1])
+        printf("%d %s\n",counts[exact_count - 1],save_dir);
+    }
     else {
       for (n = MAX_PLAYERS - 1; (n >= 0); n--) {
         if (counts[n])
