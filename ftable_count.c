@@ -37,7 +37,7 @@ int main(int argc,char **argv)
   bool bExactCount;
   int exact_count;
   bool bAggByCount;
-  char counts[MAX_PLAYERS];
+  char counts[MAX_PLAYERS - 1];
   FILE *fptr0;
   int filename_len;
   int num_files;
@@ -98,7 +98,7 @@ int main(int argc,char **argv)
     sum_table_count = 0;
 
   if (bAggByCount) {
-    for (n = 0; n < MAX_PLAYERS; n++)
+    for (n = 0; n < MAX_PLAYERS - 1; n++)
       counts[n] = 0;
   }
 
@@ -154,7 +154,7 @@ int main(int argc,char **argv)
               return 4;
             }
 
-            table_count--;
+            table_count -= 2;
             counts[table_count]++;
           }
           else if (ge_num != -1) {
@@ -192,11 +192,11 @@ int main(int argc,char **argv)
     printf("%d\n",sum_table_count);
   else if (bAggByCount) {
     if (bExactCount) {
-      if (counts[exact_count - 1])
-        printf("%d %s\n",counts[exact_count - 1],save_dir);
+      if (counts[exact_count - 2])
+        printf("%d %s\n",counts[exact_count - 2],save_dir);
     }
     else {
-      for (n = MAX_PLAYERS - 1; (n >= 0); n--) {
+      for (n = MAX_PLAYERS - 2; (n >= 0); n--) {
         printf("%3d",counts[n]);
 
         if (n > 0)
