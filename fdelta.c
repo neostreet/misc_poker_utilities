@@ -22,7 +22,7 @@ static char game_name[MAX_GAME_NAME_LEN+1];
 static char usage[] =
 "usage: fdelta (-terse) (-verbose) (-debug) (-sum) (-avg) (-absolute_value)\n"
 "  (-winning_only) (-losing_only) (-pocket_pairs_only) (-file_names)\n"
-"  (-big_blind) (-8game) player_name filename\n";
+"  (-big_blind) (-8game) (-all_in) player_name filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char pokerstars[] = "PokerStars";
@@ -59,6 +59,8 @@ static char uncalled_bet[] = "Uncalled bet (";
 #define UNCALLED_BET_LEN (sizeof (uncalled_bet) - 1)
 static char collected[] = " collected ";
 #define COLLECTED_LEN (sizeof (collected) - 1)
+static char all_in[] = "all-in";
+#define ALL_IN_LEN (sizeof (all_in) - 1)
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
 static int Contains(bool bCaseSens,char *line,int line_len,
@@ -96,6 +98,8 @@ int main(int argc,char **argv)
   bool bRazz;
   bool bAsterisk;
   bool b8game;
+  bool bAllIn;
+  bool bHaveAllIn;
   int player_name_ix;
   int player_name_len;
   FILE *fptr0;
@@ -136,7 +140,7 @@ int main(int argc,char **argv)
   int curr_big_blind;
   int last_big_blind;
 
-  if ((argc < 3) || (argc > 15)) {
+  if ((argc < 3) || (argc > 16)) {
     printf(usage);
     return 1;
   }
@@ -153,6 +157,7 @@ int main(int argc,char **argv)
   bFileNames = false;
   bBigBlind = false;
   b8game = false;
+  bAllIn = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-terse"))
@@ -183,6 +188,8 @@ int main(int argc,char **argv)
       bBigBlind = true;
     else if (!strcmp(argv[curr_arg],"-8game"))
       b8game = true;
+    else if (!strcmp(argv[curr_arg],"-all_in"))
+      bAllIn = true;
     else
       break;
   }
@@ -257,6 +264,7 @@ int main(int argc,char **argv)
     uncalled_bet_amount = 0;
     collected_from_pot = 0;
     collected_from_pot_count = 0;
+    bHaveAllIn = false;
 
     for ( ; ; ) {
       GetLine(fptr,line,&line_len,MAX_LINE_LEN);
@@ -337,6 +345,14 @@ int main(int argc,char **argv)
         line,line_len,
         argv[player_name_ix],player_name_len,
         &ix)) {
+
+        if (Contains(true,
+          line,line_len,
+          all_in,ALL_IN_LEN,
+          &ix)) {
+
+          bHaveAllIn = true;
+        }
 
         if (Contains(true,
           line,line_len,
@@ -547,7 +563,7 @@ int main(int argc,char **argv)
           sum_absolute_value_deltas -= delta;
       }
     }
-    else {
+    else if (!bAllIn || bHaveAllIn) {
       if (bTerse) {
         if (!bBigBlind) {
           if (!b8game)
