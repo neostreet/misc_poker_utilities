@@ -22,7 +22,7 @@ static char game_name[MAX_GAME_NAME_LEN+1];
 static char usage[] =
 "usage: fdelta (-terse) (-verbose) (-debug) (-sum) (-avg) (-absolute_value)\n"
 "  (-winning_only) (-losing_only) (-pocket_pairs_only) (-file_names)\n"
-"  (-big_blind) (-8game) (-all_in) player_name filename\n";
+"  (-big_blind) (-8game) (-all_in) (-hand_number) player_name filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char pokerstars[] = "PokerStars";
@@ -100,6 +100,7 @@ int main(int argc,char **argv)
   bool b8game;
   bool bAllIn;
   bool bHaveAllIn;
+  bool bHandNumber;
   int player_name_ix;
   int player_name_len;
   FILE *fptr0;
@@ -140,7 +141,7 @@ int main(int argc,char **argv)
   int curr_big_blind;
   int last_big_blind;
 
-  if ((argc < 3) || (argc > 16)) {
+  if ((argc < 3) || (argc > 17)) {
     printf(usage);
     return 1;
   }
@@ -158,6 +159,7 @@ int main(int argc,char **argv)
   bBigBlind = false;
   b8game = false;
   bAllIn = false;
+  bHandNumber = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-terse"))
@@ -190,6 +192,8 @@ int main(int argc,char **argv)
       b8game = true;
     else if (!strcmp(argv[curr_arg],"-all_in"))
       bAllIn = true;
+    else if (!strcmp(argv[curr_arg],"-hand_number"))
+      bHandNumber = true;
     else
       break;
   }
@@ -566,10 +570,18 @@ int main(int argc,char **argv)
     else if (!bAllIn || bHaveAllIn) {
       if (bTerse) {
         if (!bBigBlind) {
-          if (!b8game)
-            printf("%d\n",delta);
-          else
-            printf("%d %s\n",delta,game_name);
+          if (!b8game) {
+            if (!bHandNumber)
+              printf("%d\n",delta);
+            else
+              printf("%d (%d)\n",delta,num_hands);
+          }
+          else {
+            if (!bHandNumber)
+              printf("%d %s\n",delta,game_name);
+            else
+              printf("%d %s (%d)\n",delta,game_name,num_hands);
+          }
         }
         else
           printf("%d %d\n",delta,curr_big_blind);
