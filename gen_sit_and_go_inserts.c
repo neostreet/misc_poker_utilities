@@ -74,7 +74,7 @@ int main(int argc,char **argv)
   poker_flavor = 3;
 
   for (n = 0; n < MAX_SIT_AND_GOS; n++) {
-    sprintf(outer_filename,"%c/hands.ls0",letter);
+    sprintf(outer_filename,"%c/sng_hands.ls0",letter);
 
     if ((fptr = fopen(outer_filename,"r")) == NULL)
       break;
