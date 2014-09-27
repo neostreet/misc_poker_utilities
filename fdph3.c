@@ -15,7 +15,7 @@ static char filename[MAX_FILENAME_LEN];
 static char line[MAX_LINE_LEN];
 
 static char usage[] =
-"usage: fdph3 (-verbose) (-debug) player_name filename\n";
+"usage: fdph3 (-verbose) (-debug) (-by_file) player_name filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char in_chips[] = " in chips";
@@ -47,6 +47,7 @@ int main(int argc,char **argv)
   int curr_arg;
   bool bVerbose;
   bool bDebug;
+  bool bByFile;
   int player_name_ix;
   int player_name_len;
   FILE *fptr0;
@@ -58,8 +59,9 @@ int main(int argc,char **argv)
   int ix;
   int file_no;
   int dbg_file_no;
+  int outer_total_num_decisions;
   int total_num_decisions;
-  int total_num_hands;
+  int outer_total_num_hands;
   int num_decisions;
   int num_hands;
   int dbg;
@@ -67,19 +69,22 @@ int main(int argc,char **argv)
   bool bSkipping;
   double dwork;
 
-  if ((argc < 3) || (argc > 5)) {
+  if ((argc < 3) || (argc > 6)) {
     printf(usage);
     return 1;
   }
 
   bVerbose = false;
   bDebug = false;
+  bByFile = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-verbose"))
       bVerbose = true;
     else if (!strcmp(argv[curr_arg],"-debug"))
       bDebug = true;
+    else if (!strcmp(argv[curr_arg],"-by_file"))
+      bByFile = true;
     else
       break;
   }
@@ -102,8 +107,8 @@ int main(int argc,char **argv)
 
   hole_cards[5] = 0;
 
-  total_num_decisions = 0;
-  total_num_hands = 0;
+  outer_total_num_decisions = 0;
+  outer_total_num_hands = 0;
 
   for ( ; ; ) {
     GetLine(fptr0,filename,&filename_len,MAX_FILENAME_LEN);
@@ -123,8 +128,8 @@ int main(int argc,char **argv)
 
     line_no = 0;
     bSkipping = false;
+    total_num_decisions = 0;
     num_hands = 0;
-    num_decisions = 0;
 
     for ( ; ; ) {
       GetLine(fptr,line,&line_len,MAX_LINE_LEN);
@@ -236,22 +241,31 @@ int main(int argc,char **argv)
           }
 
           total_num_decisions += num_decisions;
-          total_num_hands++;
         }
       }
     }
 
     fclose(fptr);
+
+    if (bByFile) {
+      dwork = (double)total_num_decisions / (double)num_hands;
+
+      printf("%10d %10d %5.2lf %s\n",total_num_decisions,num_hands,dwork,
+        filename);
+    }
+
+    outer_total_num_decisions += total_num_decisions;
+    outer_total_num_hands += num_hands;
   }
 
   fclose(fptr0);
 
-  dwork = (double)total_num_decisions / (double)total_num_hands;
+  dwork = (double)outer_total_num_decisions / (double)outer_total_num_hands;
 
-  if (bVerbose)
+  if (bVerbose || bByFile)
     putchar(0x0a);
 
-  printf("%10d %10d %5.2lf\n",total_num_decisions,total_num_hands,dwork);
+  printf("%10d %10d %5.2lf\n",outer_total_num_decisions,outer_total_num_hands,dwork);
 
   return 0;
 }
