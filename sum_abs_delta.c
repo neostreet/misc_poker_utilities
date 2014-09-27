@@ -80,13 +80,13 @@ int main(int argc,char **argv)
     if (!bDebug)
       printf("%d\n",total_delta);
     else
-      printf("%s %d\n",save_dir,total_delta);
+      printf("%d %s\n",total_delta,save_dir);
   }
   else {
     if (!bDebug)
       printf("%d (%d)\n",total_delta,line_no);
     else
-      printf("%s %d (%d)\n",save_dir,total_delta,line_no);
+      printf("%d (%d) %s\n",total_delta,line_no,save_dir);
   }
 
   fclose(fptr);

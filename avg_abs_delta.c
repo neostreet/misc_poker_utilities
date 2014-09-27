@@ -83,13 +83,13 @@ int main(int argc,char **argv)
     if (!bDebug)
       printf("%lf\n",avg_abs_delta);
     else
-      printf("%s %lf\n",save_dir,avg_abs_delta);
+      printf("%lf %s\n",avg_abs_delta,save_dir);
   }
   else {
     if (!bDebug)
       printf("%lf (%d %d)\n",avg_abs_delta,total_delta,line_no);
     else
-      printf("%s %lf (%d %d)\n",save_dir,avg_abs_delta,total_delta,line_no);
+      printf("%lf (%d %d) %s\n",avg_abs_delta,total_delta,line_no,save_dir);
   }
 
   fclose(fptr);
