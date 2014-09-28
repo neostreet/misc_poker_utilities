@@ -18,7 +18,6 @@ static char usage[] =
 static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
-static int get_date_from_cwd(char *cwd,char **date_string_ptr);
 
 int main(int argc,char **argv)
 {
@@ -118,42 +117,4 @@ static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen)
 
   line[local_line_len] = 0;
   *line_len = local_line_len;
-}
-
-static char sql_date_string[11];
-
-static int get_date_from_cwd(char *cwd,char **date_string_ptr)
-{
-  int n;
-  int len;
-  int slash_count;
-
-  len = strlen(cwd);
-  slash_count = 0;
-
-  for (n = len - 1; (n >= 0); n--) {
-    if (cwd[n] == '/') {
-      slash_count++;
-
-      if (slash_count == 2)
-        break;
-    }
-  }
-
-  if (slash_count != 2)
-    return 1;
-
-  if (cwd[n+5] != '/')
-    return 2;
-
-  strncpy(sql_date_string,&cwd[n+1],4);
-  sql_date_string[4] = '-';
-  strncpy(&sql_date_string[5],&cwd[n+6],2);
-  sql_date_string[7] = '-';
-  strncpy(&sql_date_string[8],&cwd[n+8],2);
-  sql_date_string[10] = 0;
-
-  *date_string_ptr = sql_date_string;
-
-  return 0;
 }
