@@ -186,7 +186,7 @@ int main(int argc,char **argv)
           line,line_len,
           calls,CALLS_LEN,
           &ix)) {
-          tot_numcalls;
+          tot_numcalls++;
           numdecs++;
         }
         else if (Contains(true,
