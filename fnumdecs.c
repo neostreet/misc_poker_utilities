@@ -17,7 +17,7 @@ static char filename[MAX_FILENAME_LEN];
 static char line[MAX_LINE_LEN];
 
 static char usage[] =
-"usage: fnumdecs (-debug) player_name filename\n";
+"usage: fnumdecs (-debug) (-verbose) player_name filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char in_chips[] = " in chips";
@@ -48,6 +48,7 @@ int main(int argc,char **argv)
   int p;
   int curr_arg;
   bool bDebug;
+  bool bVerbose;
   int player_name_ix;
   int player_name_len;
   FILE *fptr0;
@@ -62,9 +63,14 @@ int main(int argc,char **argv)
   char hole_cards[6];
   int tot_numdecs;
   int numdecs;
+  int tot_numfolds;
+  int tot_numbets;
+  int tot_numcalls;
+  int tot_numraises;
+  int tot_numchecks;
   double dwork;
 
-  if ((argc < 3) || (argc > 4)) {
+  if ((argc < 3) || (argc > 5)) {
     printf(usage);
     return 1;
   }
@@ -72,10 +78,13 @@ int main(int argc,char **argv)
   getcwd(save_dir,_MAX_PATH);
 
   bDebug = false;
+  bVerbose = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-debug"))
       bDebug = true;
+    else if (!strcmp(argv[curr_arg],"-verbose"))
+      bVerbose = true;
     else
       break;
   }
@@ -99,6 +108,11 @@ int main(int argc,char **argv)
   hole_cards[5] = 0;
 
   tot_numdecs = 0;
+  tot_numfolds = 0;
+  tot_numbets = 0;
+  tot_numcalls = 0;
+  tot_numraises = 0;
+  tot_numchecks = 0;
 
   for ( ; ; ) {
     GetLine(fptr0,filename,&filename_len,MAX_FILENAME_LEN);
@@ -156,6 +170,7 @@ int main(int argc,char **argv)
           line,line_len,
           folds,FOLDS_LEN,
           &ix)) {
+          tot_numfolds++;
           numdecs++;
 
           break;
@@ -164,24 +179,28 @@ int main(int argc,char **argv)
           line,line_len,
           bets,BETS_LEN,
           &ix)) {
+          tot_numbets++;
           numdecs++;
         }
         else if (Contains(true,
           line,line_len,
           calls,CALLS_LEN,
           &ix)) {
+          tot_numcalls;
           numdecs++;
         }
         else if (Contains(true,
           line,line_len,
           raises,RAISES_LEN,
           &ix)) {
+          tot_numraises++;
           numdecs++;
         }
         else if (Contains(true,
           line,line_len,
           checks,CHECKS_LEN,
           &ix)) {
+          tot_numchecks++;
           numdecs++;
         }
       }
@@ -206,7 +225,14 @@ int main(int argc,char **argv)
 
   dwork = (double)tot_numdecs / (double)file_no;
 
-  printf("%5d %5d %5.2lf %s\n",tot_numdecs,file_no,dwork,save_dir);
+  if (!bVerbose)
+    printf("%5d %5d %5.2lf %s\n",tot_numdecs,file_no,dwork,save_dir);
+  else {
+    printf("%3d %5d %5.2lf fld %3d bet %3d call %3d rse %3d chk %3d %s\n",
+       tot_numdecs,file_no,dwork,
+       tot_numfolds,tot_numbets,tot_numcalls,tot_numraises,tot_numchecks,
+       save_dir);
+  }
 
   return 0;
 }
