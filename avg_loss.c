@@ -85,13 +85,13 @@ int main(int argc,char **argv)
     if (!bDebug)
       printf("%lf\n",avg_loss);
     else
-      printf("%s %lf\n",save_dir,avg_loss);
+      printf("%lf %s\n",avg_loss,save_dir);
   }
   else {
     if (!bDebug)
       printf("%lf (%d %d)\n",avg_loss,total_losses,line_no);
     else
-      printf("%s %lf (%d %d)\n",save_dir,avg_loss,total_losses,line_no);
+      printf("%lf (%d %d) %s\n",avg_loss,total_losses,line_no,save_dir);
   }
 
   fclose(fptr);
