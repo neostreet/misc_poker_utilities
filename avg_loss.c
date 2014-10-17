@@ -89,9 +89,9 @@ int main(int argc,char **argv)
   }
   else {
     if (!bDebug)
-      printf("%lf (%d %d)\n",avg_loss,total_losses,line_no);
+      printf("%lf (%d %d)\n",avg_loss,total_losses,num_losses);
     else
-      printf("%lf (%d %d) %s\n",avg_loss,total_losses,line_no,save_dir);
+      printf("%lf (%d %d) %s\n",avg_loss,total_losses,num_losses,save_dir);
   }
 
   fclose(fptr);
