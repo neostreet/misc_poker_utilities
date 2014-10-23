@@ -17,7 +17,8 @@ static char line[MAX_LINE_LEN];
 
 static char usage[] =
 "usage: ffelted3 (-debug) (-reverse) (-count) (-exact_countn) (-reupped)\n"
-"  (-consecutive) (-show_zero) (-one_and_done) (-stud) player_name filename\n";
+"  (-consecutive) (-show_zero) (-one_and_done) (-stud)\n"
+"  (-max_felt_distance) player_name filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char in_chips[] = " in chips";
@@ -65,6 +66,7 @@ int main(int argc,char **argv)
   bool bShowZero;
   bool bOneAndDone;
   bool bStud;
+  bool bMaxFeltDistance;
   int hit_felt_count;
   int reupped_count;
   int consecutive_hit_felt_count;
@@ -98,8 +100,12 @@ int main(int argc,char **argv)
   double dwork1;
   double dwork2;
   bool bSkipping;
+  int hand_number;
+  int last_felted_hand_number;
+  int felt_distance;
+  int max_felt_distance;
 
-  if ((argc < 3) || (argc > 12)) {
+  if ((argc < 3) || (argc > 13)) {
     printf(usage);
     return 1;
   }
@@ -113,6 +119,7 @@ int main(int argc,char **argv)
   bShowZero = false;
   bOneAndDone = false;
   bStud = false;
+  bMaxFeltDistance = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-debug"))
@@ -137,6 +144,8 @@ int main(int argc,char **argv)
       bOneAndDone = true;
     else if (!strcmp(argv[curr_arg],"-stud"))
       bStud = true;
+    else if (!strcmp(argv[curr_arg],"-max_felt_distance"))
+      bMaxFeltDistance = true;
     else
       break;
   }
@@ -192,6 +201,12 @@ int main(int argc,char **argv)
     ending_balance = -1;
     reupped_count = 0;
 
+    if (bMaxFeltDistance) {
+      hand_number = 0;
+      last_felted_hand_number = 0;
+      max_felt_distance = 0;
+    }
+
     for ( ; ; ) {
       GetLine(fptr,line,&line_len,MAX_LINE_LEN);
 
@@ -215,6 +230,9 @@ int main(int argc,char **argv)
           line,line_len,
           in_chips,IN_CHIPS_LEN,
           &ix)) {
+
+          if (bMaxFeltDistance)
+            hand_number++;
 
           bSkipping = false;
 
@@ -379,8 +397,18 @@ int main(int argc,char **argv)
 
           ending_balance = starting_balance - spent_this_hand + collected_from_pot;
 
-          if (!ending_balance)
+          if (!ending_balance) {
             hit_felt_count++;
+
+            if (bMaxFeltDistance) {
+              felt_distance = hand_number - last_felted_hand_number;
+
+              if (felt_distance > max_felt_distance)
+                max_felt_distance = felt_distance;
+
+              last_felted_hand_number = hand_number;
+            }
+          }
 
           continue;
         }
@@ -415,8 +443,12 @@ int main(int argc,char **argv)
         }
       }
       else if ((bShowZero || hit_felt_count) && (!bExactCount || (hit_felt_count == exact_count))) {
-        if (!bCount)
-          printf("%s\n",filename);
+        if (!bCount) {
+          if (!bMaxFeltDistance)
+            printf("%s\n",filename);
+          else
+            printf("%7d %s\n",max_felt_distance,filename);
+        }
         else
           printf("%7d %s\n",hit_felt_count,filename);
       }
