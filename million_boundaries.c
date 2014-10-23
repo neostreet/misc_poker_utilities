@@ -4,7 +4,8 @@
 #define MAX_LINE_LEN 1024
 static char line[MAX_LINE_LEN];
 
-static char usage[] = "usage: million_boundaries (-debug) filename\n";
+static char usage[] =
+"usage: million_boundaries (-debug) (-all) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
@@ -13,6 +14,8 @@ int main(int argc,char **argv)
 {
   int curr_arg;
   bool bDebug;
+  bool bAll;
+  bool bCrossed;
   FILE *fptr;
   int line_len;
   int line_no;
@@ -22,16 +25,19 @@ int main(int argc,char **argv)
   int starting_balance;
   int ending_balance;
 
-  if ((argc < 2) || (argc > 3)) {
+  if ((argc < 2) || (argc > 4)) {
     printf(usage);
     return 1;
   }
 
   bDebug = false;
+  bAll = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-debug"))
       bDebug = true;
+    else if (!strcmp(argv[curr_arg],"-all"))
+      bAll = true;
     else
       break;
   }
@@ -47,7 +53,10 @@ int main(int argc,char **argv)
   }
 
   line_no = 0;
-  boundary = 1000000;
+
+  if (!bAll)
+    boundary = 1000000;
+
   last_boundary_ix = 0;
 
   for ( ; ; ) {
@@ -60,7 +69,20 @@ int main(int argc,char **argv)
 
     sscanf(line,"%s\t%d\t%d",&date_str[0],&starting_balance,&ending_balance);
 
-    if ((starting_balance < boundary) && (boundary < ending_balance)) {
+    if (!bAll) {
+      if ((starting_balance < boundary) && (boundary < ending_balance))
+        bCrossed = true;
+      else
+        bCrossed = false;
+    }
+    else {
+      if ((starting_balance / 1000000) != (ending_balance / 1000000))
+        bCrossed = true;
+      else
+        bCrossed = false;
+    }
+
+    if (bCrossed) {
       if (!bDebug) {
         printf("%s\t%d\t%d (%d)\n",date_str,starting_balance,ending_balance,
           line_no - last_boundary_ix);
@@ -71,7 +93,9 @@ int main(int argc,char **argv)
       }
 
       last_boundary_ix = line_no;
-      boundary += 1000000;
+
+      if (!bAll)
+        boundary += 1000000;
     }
   }
 
