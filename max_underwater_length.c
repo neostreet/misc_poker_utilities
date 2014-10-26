@@ -15,7 +15,9 @@ static char line[MAX_LINE_LEN];
 
 struct session_info_struct {
   time_t start_date;
+  int start_ix;
   time_t end_date;
+  int end_ix;
   int ending_amount;
   int max_underwater_length;
 };
@@ -53,7 +55,8 @@ static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
 static int get_session_info(
   char *line,
   int line_len,
-  struct session_info_struct *session_info);
+  struct session_info_struct *session_info,
+  int session_ix);
 static time_t cvt_date(char *date_str);
 int elem_compare(const void *elem1,const void *elem2);
 static char *format_date(char *cpt);
@@ -157,7 +160,8 @@ int main(int argc,char **argv)
         ((chara >= 'A') && (chara <= 'Z')))
       continue;
 
-    retval = get_session_info(line,line_len,&session_info[session_ix]);
+    retval = get_session_info(line,line_len,&session_info[session_ix],
+      session_ix);
 
     if (retval) {
       printf("get_session_info() failed on line %d: %d\n",
@@ -179,6 +183,7 @@ int main(int argc,char **argv)
     if (m > n + 1) {
       session_info[n].max_underwater_length = m - 1 - n;
       session_info[n].end_date = session_info[m].start_date;
+      session_info[n].end_ix = session_info[m].start_ix;
     }
   }
 
@@ -193,7 +198,9 @@ int main(int argc,char **argv)
       printf("%s ",format_date(cpt));
 
       cpt = ctime(&session_info[sort_ixs[n]].end_date);
-      printf("%s\n",format_date(cpt));
+      printf("%s (%d %d)\n",format_date(cpt),
+        session_info[sort_ixs[n]].start_ix,
+        session_info[sort_ixs[n]].end_ix);
     }
   }
 
@@ -231,7 +238,8 @@ static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen)
 static int get_session_info(
   char *line,
   int line_len,
-  struct session_info_struct *session_info)
+  struct session_info_struct *session_info,
+  int session_ix)
 {
   int n;
   int work;
@@ -247,6 +255,7 @@ static int get_session_info(
   line[n++] = 0;
 
   session_info->start_date = cvt_date(line);
+  session_info->start_ix = session_ix;
 
   sscanf(&line[n],"%d",&work);
 
