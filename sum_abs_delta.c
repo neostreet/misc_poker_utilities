@@ -29,7 +29,8 @@ int main(int argc,char **argv)
   int retval;
   char *date_string;
   int delta;
-  int total_delta;
+  int sum_delta;
+  int sum_abs_delta;
   int line_len;
   int line_no;
 
@@ -78,7 +79,8 @@ int main(int argc,char **argv)
   }
 
   line_no = 0;
-  total_delta = 0;
+  sum_delta = 0;
+  sum_abs_delta = 0;
 
   for ( ; ; ) {
     GetLine(fptr,line,&line_len,MAX_LINE_LEN);
@@ -90,31 +92,38 @@ int main(int argc,char **argv)
 
     sscanf(line,"%d",&delta);
 
+    if (bVerbose)
+      sum_delta += delta;
+
     if (delta < 0)
       delta *= -1;
 
-    total_delta += delta;
+    sum_abs_delta += delta;
   }
 
   if (!bVerbose) {
     if (!bDebug) {
       if (!bGetDateFromCwd)
-        printf("%d\n",total_delta);
+        printf("%d\n",sum_abs_delta);
       else
-        printf("%d %s\n",total_delta,date_string);
+        printf("%d %s\n",sum_abs_delta,date_string);
     }
     else
-      printf("%d %s\n",total_delta,save_dir);
+      printf("%d %s\n",sum_abs_delta,save_dir);
   }
   else {
     if (!bDebug) {
-      if (!bGetDateFromCwd)
-        printf("%d (%d)\n",total_delta,line_no);
+      if (!bGetDateFromCwd) {
+        printf("%d (%d) %c\n",sum_abs_delta,line_no,
+          (sum_delta > 0 ? 'w' : 'l'));
+      }
       else
-        printf("%d (%d) %s\n",total_delta,line_no,date_string);
+        printf("%d (%d) %c %s\n",sum_abs_delta,line_no,
+          (sum_delta > 0 ? 'w' : 'l'),date_string);
     }
     else
-      printf("%d (%d) %s\n",total_delta,line_no,save_dir);
+      printf("%d (%d) %c %s\n",sum_abs_delta,line_no,
+        (sum_delta > 0 ? 'w' : 'l'),save_dir);
   }
 
   fclose(fptr);
