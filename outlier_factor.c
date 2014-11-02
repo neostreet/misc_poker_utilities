@@ -13,7 +13,7 @@ static char save_dir[_MAX_PATH];
 static char line[MAX_LINE_LEN];
 
 static char usage[] =
-"usage: outlier_factor (-debug) (-verbose) filename\n";
+"usage: outlier_factor (-debug) (-verbose) (-abs_val) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
@@ -23,23 +23,26 @@ int main(int argc,char **argv)
   int curr_arg;
   bool bDebug;
   bool bVerbose;
+  bool bAbsVal;
   FILE *fptr;
-  int num_winning_hands;
-  int total_winning_deltas;
+  int num_hands;
+  int total_deltas;
   int max_winning_delta;
   int work;
+  int abs_work;
   double avg_gain;
   double outlier_factor;
   int line_len;
   int line_no;
 
-  if ((argc < 2) || (argc > 4)) {
+  if ((argc < 2) || (argc > 5)) {
     printf(usage);
     return 1;
   }
 
   bDebug = false;
   bVerbose = false;
+  bAbsVal = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-debug")) {
@@ -48,6 +51,8 @@ int main(int argc,char **argv)
     }
     else if (!strcmp(argv[curr_arg],"-verbose"))
       bVerbose = true;
+    else if (!strcmp(argv[curr_arg],"-abs_val"))
+      bAbsVal = true;
     else
       break;
   }
@@ -63,8 +68,8 @@ int main(int argc,char **argv)
   }
 
   line_no = 0;
-  num_winning_hands = 0;
-  total_winning_deltas = 0;
+  num_hands = 0;
+  total_deltas = 0;
   max_winning_delta = 0;
 
   for ( ; ; ) {
@@ -77,9 +82,14 @@ int main(int argc,char **argv)
 
     sscanf(line,"%d",&work);
 
-    if (work > 0) {
-      num_winning_hands++;
-      total_winning_deltas += work;
+    if (work < 0)
+      abs_work = work * -1;
+    else
+      abs_work = work;
+
+    if (bAbsVal || (work > 0)) {
+      num_hands++;
+      total_deltas += abs_work;
 
       if (work > max_winning_delta)
         max_winning_delta = work;
@@ -88,9 +98,9 @@ int main(int argc,char **argv)
 
   fclose(fptr);
 
-  if (num_winning_hands > 1) {
-    total_winning_deltas -= max_winning_delta;
-    avg_gain = (double)total_winning_deltas / (double)(num_winning_hands - 1);
+  if (num_hands > 1) {
+    total_deltas -= max_winning_delta;
+    avg_gain = (double)total_deltas / (double)(num_hands - 1);
     outlier_factor = (double)max_winning_delta / avg_gain;
 
     if (!bDebug) {
