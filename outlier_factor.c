@@ -98,7 +98,7 @@ int main(int argc,char **argv)
 
   fclose(fptr);
 
-  if (num_hands > 1) {
+  if ((num_hands > 1) && (max_winning_delta > 0)) {
     total_deltas -= max_winning_delta;
     avg_gain = (double)total_deltas / (double)(num_hands - 1);
     outlier_factor = (double)max_winning_delta / avg_gain;
