@@ -20,6 +20,7 @@ static char usage[] =
 "  (-consecutive) (-show_zero) (-one_and_done) (-stud)\n"
 "  (-max_felt_distance) player_name filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
+static char fmt1[] = "%s\t%d\n";
 
 static char in_chips[] = " in chips";
 #define IN_CHIPS_LEN (sizeof (in_chips) - 1)
@@ -50,6 +51,7 @@ static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
 static int Contains(bool bCaseSens,char *line,int line_len,
   char *string,int string_len,int *index);
 int get_work_amount(char *line,int line_len);
+static int get_date_from_path(char *path,char slash_char,int num_slashes,char **date_string_ptr);
 
 int main(int argc,char **argv)
 {
@@ -78,6 +80,7 @@ int main(int argc,char **argv)
   FILE *fptr;
   int line_len;
   int line_no;
+  int retval;
   int dbg_line_no;
   int ix;
   int street;
@@ -104,6 +107,7 @@ int main(int argc,char **argv)
   int last_felted_hand_number;
   int felt_distance;
   int max_felt_distance;
+  char *date_string;
 
   if ((argc < 3) || (argc > 13)) {
     printf(usage);
@@ -185,7 +189,6 @@ int main(int argc,char **argv)
     if (feof(fptr0))
       break;
 
-    strcpy(prev_filename,filename);
     file_no++;
 
     if (dbg_file_no == file_no)
@@ -195,6 +198,15 @@ int main(int argc,char **argv)
       printf(couldnt_open,filename);
       continue;
     }
+
+    retval = get_date_from_path(filename,'\\',3,&date_string);
+
+    if (retval) {
+      printf("get_date_from_path() on %s failed: %d\n",filename,retval);
+      continue;
+    }
+
+    strcpy(prev_filename,date_string);
 
     line_no = 0;
     hit_felt_count = 0;
@@ -438,7 +450,7 @@ int main(int argc,char **argv)
         consecutive_hit_felt_count += hit_felt_count;
 
         if (ending_balance && (consecutive_hit_felt_count > 0)) {
-          printf("%7d %s\n",consecutive_hit_felt_count,filename);
+          printf(fmt1,date_string,consecutive_hit_felt_count);
           consecutive_hit_felt_count = 0;
         }
       }
@@ -447,10 +459,10 @@ int main(int argc,char **argv)
           if (!bMaxFeltDistance)
             printf("%s\n",filename);
           else
-            printf("%7d %s\n",max_felt_distance,filename);
+            printf(fmt1,date_string,max_felt_distance);
         }
         else
-          printf("%7d %s\n",hit_felt_count,filename);
+          printf(fmt1,date_string,hit_felt_count);
       }
     }
     else {
@@ -462,7 +474,7 @@ int main(int argc,char **argv)
   }
 
   if (bConsecutive && (consecutive_hit_felt_count > 0))
-    printf("%7d %s\n",consecutive_hit_felt_count,prev_filename);
+    printf(fmt1,prev_filename,consecutive_hit_felt_count);
 
   fclose(fptr0);
 
@@ -556,4 +568,42 @@ int get_work_amount(char *line,int line_len)
   sscanf(&line[ix+1],"%d",&work_amount);
 
   return work_amount;
+}
+
+static char sql_date_string[11];
+
+static int get_date_from_path(char *path,char slash_char,int num_slashes,char **date_string_ptr)
+{
+  int n;
+  int len;
+  int slash_count;
+
+  len = strlen(path);
+  slash_count = 0;
+
+  for (n = len - 1; (n >= 0); n--) {
+    if (path[n] == slash_char) {
+      slash_count++;
+
+      if (slash_count == num_slashes)
+        break;
+    }
+  }
+
+  if (slash_count != num_slashes)
+    return 1;
+
+  if (path[n+5] != slash_char)
+    return 2;
+
+  strncpy(sql_date_string,&path[n+1],4);
+  sql_date_string[4] = '-';
+  strncpy(&sql_date_string[5],&path[n+6],2);
+  sql_date_string[7] = '-';
+  strncpy(&sql_date_string[8],&path[n+8],2);
+  sql_date_string[10] = 0;
+
+  *date_string_ptr = sql_date_string;
+
+  return 0;
 }
