@@ -14,7 +14,8 @@ static char line[MAX_LINE_LEN];
 
 static char usage[] =
 "usage: underwater_count (-debug) (-verbose) (-diffval) (-reverse)\n"
-"  (-only_none) (-only_all) (-only_winning) (-only_losing) filename\n";
+"  (-only_none) (-only_all) (-only_winning) (-only_losing) (-exact_countn)\n"
+"  (-le_countn) (-ge_countn) (-last_one_counts) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
@@ -30,6 +31,14 @@ int main(int argc,char **argv)
   bool bOnlyAll;
   bool bOnlyWinning;
   bool bOnlyLosing;
+  bool bExactCount;
+  bool bLeCount;
+  bool bGeCount;
+  bool bLastOneCounts;
+  int exact_count;
+  int le_count;
+  int ge_count;
+  bool bCurrentOneCounts;
   int val;
   FILE *fptr;
   int line_len;
@@ -38,7 +47,7 @@ int main(int argc,char **argv)
   int work;
   double pct;
 
-  if ((argc < 2) || (argc > 10)) {
+  if ((argc < 2) || (argc > 14)) {
     printf(usage);
     return 1;
   }
@@ -51,6 +60,10 @@ int main(int argc,char **argv)
   bOnlyAll = false;
   bOnlyWinning = false;
   bOnlyLosing = false;
+  bExactCount = false;
+  bLeCount = false;
+  bGeCount = false;
+  bLastOneCounts = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-debug")) {
@@ -73,6 +86,20 @@ int main(int argc,char **argv)
       bOnlyWinning = true;
     else if (!strcmp(argv[curr_arg],"-only_losing"))
       bOnlyLosing = true;
+    else if (!strncmp(argv[curr_arg],"-exact_count",12)) {
+      bExactCount = true;
+      sscanf(&argv[curr_arg][12],"%d",&exact_count);
+    }
+    else if (!strncmp(argv[curr_arg],"-le_count",9)) {
+      bLeCount = true;
+      sscanf(&argv[curr_arg][9],"%d",&le_count);
+    }
+    else if (!strncmp(argv[curr_arg],"-ge_count",9)) {
+      bGeCount = true;
+      sscanf(&argv[curr_arg][9],"%d",&ge_count);
+    }
+    else if (!strcmp(argv[curr_arg],"-last_one_counts"))
+      bLastOneCounts = true;
     else
       break;
   }
@@ -107,6 +134,21 @@ int main(int argc,char **argv)
     return 7;
   }
 
+  if (bExactCount && bLeCount) {
+    printf("can't specify both -exact_countn and -le_countn\n");
+    return 8;
+  }
+
+  if (bExactCount && bGeCount) {
+    printf("can't specify both -exact_countn and -ge_countn\n");
+    return 9;
+  }
+
+  if (bLeCount && bGeCount && (le_count < ge_count)) {
+    printf("le_count must be >= ge_count\n");
+    return 10;
+  }
+
   line_no = 0;
   count = 0;
 
@@ -119,6 +161,7 @@ int main(int argc,char **argv)
     line_no++;
 
     sscanf(line,"%d",&work);
+    bCurrentOneCounts = false;
 
     if (!bReverse) {
       if (work < 0) {
@@ -126,6 +169,7 @@ int main(int argc,char **argv)
           printf("%d (%d)\n",work,line_no);
 
         count++;
+        bCurrentOneCounts = true;
       }
     }
     else {
@@ -134,6 +178,7 @@ int main(int argc,char **argv)
           printf("%d (%d)\n",work,line_no);
 
         count++;
+        bCurrentOneCounts = true;
       }
     }
   }
@@ -147,11 +192,19 @@ int main(int argc,char **argv)
       if (!bOnlyAll || (count == line_no)) {
         if (!bOnlyWinning || (work > 0)) {
           if (!bOnlyLosing || (work < 0)) {
-            if (!bDebug)
-              printf("%lf %3d %3d\n",pct,count,line_no);
-            else {
-              printf("%lf %3d %3d %s\n",pct,count,line_no,
-                save_dir);
+            if (!bExactCount || (count == exact_count)) {
+              if (!bLeCount || (count <= le_count)) {
+                if (!bGeCount || (count >= ge_count)) {
+                  if (!bLastOneCounts || bCurrentOneCounts) {
+                    if (!bDebug)
+                      printf("%lf %3d %3d\n",pct,count,line_no);
+                    else {
+                      printf("%lf %3d %3d %s\n",pct,count,line_no,
+                        save_dir);
+                    }
+                  }
+                }
+              }
             }
           }
         }
