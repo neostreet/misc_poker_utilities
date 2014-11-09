@@ -100,29 +100,21 @@ int main(int argc,char **argv)
     sscanf(line,"%s\t%d",str,&delta);
 
     if (!line_no) {
+      max_balance_ix = 0;
+
       if (initial_bal) {
         if (delta < 0) {
           max_balance = initial_bal;
-          max_balance_ix = -1;
           balance = initial_bal + delta;
         }
         else {
           max_balance = initial_bal + delta;
-          max_balance_ix = 0;
           balance = max_balance;
         }
       }
       else {
-        if (delta < 0) {
-          max_balance = delta * -1;
-          max_balance_ix = -1;
-          balance = 0;
-        }
-        else {
-          max_balance = delta;
-          max_balance_ix = 0;
-          balance = max_balance;
-        }
+        max_balance = delta;
+        balance = max_balance;
       }
     }
     else {
@@ -140,36 +132,52 @@ int main(int argc,char **argv)
           if (!bInSessions) {
             if (!bVerbose) {
               if (!bIsBlue) {
-                if (!bSkyfall || ((delta < 0) && (line_no == max_balance_ix + 1)))
-                  printf("%d\t%s\n",max_balance - balance,line);
+                if (!bSkyfall || ((delta < 0) && (line_no == max_balance_ix + 1))) {
+                  printf("%d\t%s\n",
+                  ((max_balance > 0) ? max_balance - balance : max_balance * -1),
+                  line);
+                }
               }
               else {
-                printf("%d %d %d\t\%s\n",max_balance - balance,delta,
+                printf("%d %d %d\t\%s\n",
+                  ((max_balance > 0) ? max_balance - balance : max_balance * -1),
+                  delta,
                   ((max_balance == balance) ? 1 : 0),line);
               }
             }
             else {
               if (!bIsBlue) {
-                printf("%d (%d %d)\t%s\n",max_balance - balance,
-                  max_balance,balance,line);
+                printf("%d (%d %d %d)\t%s\n",
+                  ((max_balance > 0) ? max_balance - balance : max_balance * -1),
+                  ((max_balance > 0) ? max_balance : 0),
+                  balance,
+                  ((max_balance > 0) ? line_no - max_balance_ix : line_no + 1),
+                  line);
               }
               else {
-                printf("%d (%d %d) %d %d\t%s\n",max_balance - balance,
-                  max_balance,balance,delta,
+                printf("%d (%d %d %d) %d %d\t%s\n",
+                  ((max_balance > 0) ? max_balance - balance : max_balance * -1),
+                  ((max_balance > 0) ? max_balance : 0),
+                  balance,
+                  ((max_balance > 0) ? line_no - max_balance_ix : line_no + 1),
+                  delta,
                   ((max_balance == balance) ? 1 : 0),line);
               }
             }
           }
-          else
-            printf("%d\t%s\n",line_no - max_balance_ix,line);
+          else {
+            printf("%d\t%s\n",
+              ((max_balance > 0) ? line_no - max_balance_ix : line_no + 1),
+              line);
+          }
         }
         else {
-          if (line_no == max_balance_ix) {
+          if ((max_balance > 0) && (line_no == max_balance_ix)) {
             if (!bFromNonblue || !bPrevIsBlue) {
               if (!bVerbose)
-                printf("%10d %10d %s\n",delta,max_balance,line);
+                printf("%10d %s\n",max_balance,line);
               else
-                printf("%10d %10d %s (%d)\n",delta,max_balance,line,line_no);
+                printf("%10d %s (%d)\n",max_balance,line,line_no);
             }
 
             bPrevIsBlue = true;
@@ -180,15 +188,22 @@ int main(int argc,char **argv)
       }
       else {
         if (!bInSessions) {
-          if (!bVerbose)
-            printf("%d\n",max_balance - balance);
+          if (!bVerbose) {
+            printf("%d\n",
+              ((max_balance > 0) ? max_balance - balance : max_balance * -1));
+          }
           else {
-            printf("%d (%d %d)\n",max_balance - balance,
-              max_balance,balance);
+            printf("%d (%d %d %d)\n",
+              ((max_balance > 0) ? max_balance - balance : max_balance * -1),
+              ((max_balance > 0) ? max_balance : 0),
+              balance,
+              ((max_balance > 0) ? line_no - max_balance_ix : line_no + 1));
           }
         }
-        else
-          printf("%d\n",line_no - max_balance_ix);
+        else {
+          printf("%d\n",
+            ((max_balance > 0) ? line_no - max_balance_ix : line_no + 1));
+        }
       }
     }
 
@@ -197,16 +212,26 @@ int main(int argc,char **argv)
 
   if (bTerse) {
     if (!bNoDates) {
-      if (!bInSessions)
-        printf("%d\t%s\n",max_balance - balance,line);
-      else
-        printf("%d\t%s\n",line_no - max_balance_ix,line);
+      if (!bInSessions) {
+        printf("%d\t%s\n",
+          ((max_balance > 0) ? max_balance - balance : max_balance * -1),
+          line);
+      }
+      else {
+        printf("%d\t%s\n",
+          ((max_balance > 0) ? line_no - max_balance_ix : line_no + 1),
+          line);
+      }
     }
     else {
-      if (!bInSessions)
-        printf("%d\n",max_balance - balance);
-      else
-        printf("%d\n",line_no - max_balance_ix);
+      if (!bInSessions) {
+        printf("%d\n",
+          ((max_balance > 0) ? max_balance - balance : max_balance * -1));
+      }
+      else {
+        printf("%d\n",
+          ((max_balance > 0) ? line_no - max_balance_ix : line_no + 1));
+      }
     }
   }
 
