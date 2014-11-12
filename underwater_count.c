@@ -15,10 +15,12 @@ static char line[MAX_LINE_LEN];
 static char usage[] =
 "usage: underwater_count (-debug) (-verbose) (-terse) (-diffval) (-reverse)\n"
 "  (-only_none) (-only_all) (-only_winning) (-only_losing) (-exact_countn)\n"
-"  (-le_countn) (-ge_countn) (-last_one_counts) (-get_date_from_path) filename\n";
+"  (-le_countn) (-ge_countn) (-last_one_counts) (-get_date_from_path)\n"
+"  (-avg_loss) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 static char fmt_str1[] = "%s\n";
 static char fmt_str2[] = "%lf %3d %3d %s\n";
+static char fmt_str3[] = "%7.2lf %d %d %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
 static int get_date_from_path(char *path,char slash_char,int num_slashes,char **date_string_ptr);
@@ -40,6 +42,7 @@ int main(int argc,char **argv)
   bool bGeCount;
   bool bLastOneCounts;
   bool bGetDateFromPath;
+  bool bAvgLoss;
   int exact_count;
   int le_count;
   int ge_count;
@@ -53,8 +56,9 @@ int main(int argc,char **argv)
   int count;
   int work;
   double pct;
+  double avg_loss;
 
-  if ((argc < 2) || (argc > 16)) {
+  if ((argc < 2) || (argc > 17)) {
     printf(usage);
     return 1;
   }
@@ -73,6 +77,7 @@ int main(int argc,char **argv)
   bGeCount = false;
   bLastOneCounts = false;
   bGetDateFromPath = false;
+  bAvgLoss = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-debug"))
@@ -111,6 +116,8 @@ int main(int argc,char **argv)
       bLastOneCounts = true;
     else if (!strcmp(argv[curr_arg],"-get_date_from_path"))
       bGetDateFromPath = true;
+    else if (!strcmp(argv[curr_arg],"-avg_loss"))
+      bAvgLoss = true;
     else
       break;
   }
@@ -119,6 +126,9 @@ int main(int argc,char **argv)
     printf(usage);
     return 2;
   }
+
+  if (bAvgLoss)
+    bOnlyAll = true;
 
   if (bDebug || bGetDateFromPath)
     getcwd(save_dir,_MAX_PATH);
@@ -219,6 +229,9 @@ int main(int argc,char **argv)
               if (!bLeCount || (count <= le_count)) {
                 if (!bGeCount || (count >= ge_count)) {
                   if (!bLastOneCounts || bCurrentOneCounts) {
+                    if (bAvgLoss)
+                      avg_loss = (double)work / (double)line_no;
+
                     if (bTerse) {
                       if (!bGetDateFromPath)
                         printf(fmt_str1,save_dir);
@@ -228,10 +241,18 @@ int main(int argc,char **argv)
                     else if (!bDebug)
                       printf("%lf %3d %3d\n",pct,count,line_no);
                     else {
-                      if (!bGetDateFromPath)
-                        printf(fmt_str2,pct,count,line_no,save_dir);
-                      else
-                        printf(fmt_str2,pct,count,line_no,date_string);
+                      if (!bGetDateFromPath) {
+                        if (!bAvgLoss)
+                          printf(fmt_str2,pct,count,line_no,save_dir);
+                        else
+                          printf(fmt_str3,avg_loss,work,line_no,save_dir);
+                      }
+                      else {
+                        if (!bAvgLoss)
+                          printf(fmt_str2,pct,count,line_no,date_string);
+                        else
+                          printf(fmt_str3,avg_loss,work,line_no,date_string);
+                      }
                     }
                   }
                 }
