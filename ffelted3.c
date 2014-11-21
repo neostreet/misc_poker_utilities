@@ -20,7 +20,7 @@ static char usage[] =
 "  (-consecutive) (-show_zero) (-one_and_done) (-stud)\n"
 "  (-max_felt_distance) player_name filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
-static char fmt1[] = "%s\t%d\n";
+static char fmt[] = "%d\t%s\n";
 
 static char in_chips[] = " in chips";
 #define IN_CHIPS_LEN (sizeof (in_chips) - 1)
@@ -450,7 +450,7 @@ int main(int argc,char **argv)
         consecutive_hit_felt_count += hit_felt_count;
 
         if (ending_balance && (consecutive_hit_felt_count > 0)) {
-          printf(fmt1,date_string,consecutive_hit_felt_count);
+          printf(fmt,consecutive_hit_felt_count,date_string);
           consecutive_hit_felt_count = 0;
         }
       }
@@ -459,10 +459,10 @@ int main(int argc,char **argv)
           if (!bMaxFeltDistance)
             printf("%s\n",filename);
           else
-            printf(fmt1,date_string,max_felt_distance);
+            printf(fmt,max_felt_distance,date_string);
         }
         else
-          printf(fmt1,date_string,hit_felt_count);
+          printf(fmt,hit_felt_count,date_string);
       }
     }
     else {
@@ -474,7 +474,7 @@ int main(int argc,char **argv)
   }
 
   if (bConsecutive && (consecutive_hit_felt_count > 0))
-    printf(fmt1,prev_filename,consecutive_hit_felt_count);
+    printf(fmt,consecutive_hit_felt_count,prev_filename);
 
   fclose(fptr0);
 
