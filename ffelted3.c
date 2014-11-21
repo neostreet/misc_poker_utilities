@@ -160,9 +160,12 @@ int main(int argc,char **argv)
   }
 
   if (bExactCount && bOneAndDone) {
-    printf("can't specify boht -exact_countn and -one_and_done\n");
+    printf("can't specify both -exact_countn and -one_and_done\n");
     return 3;
   }
+
+  if (bExactCount && !exact_count)
+    bShowZero = true;
 
   player_name_ix = curr_arg++;
   player_name_len = strlen(argv[player_name_ix]);
