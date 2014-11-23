@@ -22,7 +22,8 @@ static char line[MAX_LINE_LEN];
 
 #define TAB 0x9
 
-static char usage[] = "usage: sessions_by_weekday filename\n";
+static char usage[] =
+"usage: sessions_by_weekday (-terse) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 struct digit_range {
@@ -43,6 +44,8 @@ static int get_weekday(char *cpt,int *ix);
 int main(int argc,char **argv)
 {
   int n;
+  int curr_arg;
+  bool bTerse;
   FILE *fptr;
   int line_len;
   int line_no;
@@ -51,14 +54,28 @@ int main(int argc,char **argv)
   char *cpt;
   int ix;
 
-  if (argc != 2) {
+  if ((argc < 2) || (argc > 3)) {
     printf(usage);
     return 1;
   }
 
-  if ((fptr = fopen(argv[1],"r")) == NULL) {
-    printf(couldnt_open,argv[1]);
+  bTerse = false;
+
+  for (curr_arg = 1; curr_arg < argc; curr_arg++) {
+    if (!strcmp(argv[curr_arg],"-terse"))
+      bTerse = true;
+    else
+      break;
+  }
+
+  if (argc - curr_arg != 1) {
+    printf(usage);
     return 2;
+  }
+
+  if ((fptr = fopen(argv[curr_arg],"r")) == NULL) {
+    printf(couldnt_open,argv[curr_arg]);
+    return 3;
   }
 
   line_no = 0;
@@ -87,8 +104,12 @@ int main(int argc,char **argv)
 
   fclose(fptr);
 
-  for (n = 0; n < NUM_WEEKDAYS; n++)
-    printf("%s: %5d\n",weekdays[n],weekday_num_sessions[n]);
+  for (n = 0; n < NUM_WEEKDAYS; n++) {
+    if (!bTerse)
+      printf("%s: %5d\n",weekdays[n],weekday_num_sessions[n]);
+    else
+      printf("%d\n",weekday_num_sessions[n]);
+  }
 
   return 0;
 }
