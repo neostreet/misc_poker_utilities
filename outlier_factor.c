@@ -13,7 +13,7 @@ static char save_dir[_MAX_PATH];
 static char line[MAX_LINE_LEN];
 
 static char usage[] =
-"usage: outlier_factor (-debug) (-verbose) (-abs_val) filename\n";
+"usage: outlier_factor (-debug) (-verbose) (-abs_val) (-only_pos) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
@@ -24,6 +24,7 @@ int main(int argc,char **argv)
   bool bDebug;
   bool bVerbose;
   bool bAbsVal;
+  bool bOnlyPos;
   FILE *fptr;
   int num_hands;
   int total_deltas;
@@ -35,7 +36,7 @@ int main(int argc,char **argv)
   int line_len;
   int line_no;
 
-  if ((argc < 2) || (argc > 5)) {
+  if ((argc < 2) || (argc > 6)) {
     printf(usage);
     return 1;
   }
@@ -43,6 +44,7 @@ int main(int argc,char **argv)
   bDebug = false;
   bVerbose = false;
   bAbsVal = false;
+  bOnlyPos = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-debug")) {
@@ -53,6 +55,8 @@ int main(int argc,char **argv)
       bVerbose = true;
     else if (!strcmp(argv[curr_arg],"-abs_val"))
       bAbsVal = true;
+    else if (!strcmp(argv[curr_arg],"-only_pos"))
+      bOnlyPos = true;
     else
       break;
   }
@@ -87,9 +91,13 @@ int main(int argc,char **argv)
     else
       abs_work = work;
 
-    if (bAbsVal || (work > 0)) {
+    if (!bOnlyPos || (work > 0)) {
       num_hands++;
-      total_deltas += abs_work;
+
+      if (!bAbsVal)
+        total_deltas += work;
+      else
+        total_deltas += abs_work;
 
       if (work > max_winning_delta)
         max_winning_delta = work;
@@ -100,6 +108,10 @@ int main(int argc,char **argv)
 
   if ((num_hands > 1) && (max_winning_delta > 0)) {
     total_deltas -= max_winning_delta;
+
+    if (total_deltas < 0)
+      total_deltas *= -1;
+
     avg_gain = (double)total_deltas / (double)(num_hands - 1);
     outlier_factor = (double)max_winning_delta / avg_gain;
 
@@ -107,14 +119,15 @@ int main(int argc,char **argv)
       if (!bVerbose)
         printf("%lf\n",outlier_factor);
       else
-        printf("%lf (%d %lf)\n",outlier_factor,max_winning_delta,avg_gain);
+        printf("%lf (%d %lf %d %d)\n",outlier_factor,max_winning_delta,avg_gain,
+          total_deltas,num_hands - 1);
     }
     else {
       if (!bVerbose)
         printf("%lf %s\n",outlier_factor,save_dir);
       else {
-        printf("%lf (%d %lf) %s\n",outlier_factor,max_winning_delta,
-          avg_gain,save_dir);
+        printf("%lf (%d %lf %d %d) %s\n",outlier_factor,max_winning_delta,
+          avg_gain,total_deltas,num_hands - 1,save_dir);
       }
     }
   }
