@@ -25,7 +25,8 @@ struct session_info_struct {
 
 static char usage[] =
 "usage: session_moving_sum (-no_sort) (-ascending) (-absolute_value)\n"
-"  (-skip_interim) (-terse) (-gesum) (-true_false) subset_size filename\n";
+"  (-skip_interim) (-terse) (-gesum) (-true_false) (-delta_first)\n"
+"  subset_size filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char malloc_failed1[] = "malloc of %d session info structures failed\n";
@@ -56,7 +57,8 @@ static int get_session_info(
   char *line,
   int line_len,
   struct session_info_struct *session_info,
-  bool bAbsoluteValue);
+  bool bAbsoluteValue,
+  bool bDeltaFirst);
 static time_t cvt_date(char *date_str);
 int elem_compare(const void *elem1,const void *elem2);
 static char *format_date(char *cpt);
@@ -71,6 +73,7 @@ int main(int argc,char **argv)
   bool bTerse;
   bool bGeSum;
   bool bTrueFalse;
+  bool bDeltaFirst;
   int ge_sum;
   int curr_arg;
   int session_ix;
@@ -87,7 +90,7 @@ int main(int argc,char **argv)
   int retval;
   char *cpt;
 
-  if ((argc < 3) || (argc > 10)) {
+  if ((argc < 3) || (argc > 11)) {
     printf(usage);
     return 1;
   }
@@ -99,6 +102,7 @@ int main(int argc,char **argv)
   bTerse = false;
   bGeSum = false;
   bTrueFalse = false;
+  bDeltaFirst = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-no_sort"))
@@ -117,6 +121,8 @@ int main(int argc,char **argv)
     }
     else if (!strcmp(argv[curr_arg],"-true_false"))
       bTrueFalse = true;
+    else if (!strcmp(argv[curr_arg],"-delta_first"))
+      bDeltaFirst = true;
     else
       break;
   }
@@ -198,7 +204,7 @@ int main(int argc,char **argv)
       continue;
 
     retval = get_session_info(line,line_len,&session_info[session_ix],
-      bAbsoluteValue);
+      bAbsoluteValue,bDeltaFirst);
 
     if (retval) {
       printf("get_session_info() failed on line %d: %d\n",
@@ -319,7 +325,8 @@ static int get_session_info(
   char *line,
   int line_len,
   struct session_info_struct *session_info,
-  bool bAbsoluteValue)
+  bool bAbsoluteValue,
+  bool bDeltaFirst)
 {
   int n;
   int work;
@@ -334,9 +341,14 @@ static int get_session_info(
 
   line[n++] = 0;
 
-  session_info->start_date = cvt_date(line);
-
-  sscanf(&line[n],"%d",&work);
+  if (!bDeltaFirst) {
+    session_info->start_date = cvt_date(line);
+    sscanf(&line[n],"%d",&work);
+  }
+  else {
+    session_info->start_date = cvt_date(&line[n]);
+    sscanf(line,"%d",&work);
+  }
 
   if ((bAbsoluteValue) && (work < 0))
     work *= -1;
