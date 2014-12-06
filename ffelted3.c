@@ -18,7 +18,7 @@ static char line[MAX_LINE_LEN];
 static char usage[] =
 "usage: ffelted3 (-debug) (-reverse) (-count) (-exact_countn) (-reupped)\n"
 "  (-consecutive) (-show_zero) (-one_and_done) (-stud)\n"
-"  (-max_felt_distance) player_name filename\n";
+"  (-max_felt_distance) (-starting_stack) player_name filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 static char fmt[] = "%d\t%s\n";
 
@@ -69,6 +69,8 @@ int main(int argc,char **argv)
   bool bOneAndDone;
   bool bStud;
   bool bMaxFeltDistance;
+  bool bStartingStack;
+  int starting_stack;
   int hit_felt_count;
   int reupped_count;
   int consecutive_hit_felt_count;
@@ -109,7 +111,7 @@ int main(int argc,char **argv)
   int max_felt_distance;
   char *date_string;
 
-  if ((argc < 3) || (argc > 13)) {
+  if ((argc < 3) || (argc > 14)) {
     printf(usage);
     return 1;
   }
@@ -124,6 +126,7 @@ int main(int argc,char **argv)
   bOneAndDone = false;
   bStud = false;
   bMaxFeltDistance = false;
+  bStartingStack = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-debug"))
@@ -150,6 +153,8 @@ int main(int argc,char **argv)
       bStud = true;
     else if (!strcmp(argv[curr_arg],"-max_felt_distance"))
       bMaxFeltDistance = true;
+    else if (!strcmp(argv[curr_arg],"-starting_stack"))
+      bStartingStack = true;
     else
       break;
   }
@@ -164,6 +169,11 @@ int main(int argc,char **argv)
     return 3;
   }
 
+  if (bCount && bStartingStack) {
+    printf("can't specify both -count and -starting_stack\n");
+    return 4;
+  }
+
   if (bExactCount && !exact_count)
     bShowZero = true;
 
@@ -172,7 +182,7 @@ int main(int argc,char **argv)
 
   if ((fptr0 = fopen(argv[curr_arg],"r")) == NULL) {
     printf(couldnt_open,argv[curr_arg]);
-    return 4;
+    return 5;
   }
 
   if (!bStud)
@@ -215,9 +225,9 @@ int main(int argc,char **argv)
     hit_felt_count = 0;
     ending_balance = -1;
     reupped_count = 0;
+    hand_number = 0;
 
     if (bMaxFeltDistance) {
-      hand_number = 0;
       last_felted_hand_number = 0;
       max_felt_distance = 0;
     }
@@ -246,8 +256,7 @@ int main(int argc,char **argv)
           in_chips,IN_CHIPS_LEN,
           &ix)) {
 
-          if (bMaxFeltDistance)
-            hand_number++;
+          hand_number++;
 
           bSkipping = false;
 
@@ -271,6 +280,9 @@ int main(int argc,char **argv)
 
           if (bDebug)
             printf("line %d starting_balance = %d\n",line_no,starting_balance);
+
+          if (bStartingStack && (hand_number == 1))
+            starting_stack = starting_balance;
 
           continue;
         }
@@ -458,14 +470,16 @@ int main(int argc,char **argv)
         }
       }
       else if ((bShowZero || hit_felt_count) && (!bExactCount || (hit_felt_count == exact_count))) {
-        if (!bCount) {
+        if (bCount)
+          printf(fmt,hit_felt_count,date_string);
+        else if (bStartingStack)
+          printf(fmt,starting_stack,date_string);
+        else {
           if (!bMaxFeltDistance)
             printf("%s\n",filename);
           else
             printf(fmt,max_felt_distance,date_string);
         }
-        else
-          printf(fmt,hit_felt_count,date_string);
       }
     }
     else {
