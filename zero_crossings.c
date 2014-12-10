@@ -64,13 +64,15 @@ int main(int argc,char **argv)
 
   getcwd(save_dir,_MAX_PATH);
 
-  if (bVerbose) {
+  if (bDateString) {
     retval = get_date_from_path(save_dir,'/',2,&date_string);
 
     if (retval) {
       printf("get_date_from_path() failed: %d\n",retval);
       return 4;
     }
+
+    bVerbose = true;
   }
 
   line_no = 0;
