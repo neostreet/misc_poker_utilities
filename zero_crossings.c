@@ -14,7 +14,7 @@ static char save_dir[_MAX_PATH];
 static char line[MAX_LINE_LEN];
 
 static char usage[] =
-"usage: zero_crossings (-verbose) (-date_string) filename\n";
+"usage: zero_crossings (-verbose) (-date_string) (-pct) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
@@ -26,6 +26,7 @@ int main(int argc,char **argv)
   int curr_arg;
   bool bVerbose;
   bool bDateString;
+  bool bPct;
   FILE *fptr;
   int line_len;
   int line_no;
@@ -34,20 +35,24 @@ int main(int argc,char **argv)
   int val;
   int prev_val;
   int zero_crossings;
+  double dwork;
 
-  if ((argc < 2) || (argc > 4)) {
+  if ((argc < 2) || (argc > 5)) {
     printf(usage);
     return 1;
   }
 
   bVerbose = false;
   bDateString = false;
+  bPct = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-verbose"))
       bVerbose = true;
     else if (!strcmp(argv[curr_arg],"-date_string"))
       bDateString = true;
+    else if (!strcmp(argv[curr_arg],"-pct"))
+      bPct = true;
     else
       break;
   }
@@ -96,13 +101,31 @@ int main(int argc,char **argv)
 
   fclose(fptr);
 
-  if (!bVerbose)
-    printf("%3d\n",zero_crossings);
-  else {
-    if (!bDateString)
-      printf("%3d %s/%s\n",zero_crossings,save_dir,argv[curr_arg]);
+  if (bPct) {
+    dwork = (double)zero_crossings / (double)line_no;
+  }
+
+  if (!bVerbose) {
+    if (!bPct)
+      printf("%d\n",zero_crossings);
     else
-      printf("%3d %s\n",zero_crossings,date_string);
+      printf("%lf\n",dwork);
+  }
+  else {
+    if (!bDateString) {
+      if (!bPct)
+        printf("%3d %s/%s\n",zero_crossings,save_dir,argv[curr_arg]);
+      else {
+        printf("%lf (%d %d) %s/%s\n",dwork,zero_crossings,line_no,
+          save_dir,argv[curr_arg]);
+      }
+    }
+    else {
+      if (!bPct)
+        printf("%3d %s\n",zero_crossings,date_string);
+      else
+        printf("%lf (%d %d) %s\n",dwork,zero_crossings,line_no,date_string);
+    }
   }
 
   return 0;
