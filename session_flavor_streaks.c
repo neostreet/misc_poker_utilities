@@ -20,12 +20,13 @@ struct session_info_struct {
   int sum;
   int flavor;
   int num_flavor_sessions;
+  int sit_and_go;
 };
 
 #define TAB 0x9
 
 static char usage[] =
-"usage: session_flavor_streaks (-no_sort) (-ascending) filename\n";
+"usage: session_flavor_streaks (-debug) (-no_sort) (-ascending) (-sit_and_go) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char malloc_failed1[] = "malloc of %d session info structures failed\n";
@@ -51,12 +52,14 @@ static char *months[] = {
 static struct session_info_struct *session_info;
 static struct session_info_struct *flavor_streaks;
 static bool bAscending;
+static bool bSitAndGo;
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
 static int get_session_info(
   char *line,
   int line_len,
-  struct session_info_struct *session_info);
+  struct session_info_struct *session_info,
+  bool bSitAndGo);
 static time_t cvt_date(char *date_str);
 int elem_compare(const void *elem1,const void *elem2);
 static char *format_date(char *cpt);
@@ -65,6 +68,7 @@ int main(int argc,char **argv)
 {
   int m;
   int n;
+  bool bDebug;
   bool bNoSort;
   int curr_arg;
   FILE *fptr;
@@ -80,19 +84,25 @@ int main(int argc,char **argv)
   int retval;
   char *cpt;
 
-  if ((argc < 2) || (argc > 4)) {
+  if ((argc < 2) || (argc > 6)) {
     printf(usage);
     return 1;
   }
 
+  bDebug = false;
   bNoSort = false;
   bAscending = false;
+  bSitAndGo = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
-    if (!strcmp(argv[curr_arg],"-no_sort"))
+    if (!strcmp(argv[curr_arg],"-debug"))
+      bDebug = true;
+    else if (!strcmp(argv[curr_arg],"-no_sort"))
       bNoSort = true;
     else if (!strcmp(argv[curr_arg],"-ascending"))
       bAscending = true;
+    else if (!strcmp(argv[curr_arg],"-sit_and_go"))
+      bSitAndGo = true;
     else
       break;
   }
@@ -180,7 +190,8 @@ int main(int argc,char **argv)
         ((chara >= 'A') && (chara <= 'Z')))
       continue;
 
-    retval = get_session_info(line,line_len,&session_info[session_ix]);
+    retval = get_session_info(line,line_len,&session_info[session_ix],
+      bSitAndGo);
 
     if (retval) {
       printf("get_session_info() failed on line %d: %d\n",
@@ -190,6 +201,15 @@ int main(int argc,char **argv)
       free(flavor_streaks);
       free(sort_ixs);
       return 7;
+    }
+
+    if (bDebug) {
+      if (!bSitAndGo)
+        printf("%d\n",session_info[session_ix].flavor);
+      else {
+        printf("%d %d\n",session_info[session_ix].flavor,
+          session_info[session_ix].sit_and_go);
+      }
     }
 
     session_ix++;
@@ -266,7 +286,8 @@ static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen)
 static int get_session_info(
   char *line,
   int line_len,
-  struct session_info_struct *session_info)
+  struct session_info_struct *session_info,
+  bool bSitAndGo)
 {
   int m;
   int n;
@@ -297,12 +318,30 @@ static int get_session_info(
   line[n++] = 0;
 
   sscanf(&line[m],"%d",&work);
-
   session_info->delta = work;
 
-  sscanf(&line[n],"%d",&work);
+  if (!bSitAndGo) {
+    sscanf(&line[n],"%d",&work);
+    session_info->flavor = work;
+  }
+  else {
+    m = n;
 
-  session_info->flavor = work;
+    for ( ; n < line_len; n++) {
+      if (line[n] == TAB)
+        break;
+    }
+
+    if (n == line_len)
+      return 1;
+
+    line[n++] = 0;
+
+    sscanf(&line[m],"%d",&work);
+    session_info->sit_and_go = work;
+    sscanf(&line[n],"%d",&work);
+    session_info->flavor = work;
+  }
 
   return 0;
 }
