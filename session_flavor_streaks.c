@@ -75,9 +75,6 @@ int main(int argc,char **argv)
   int line_len;
   int num_sessions;
   int session_ix;
-  int flavor;
-  int prev_flavor;
-  int chara;
   int *sort_ixs;
   int num_flavor_streaks;
   int flavor_streak_ix;
@@ -118,7 +115,6 @@ int main(int argc,char **argv)
   }
 
   num_sessions = 0;
-  num_flavor_streaks = 0;
 
   for ( ; ; ) {
     GetLine(fptr,line,&line_len,MAX_LINE_LEN);
@@ -126,22 +122,7 @@ int main(int argc,char **argv)
     if (feof(fptr))
       break;
 
-    if (!line_len)
-      continue;
-
-    chara = line[0];
-
-    if (((chara >= 'a') && (chara <= 'z')) ||
-        ((chara >= 'A') && (chara <= 'Z')))
-      continue;
-
-    sscanf(&line[line_len-1],"%d",&flavor);
-
-    if ((num_sessions == 0) || (flavor != prev_flavor))
-      num_flavor_streaks++;
-
     num_sessions++;
-    prev_flavor = flavor;
   }
 
   if ((session_info = (struct session_info_struct *)malloc(
@@ -152,43 +133,32 @@ int main(int argc,char **argv)
   }
 
   if ((flavor_streaks = (struct session_info_struct *)malloc(
-    num_flavor_streaks * sizeof (struct session_info_struct))) == NULL) {
-    printf(malloc_failed1,num_flavor_streaks);
+    num_sessions * sizeof (struct session_info_struct))) == NULL) {
+    printf(malloc_failed1,num_sessions);
     fclose(fptr);
     free(session_info);
     return 5;
   }
 
   if ((sort_ixs = (int *)malloc(
-    num_flavor_streaks * sizeof (int))) == NULL) {
-    printf(malloc_failed2,num_flavor_streaks);
+    num_sessions * sizeof (int))) == NULL) {
+    printf(malloc_failed2,num_sessions);
     fclose(fptr);
     free(session_info);
     free(flavor_streaks);
     return 6;
   }
 
-  for (n = 0; n < num_flavor_streaks; n++)
-    sort_ixs[n] = n;
-
   fseek(fptr,0L,SEEK_SET);
 
   session_ix = 0;
+  num_flavor_streaks = 0;
 
   for ( ; ; ) {
     GetLine(fptr,line,&line_len,MAX_LINE_LEN);
 
     if (feof(fptr))
       break;
-
-    if (!line_len)
-      continue;
-
-    chara = line[0];
-
-    if (((chara >= 'a') && (chara <= 'z')) ||
-        ((chara >= 'A') && (chara <= 'Z')))
-      continue;
 
     retval = get_session_info(line,line_len,&session_info[session_ix],
       bSitAndGo);
@@ -201,6 +171,12 @@ int main(int argc,char **argv)
       free(flavor_streaks);
       free(sort_ixs);
       return 7;
+    }
+
+    if ((session_ix == 0) ||
+        (session_info[session_ix].flavor != session_info[session_ix-1].flavor)) {
+      sort_ixs[num_flavor_streaks] = num_flavor_streaks;
+      num_flavor_streaks++;
     }
 
     if (bDebug) {
@@ -220,7 +196,8 @@ int main(int argc,char **argv)
   flavor_streak_ix = 0;
 
   for (n = 0; n < num_sessions; n++) {
-    if ((n == 0) || (session_info[n].flavor != session_info[n-1].flavor)) {
+    if ((n == 0) ||
+        (session_info[n].flavor != session_info[n-1].flavor)) {
       flavor_streaks[flavor_streak_ix].start_date = session_info[n].start_date;
 
       flavor_streaks[flavor_streak_ix].sum = session_info[n].delta;
