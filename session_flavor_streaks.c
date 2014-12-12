@@ -174,7 +174,10 @@ int main(int argc,char **argv)
     }
 
     if ((session_ix == 0) ||
-        (session_info[session_ix].flavor != session_info[session_ix-1].flavor)) {
+        (session_info[session_ix].flavor != session_info[session_ix-1].flavor) ||
+        (bSitAndGo &&
+        (session_info[session_ix].sit_and_go != session_info[session_ix-1].sit_and_go))) {
+
       sort_ixs[num_flavor_streaks] = num_flavor_streaks;
       num_flavor_streaks++;
     }
@@ -197,12 +200,18 @@ int main(int argc,char **argv)
 
   for (n = 0; n < num_sessions; n++) {
     if ((n == 0) ||
-        (session_info[n].flavor != session_info[n-1].flavor)) {
-      flavor_streaks[flavor_streak_ix].start_date = session_info[n].start_date;
+        (session_info[n].flavor != session_info[n-1].flavor) ||
+        (bSitAndGo &&
+        (session_info[n].sit_and_go != session_info[n-1].sit_and_go))) {
 
+      flavor_streaks[flavor_streak_ix].start_date = session_info[n].start_date;
       flavor_streaks[flavor_streak_ix].sum = session_info[n].delta;
 
-      for (m = n + 1; (m < num_sessions) && (session_info[m].flavor == session_info[n].flavor); m++)
+      for (m = n + 1;
+          (m < num_sessions) &&
+          (!bSitAndGo || (session_info[m].sit_and_go == session_info[n].sit_and_go)) &&
+          (session_info[m].flavor == session_info[n].flavor);
+          m++)
         flavor_streaks[flavor_streak_ix].sum += session_info[m].delta;
 
       flavor_streaks[flavor_streak_ix].end_date = session_info[m - 1].start_date;
@@ -225,8 +234,16 @@ int main(int argc,char **argv)
     cpt = ctime(&flavor_streaks[sort_ixs[n]].end_date);
     printf("%s ",format_date(cpt));
 
-    printf("%d %10d\n",flavor_streaks[sort_ixs[n]].flavor,
-      flavor_streaks[sort_ixs[n]].sum);
+    if (!bSitAndGo) {
+      printf("%d %10d\n",flavor_streaks[sort_ixs[n]].flavor,
+        flavor_streaks[sort_ixs[n]].sum);
+    }
+    else {
+      printf("%d %d %10d\n",
+        flavor_streaks[sort_ixs[n]].sit_and_go,
+        flavor_streaks[sort_ixs[n]].flavor,
+        flavor_streaks[sort_ixs[n]].sum);
+    }
   }
 
   free(session_info);
