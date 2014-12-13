@@ -18,9 +18,9 @@ struct session_info_struct {
   time_t end_date;
   int delta;
   int sum;
+  int sit_and_go;
   int flavor;
   int num_flavor_sessions;
-  int sit_and_go;
 };
 
 #define TAB 0x9
@@ -216,6 +216,7 @@ int main(int argc,char **argv)
 
       flavor_streaks[flavor_streak_ix].end_date = session_info[m - 1].start_date;
       flavor_streaks[flavor_streak_ix].num_flavor_sessions = m - n;
+      flavor_streaks[flavor_streak_ix].sit_and_go = session_info[n].sit_and_go;
       flavor_streaks[flavor_streak_ix].flavor = session_info[n].flavor;
 
       flavor_streak_ix++;
