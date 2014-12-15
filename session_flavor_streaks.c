@@ -18,6 +18,7 @@ struct session_info_struct {
   time_t end_date;
   int delta;
   int sum;
+  int initial_stake;
   int sit_and_go;
   int flavor;
   int num_flavor_sessions;
@@ -26,7 +27,8 @@ struct session_info_struct {
 #define TAB 0x9
 
 static char usage[] =
-"usage: session_flavor_streaks (-debug) (-no_sort) (-ascending) filename\n";
+"usage: session_flavor_streaks (-debug) (-no_sort) (-ascending)\n"
+"  (-initial_stake) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char malloc_failed1[] = "malloc of %d session info structures failed\n";
@@ -57,7 +59,8 @@ static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
 static int get_session_info(
   char *line,
   int line_len,
-  struct session_info_struct *session_info);
+  struct session_info_struct *session_info,
+  bool bInitialStake);
 static time_t cvt_date(char *date_str);
 int elem_compare(const void *elem1,const void *elem2);
 static char *format_date(char *cpt);
@@ -68,6 +71,7 @@ int main(int argc,char **argv)
   int n;
   bool bDebug;
   bool bNoSort;
+  bool bInitialStake;
   int curr_arg;
   FILE *fptr;
   int line_len;
@@ -79,7 +83,7 @@ int main(int argc,char **argv)
   int retval;
   char *cpt;
 
-  if ((argc < 2) || (argc > 5)) {
+  if ((argc < 2) || (argc > 6)) {
     printf(usage);
     return 1;
   }
@@ -87,6 +91,7 @@ int main(int argc,char **argv)
   bDebug = false;
   bNoSort = false;
   bAscending = false;
+  bInitialStake = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-debug"))
@@ -95,6 +100,8 @@ int main(int argc,char **argv)
       bNoSort = true;
     else if (!strcmp(argv[curr_arg],"-ascending"))
       bAscending = true;
+    else if (!strcmp(argv[curr_arg],"-initial_stake"))
+      bInitialStake = true;
     else
       break;
   }
@@ -155,7 +162,8 @@ int main(int argc,char **argv)
     if (feof(fptr))
       break;
 
-    retval = get_session_info(line,line_len,&session_info[session_ix]);
+    retval = get_session_info(line,line_len,&session_info[session_ix],
+      bInitialStake);
 
     if (retval) {
       printf("get_session_info() failed on line %d: %d\n",
@@ -169,7 +177,9 @@ int main(int argc,char **argv)
 
     if ((session_ix == 0) ||
         (session_info[session_ix].sit_and_go != session_info[session_ix-1].sit_and_go) ||
-        (session_info[session_ix].flavor != session_info[session_ix-1].flavor)) {
+        (session_info[session_ix].flavor != session_info[session_ix-1].flavor) ||
+        (bInitialStake &&
+        (session_info[session_ix].initial_stake != session_info[session_ix-1].initial_stake))) {
 
       sort_ixs[num_flavor_streaks] = num_flavor_streaks;
       num_flavor_streaks++;
@@ -190,7 +200,9 @@ int main(int argc,char **argv)
   for (n = 0; n < num_sessions; n++) {
     if ((n == 0) ||
         (session_info[n].sit_and_go != session_info[n-1].sit_and_go) ||
-        (session_info[n].flavor != session_info[n-1].flavor)) {
+        (session_info[n].flavor != session_info[n-1].flavor) ||
+        (bInitialStake &&
+        (session_info[n].initial_stake != session_info[n-1].initial_stake))) {
 
       flavor_streaks[flavor_streak_ix].start_date = session_info[n].start_date;
       flavor_streaks[flavor_streak_ix].sum = session_info[n].delta;
@@ -198,7 +210,9 @@ int main(int argc,char **argv)
       for (m = n + 1;
           (m < num_sessions) &&
           (session_info[m].sit_and_go == session_info[n].sit_and_go) &&
-          (session_info[m].flavor == session_info[n].flavor);
+          (session_info[m].flavor == session_info[n].flavor) &&
+          (!bInitialStake ||
+          (session_info[m].initial_stake == session_info[n].initial_stake));
           m++)
         flavor_streaks[flavor_streak_ix].sum += session_info[m].delta;
 
@@ -206,6 +220,9 @@ int main(int argc,char **argv)
       flavor_streaks[flavor_streak_ix].num_flavor_sessions = m - n;
       flavor_streaks[flavor_streak_ix].sit_and_go = session_info[n].sit_and_go;
       flavor_streaks[flavor_streak_ix].flavor = session_info[n].flavor;
+
+      if (bInitialStake)
+        flavor_streaks[flavor_streak_ix].initial_stake = session_info[n].initial_stake;
 
       flavor_streak_ix++;
     }
@@ -223,10 +240,19 @@ int main(int argc,char **argv)
     cpt = ctime(&flavor_streaks[sort_ixs[n]].end_date);
     printf("%s ",format_date(cpt));
 
-    printf("%d %d %10d\n",
-      flavor_streaks[sort_ixs[n]].sit_and_go,
-      flavor_streaks[sort_ixs[n]].flavor,
-      flavor_streaks[sort_ixs[n]].sum);
+    if (!bInitialStake) {
+      printf("%d %d %10d\n",
+        flavor_streaks[sort_ixs[n]].sit_and_go,
+        flavor_streaks[sort_ixs[n]].flavor,
+        flavor_streaks[sort_ixs[n]].sum);
+    }
+    else {
+      printf("%d %d %d %10d\n",
+        flavor_streaks[sort_ixs[n]].initial_stake,
+        flavor_streaks[sort_ixs[n]].sit_and_go,
+        flavor_streaks[sort_ixs[n]].flavor,
+        flavor_streaks[sort_ixs[n]].sum);
+    }
   }
 
   free(session_info);
@@ -263,7 +289,8 @@ static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen)
 static int get_session_info(
   char *line,
   int line_len,
-  struct session_info_struct *session_info)
+  struct session_info_struct *session_info,
+  bool bInitialStake)
 {
   int m;
   int n;
@@ -310,8 +337,29 @@ static int get_session_info(
 
   sscanf(&line[m],"%d",&work);
   session_info->sit_and_go = work;
-  sscanf(&line[n],"%d",&work);
-  session_info->flavor = work;
+
+  if (!bInitialStake) {
+    sscanf(&line[n],"%d",&work);
+    session_info->flavor = work;
+  }
+  else {
+    m = n;
+
+    for ( ; n < line_len; n++) {
+      if (line[n] == TAB)
+        break;
+    }
+
+    if (n == line_len)
+      return 1;
+
+    line[n++] = 0;
+
+    sscanf(&line[m],"%d",&work);
+    session_info->flavor = work;
+    sscanf(&line[n],"%d",&work);
+    session_info->initial_stake = work;
+  }
 
   return 0;
 }
