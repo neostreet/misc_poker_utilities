@@ -15,8 +15,8 @@ static char couldnt_open[] = "couldn't open %s\n";
 static char unexpected_eof[] = "unexpected eof in %s\n";
 static char finished[] = "finished the tournament in ";
 #define FINISHED_LEN (sizeof (finished) - 1)
-static char finished_in_second_place[] = "finished the tournament in 2nd place and received ";
-#define FINISHED_IN_SECOND_PLACE_LEN (sizeof (finished_in_second_place) - 1)
+static char place_and_received[] = " place and received ";
+#define PLACE_AND_RECEIVED_LEN (sizeof (place_and_received) - 1)
 static char wins[] = "wins the tournament and receives ";
 #define WINS_LEN (sizeof (wins) - 1)
 
@@ -293,8 +293,13 @@ static int get_place_and_winnings(char *player_name,int player_name_len,FILE *fp
 
         sscanf(&line[ix + FINISHED_LEN],"%d",place);
 
-        if (*place == 2)
-          sscanf(&line[ix + FINISHED_IN_SECOND_PLACE_LEN],"%d",winnings);
+        if (Contains(true,
+          line,line_len,
+          place_and_received,PLACE_AND_RECEIVED_LEN,
+          &ix)) {
+
+          sscanf(&line[ix + PLACE_AND_RECEIVED_LEN],"%d",winnings);
+        }
 
         break;
       }
