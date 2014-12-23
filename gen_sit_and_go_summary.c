@@ -10,7 +10,7 @@ static char filename[MAX_FILENAME_LEN];
 #define MAX_LINE_LEN 4096
 static char line[MAX_LINE_LEN];
 
-static char usage[] = "usage: sit_and_go_summary (-delta) player_name\n";
+static char usage[] = "usage: gen_sit_and_go_summary (-delta) player_name\n";
 static char couldnt_open[] = "couldn't open %s\n";
 static char unexpected_eof[] = "unexpected eof in %s\n";
 static char finished[] = "finished the tournament in ";
