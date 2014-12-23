@@ -8,6 +8,14 @@
 #include <unistd.h>
 #endif
 
+enum args {
+  ARG_EXE,
+  ARG_PLAYER_NAME,
+  ARG_POKER_FLAVOR,
+  ARG_BIG_BLIND_AMOUNT,
+  ARG_NUM_ARGS
+};
+
 static char save_dir[_MAX_PATH];
 
 #define MAX_SIT_AND_GOS 26
@@ -20,13 +28,13 @@ static char filename[MAX_FILENAME_LEN];
 static char line[MAX_LINE_LEN];
 
 static char usage[] =
-"usage: sit_and_go_inserts player_name initial_stake big_blind_amount\n";
+"usage: gen_sit_and_go_inserts player_name poker_flavor big_blind_amount\n";
 static char couldnt_open[] = "couldn't open %s\n";
 static char unexpected_eof[] = "unexpected eof in %s\n";
 static char finished[] = "finished the tournament in ";
 #define FINISHED_LEN (sizeof (finished) - 1)
-static char finished_in_second_place[] = "finished the tournament in 2nd place and received ";
-#define FINISHED_IN_SECOND_PLACE_LEN (sizeof (finished_in_second_place) - 1)
+static char place_and_received[] = " place and received ";
+#define PLACE_AND_RECEIVED_LEN (sizeof (place_and_received) - 1)
 static char wins[] = "wins the tournament and receives ";
 #define WINS_LEN (sizeof (wins) - 1)
 
@@ -36,6 +44,7 @@ static int Contains(bool bCaseSens,char *line,int line_len,
   char *string,int string_len,int *index);
 static int get_num_hands(char *line,int line_len,int *num_hands);
 static int get_buy_in_and_entry_fee(char *line,int line_len,int *buy_in,int *entry_fee);
+static int get_initial_stake(char *player_name,int player_name_len,FILE *fptr,int *initial_stake);
 static int get_place_and_winnings(char *player_name,int player_name_len,FILE *fptr,int *place,int *winnings);
 
 int main(int argc,char **argv)
@@ -47,6 +56,7 @@ int main(int argc,char **argv)
   int line_len;
   int retval;
   char *date_string;
+  int initial_stake;
   int buy_in;
   int entry_fee;
   int num_players;
@@ -55,7 +65,7 @@ int main(int argc,char **argv)
   int place;
   int winnings;
 
-  if (argc != 4) {
+  if (argc != ARG_NUM_ARGS) {
     printf(usage);
     return 1;
   }
@@ -66,7 +76,7 @@ int main(int argc,char **argv)
 
   if (retval) {
     printf("get_date_from_path() failed: %d\n",retval);
-    return 5;
+    return 2;
   }
 
   letter = 'a';
@@ -74,6 +84,38 @@ int main(int argc,char **argv)
   poker_flavor = 3;
 
   for (n = 0; n < MAX_SIT_AND_GOS; n++) {
+    sprintf(outer_filename,"%c/sng_hands.lst",letter);
+
+    if ((fptr = fopen(outer_filename,"r")) == NULL)
+      break;
+
+    GetLine(fptr,line,&line_len,MAX_FILENAME_LEN);
+
+    if (feof(fptr)) {
+      printf(unexpected_eof,outer_filename);
+      return 3;
+    }
+
+    fclose(fptr);
+
+    sprintf(filename,"%c/%s",letter,line);
+
+    if ((fptr = fopen(filename,"r")) == NULL) {
+      printf(couldnt_open,filename);
+      return 4;
+    }
+
+    retval = get_initial_stake(
+      argv[ARG_PLAYER_NAME],strlen(argv[ARG_PLAYER_NAME]),
+      fptr,&initial_stake);
+
+    if (retval) {
+      printf("get_initial_stake() failed: %d\n",retval);
+      return 5;
+    }
+
+    fclose(fptr);
+
     sprintf(outer_filename,"%c/sng_hands.ls0",letter);
 
     if ((fptr = fopen(outer_filename,"r")) == NULL)
@@ -83,7 +125,7 @@ int main(int argc,char **argv)
 
     if (feof(fptr)) {
       printf(unexpected_eof,outer_filename);
-      return 2;
+      return 6;
     }
 
     fclose(fptr);
@@ -92,31 +134,33 @@ int main(int argc,char **argv)
 
     if (retval) {
       printf("get_num_hands failed: %d\n",retval);
-      return 3;
+      return 7;
     }
 
     sprintf(filename,"%c/%s",letter,line);
 
     if ((fptr = fopen(filename,"r")) == NULL) {
       printf(couldnt_open,filename);
-      return 4;
+      return 8;
     }
 
     GetLine(fptr,line,&line_len,MAX_LINE_LEN);
 
     if (feof(fptr)) {
       printf(unexpected_eof,filename);
-      return 5;
+      return 9;
     }
 
     retval = get_buy_in_and_entry_fee(line,line_len,&buy_in,&entry_fee);
 
     if (retval) {
-      printf("get_buy_in_and_entry_fee failed: %d\n",retval);
-      return 6;
+      printf("get_buy_in_and_entry_fee() failed: %d\n",retval);
+      return 10;
     }
 
-    retval = get_place_and_winnings(argv[1],strlen(argv[1]),fptr,&place,&winnings);
+    retval = get_place_and_winnings(
+      argv[ARG_PLAYER_NAME],strlen(argv[ARG_PLAYER_NAME]),
+      fptr,&place,&winnings);
 
     fclose(fptr);
 
@@ -124,8 +168,10 @@ int main(int argc,char **argv)
     printf("  sit_and_go,poker_session_date,buy_in,entry_fee,initial_stake,"
       "big_blind_amount,num_players,poker_flavor,num_hands,place,winnings\n");
     printf(")\n");
-    printf("values (1,'%s',%d,%d,%s,%s,%d,%d,%d,%d,%d);\n",
-      date_string,buy_in,entry_fee,argv[2],argv[3],num_players,poker_flavor,
+    printf("values (1,'%s',%d,%d,%d,%s,%d,%s,%d,%d,%d);\n",
+      date_string,buy_in,entry_fee,
+      initial_stake,argv[ARG_BIG_BLIND_AMOUNT],
+      num_players,argv[ARG_POKER_FLAVOR],
       num_hands,place,winnings);
 
     letter++;
@@ -231,6 +277,30 @@ static int Contains(bool bCaseSens,char *line,int line_len,
   return false;
 }
 
+static int get_initial_stake(char *player_name,int player_name_len,FILE *fptr,int *initial_stake)
+{
+  int ix;
+  int line_len;
+
+  for ( ; ; ) {
+    GetLine(fptr,line,&line_len,MAX_FILENAME_LEN);
+
+    if (feof(fptr))
+      break;
+
+    if (Contains(true,
+      line,line_len,
+      player_name,player_name_len,
+      &ix)) {
+
+      sscanf(&line[19],"%d",initial_stake);
+      return 0;
+    }
+  }
+
+  return 1;
+}
+
 static int get_buy_in_and_entry_fee(char *line,int line_len,int *buy_in,int *entry_fee)
 {
   int n;
@@ -317,8 +387,13 @@ static int get_place_and_winnings(char *player_name,int player_name_len,FILE *fp
 
         sscanf(&line[ix + FINISHED_LEN],"%d",place);
 
-        if (*place == 2)
-          sscanf(&line[ix + FINISHED_IN_SECOND_PLACE_LEN],"%d",winnings);
+        if (Contains(true,
+          line,line_len,
+          place_and_received,PLACE_AND_RECEIVED_LEN,
+          &ix)) {
+
+          sscanf(&line[ix + PLACE_AND_RECEIVED_LEN],"%d",winnings);
+        }
 
         break;
       }
