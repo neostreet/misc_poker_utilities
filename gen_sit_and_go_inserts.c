@@ -11,6 +11,7 @@
 enum args {
   ARG_EXE,
   ARG_PLAYER_NAME,
+  ARG_POKER_STYLE,
   ARG_POKER_FLAVOR,
   ARG_BIG_BLIND_AMOUNT,
   ARG_NUM_ARGS
@@ -28,7 +29,8 @@ static char filename[MAX_FILENAME_LEN];
 static char line[MAX_LINE_LEN];
 
 static char usage[] =
-"usage: gen_sit_and_go_inserts player_name poker_flavor big_blind_amount\n";
+"usage: gen_sit_and_go_inserts player_name poker_style poker_flavor\n"
+"  big_blind_amount\n";
 static char couldnt_open[] = "couldn't open %s\n";
 static char unexpected_eof[] = "unexpected eof in %s\n";
 static char finished[] = "finished the tournament in ";
@@ -60,7 +62,6 @@ int main(int argc,char **argv)
   int buy_in;
   int entry_fee;
   int num_players;
-  int poker_flavor;
   int num_hands;
   int place;
   int winnings;
@@ -81,7 +82,6 @@ int main(int argc,char **argv)
 
   letter = 'a';
   num_players = 6;
-  poker_flavor = 3;
 
   for (n = 0; n < MAX_SIT_AND_GOS; n++) {
     sprintf(outer_filename,"%c/sng_hands.lst",letter);
@@ -165,11 +165,11 @@ int main(int argc,char **argv)
     fclose(fptr);
 
     printf("insert into poker_sessions (\n");
-    printf("  sit_and_go,poker_session_date,buy_in,entry_fee,initial_stake,"
+    printf("  poker_style,poker_session_date,buy_in,entry_fee,initial_stake,"
       "big_blind_amount,num_players,poker_flavor,num_hands,place,winnings\n");
     printf(")\n");
-    printf("values (1,'%s',%d,%d,%d,%s,%d,%s,%d,%d,%d);\n",
-      date_string,buy_in,entry_fee,
+    printf("values (%s,'%s',%d,%d,%d,%s,%d,%s,%d,%d,%d);\n",
+      argv[ARG_POKER_STYLE],date_string,buy_in,entry_fee,
       initial_stake,argv[ARG_BIG_BLIND_AMOUNT],
       num_players,argv[ARG_POKER_FLAVOR],
       num_hands,place,winnings);
