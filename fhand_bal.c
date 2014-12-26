@@ -20,9 +20,17 @@ static char line[MAX_LINE_LEN];
 
 static char usage[] =
 "usage: fhand_bal (-debug) (-consistency) (-delta) (-starting_balance) (-terse)\n"
-"  (-double_zero) (-stud) player_name filename\n";
+"  (-double_zero) player_name filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
+static char pokerstars[] = "PokerStars";
+#define POKERSTARS_LEN (sizeof (pokerstars) - 1)
+static char stud[] = "7 Card Stud";
+#define STUD_LEN (sizeof (stud) - 1)
+static char razz[] = "Razz";
+#define RAZZ_LEN (sizeof (razz) - 1)
+static char eight_game[] = "8-Game";
+#define EIGHT_GAME_LEN (sizeof (eight_game) - 1)
 static char in_chips[] = " in chips";
 #define IN_CHIPS_LEN (sizeof (in_chips) - 1)
 static char summary[] = "*** SUMMARY ***";
@@ -65,6 +73,7 @@ int main(int argc,char **argv)
   bool bTerse;
   bool bDoubleZero;
   bool bStud;
+  bool bRazz;
   int player_name_ix;
   int player_name_len;
   FILE *fptr0;
@@ -101,7 +110,7 @@ int main(int argc,char **argv)
   double dwork;
   int prev_ending_balance;
 
-  if ((argc < 3) || (argc > 10)) {
+  if ((argc < 3) || (argc > 9)) {
     printf(usage);
     return 1;
   }
@@ -112,7 +121,6 @@ int main(int argc,char **argv)
   bStartingBalance = false;
   bTerse = false;
   bDoubleZero = false;
-  bStud = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-debug")) {
@@ -129,8 +137,6 @@ int main(int argc,char **argv)
       bTerse = true;
     else if (!strcmp(argv[curr_arg],"-double_zero"))
       bDoubleZero = true;
-    else if (!strcmp(argv[curr_arg],"-stud"))
-      bStud = true;
     else
       break;
   }
@@ -152,11 +158,6 @@ int main(int argc,char **argv)
     printf(couldnt_open,argv[curr_arg]);
     return 4;
   }
-
-  if (!bStud)
-    max_streets = 3;
-  else
-    max_streets = 4;
 
   ending_balance = -1;
   prev_ending_balance = -1;
@@ -213,6 +214,34 @@ int main(int argc,char **argv)
       line_no++;
 
       if (Contains(true,
+        line,line_len,
+        pokerstars,POKERSTARS_LEN,
+        &ix)) {
+
+        bStud = false;
+        bRazz = false;
+
+        if (Contains(true,
+          line,line_len,
+          stud,STUD_LEN,
+          &ix)) {
+
+          bStud = true;
+        }
+        else if (Contains(true,
+          line,line_len,
+          razz,RAZZ_LEN,
+          &ix)) {
+
+          bRazz = true;
+        }
+
+        if (bStud || bRazz)
+          max_streets = 4;
+        else
+          max_streets = 3;
+      }
+      else if (Contains(true,
         line,line_len,
         argv[player_name_ix],player_name_len,
         &ix)) {
