@@ -276,7 +276,7 @@ int main(int argc,char **argv)
           spent_this_hand = ante;
           continue;
         }
-        else if (bStud && Contains(true,
+        else if ((bStud || bRazz) && Contains(true,
           line,line_len,
           brings_in_for,BRINGS_IN_FOR_LEN,
           &ix)) {
