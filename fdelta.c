@@ -636,9 +636,9 @@ int main(int argc,char **argv)
           }
           else {
             if (!bHandNumber)
-              printf("%d %s\n",delta,game_name);
+              printf("%10d %s\n",delta,game_name);
             else
-              printf("%d %s (%d)\n",delta,game_name,num_hands);
+              printf("%10d %6d %s\n",delta,num_hands,game_name);
           }
         }
         else
