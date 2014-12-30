@@ -767,7 +767,7 @@ int main(int argc,char **argv)
           printf("%d %s\n",sum_8game_deltas[n],eight_game_names[n]);
         else if (!bDebug) {
           if (!bAbsoluteValue)
-            printf("%d %d %d %d %s\n",
+            printf("%10d %10d %10d %6d %s\n",
               sum_8game_deltas[n],sum_8game_positive_deltas[n],
               sum_8game_negative_deltas[n],num_8game_hands[n],
               eight_game_names[n]);
