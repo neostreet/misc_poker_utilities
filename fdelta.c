@@ -8,6 +8,18 @@
 #include <unistd.h>
 #endif
 
+static char *eight_game_names[] = {
+  "Triple Draw 2-7 Lowball Limit",
+  "Hold'em Limit",
+  "Omaha Hi/Lo Limit",
+  "Razz Limit",
+  "7 Card Stud Limit",
+  "7 Card Stud Hi/Lo Limit",
+  "Hold'em No Limit",
+  "Omaha Pot Limit"
+};
+#define NUM_8GAME_GAMES (sizeof eight_game_names / sizeof (char *))
+
 static char save_dir[_MAX_PATH];
 
 #define MAX_FILENAME_LEN 1024
@@ -71,11 +83,12 @@ static int get_big_blind(
   int line_len,
   int *big_blind_ptr
 );
-int get_game_name(
+int get_8game_name(
   char *line,
   int line_len,
   char *game_name,
   int max_game_name_len);
+int get_8game_ix(char *game_name,int *ix);
 
 int main(int argc,char **argv)
 {
@@ -110,6 +123,7 @@ int main(int argc,char **argv)
   int line_no;
   int dbg_line_no;
   int ix;
+  int eight_game_ix;
   int street;
   int num_street_markers;
   int max_streets;
@@ -137,6 +151,11 @@ int main(int argc,char **argv)
   int sum_positive_deltas;
   int sum_negative_deltas;
   int sum_absolute_value_deltas;
+  int num_8game_hands[NUM_8GAME_GAMES];
+  int sum_8game_deltas[NUM_8GAME_GAMES];
+  int sum_8game_positive_deltas[NUM_8GAME_GAMES];
+  int sum_8game_negative_deltas[NUM_8GAME_GAMES];
+  int sum_8game_absolute_value_deltas[NUM_8GAME_GAMES];
   int retval;
   int curr_big_blind;
   int last_big_blind;
@@ -231,7 +250,18 @@ int main(int argc,char **argv)
 
   hole_cards[5] = 0;
 
-  if (bSum || bAvg) {
+  if (bSum && b8game) {
+    for (n = 0 ; n < NUM_8GAME_GAMES; n++) {
+      num_8game_hands[n] = 0;
+      sum_8game_deltas[n] = 0;
+      sum_8game_positive_deltas[n] = 0;
+      sum_8game_negative_deltas[n] = 0;
+
+      if (bAbsoluteValue)
+        sum_8game_absolute_value_deltas[n] = 0;
+    }
+  }
+  else if (bSum || bAvg) {
     sum_deltas = 0;
     sum_positive_deltas = 0;
     sum_negative_deltas = 0;
@@ -318,12 +348,23 @@ int main(int argc,char **argv)
             eight_game,EIGHT_GAME_LEN,
             &ix)) {
 
-            retval = get_game_name(line,line_len,game_name,MAX_GAME_NAME_LEN);
+            retval = get_8game_name(line,line_len,game_name,MAX_GAME_NAME_LEN);
 
             if (retval) {
-              printf("get_game_name() failed on line %d: %d\n",line_no,retval);
+              printf("get_8game_name() failed on line %d: %d\n",line_no,retval);
               return 6;
             }
+
+            retval = get_8game_ix(game_name,&eight_game_ix);
+
+            if (retval) {
+              printf("get_8game_ix() failed on line %d: %d\n",line_no,retval);
+              return 7;
+            }
+          }
+          else {
+            printf("no 8-game name found on line %d\n",line_no);
+            return 8;
           }
         }
 
@@ -332,7 +373,7 @@ int main(int argc,char **argv)
 
           if (retval) {
             printf("%s: get_big_blind() failed on line %d: %d\n",filename,line_len,retval);
-            return 7;
+            return 9;
           }
 
           if (file_no > 1) {
@@ -551,7 +592,24 @@ int main(int argc,char **argv)
     ending_balance = starting_balance - spent_this_hand + collected_from_pot;
     delta = ending_balance - starting_balance;
 
-    if (bSum || bAvg) {
+    if (bSum && b8game) {
+      num_8game_hands[eight_game_ix]++;
+      sum_8game_deltas[eight_game_ix] += delta;
+
+      if (delta > 0) {
+        sum_8game_positive_deltas[eight_game_ix] += delta;
+
+        if (bAbsoluteValue)
+          sum_8game_absolute_value_deltas[eight_game_ix] += delta;
+      }
+      else {
+        sum_8game_negative_deltas[eight_game_ix] += delta;
+
+        if (bAbsoluteValue)
+          sum_8game_absolute_value_deltas[eight_game_ix] -= delta;
+      }
+    }
+    else if (bSum || bAvg) {
       sum_deltas += delta;
 
       if (delta > 0) {
@@ -651,40 +709,89 @@ int main(int argc,char **argv)
   }
 
   if (bSum) {
-    if (bAbsoluteValue) {
-      if (!sum_deltas)
-        dwork1 = (double)0;
-      else {
-        if (sum_deltas < 0)
-          sum_deltas_dwork = (double)sum_deltas * (double)-1;
-        else
-          sum_deltas_dwork = (double)sum_deltas;
+    if (!b8game) {
+      if (bAbsoluteValue) {
+        if (!sum_deltas)
+          dwork1 = (double)0;
+        else {
+          if (sum_deltas < 0)
+            sum_deltas_dwork = (double)sum_deltas * (double)-1;
+          else
+            sum_deltas_dwork = (double)sum_deltas;
 
-        dwork1 = (double)sum_absolute_value_deltas / sum_deltas_dwork;
+          dwork1 = (double)sum_absolute_value_deltas / sum_deltas_dwork;
+        }
+
+        dwork2 = (double)sum_absolute_value_deltas / (double)num_hands;
       }
 
-      dwork2 = (double)sum_absolute_value_deltas / (double)num_hands;
-    }
-
-    if (bTerse)
-      printf("%d\n",sum_deltas);
-    else if (!bDebug) {
-      if (!bAbsoluteValue)
-        printf("%d %d %d %d\n",
-          sum_deltas,sum_positive_deltas,sum_negative_deltas,num_hands);
-      else
-        printf("%d %d %d %d %d %lf %lf\n",
-          sum_deltas,sum_positive_deltas,sum_negative_deltas,num_hands,
-          sum_absolute_value_deltas,dwork1,dwork2);
+      if (bTerse)
+        printf("%d\n",sum_deltas);
+      else if (!bDebug) {
+        if (!bAbsoluteValue)
+          printf("%d %d %d %d\n",
+            sum_deltas,sum_positive_deltas,sum_negative_deltas,num_hands);
+        else
+          printf("%d %d %d %d %d %lf %lf\n",
+            sum_deltas,sum_positive_deltas,sum_negative_deltas,num_hands,
+            sum_absolute_value_deltas,dwork1,dwork2);
+      }
+      else {
+        if (!bAbsoluteValue)
+          printf("%10d %10d %10d %3d %s\n",
+            sum_deltas,sum_positive_deltas,sum_negative_deltas,num_hands,save_dir);
+        else
+          printf("%10d %10d %10d %3d %10d %8.3lf %8.2lf %s\n",
+            sum_deltas,sum_positive_deltas,sum_negative_deltas,num_hands,
+            sum_absolute_value_deltas,dwork1,dwork2,save_dir);
+      }
     }
     else {
-      if (!bAbsoluteValue)
-        printf("%10d %10d %10d %3d %s\n",
-          sum_deltas,sum_positive_deltas,sum_negative_deltas,num_hands,save_dir);
-      else
-        printf("%10d %10d %10d %3d %10d %8.3lf %8.2lf %s\n",
-          sum_deltas,sum_positive_deltas,sum_negative_deltas,num_hands,
-          sum_absolute_value_deltas,dwork1,dwork2,save_dir);
+      for (n = 0; n < NUM_8GAME_GAMES; n++) {
+        if (bAbsoluteValue) {
+          if (!sum_8game_deltas[n])
+            dwork1 = (double)0;
+          else {
+            if (sum_8game_deltas[n] < 0)
+              sum_deltas_dwork = (double)sum_8game_deltas[n] * (double)-1;
+            else
+              sum_deltas_dwork = (double)sum_8game_deltas[n];
+
+            dwork1 = (double)sum_8game_absolute_value_deltas[n] / sum_deltas_dwork;
+          }
+
+          dwork2 = (double)sum_8game_absolute_value_deltas[n] / (double)num_8game_hands[n];
+        }
+
+        if (bTerse)
+          printf("%d %s\n",sum_8game_deltas[n],eight_game_names[n]);
+        else if (!bDebug) {
+          if (!bAbsoluteValue)
+            printf("%d %d %d %d %s\n",
+              sum_8game_deltas[n],sum_8game_positive_deltas[n],
+              sum_8game_negative_deltas[n],num_8game_hands[n],
+              eight_game_names[n]);
+          else
+            printf("%d %d %d %d %d %lf %lf %s\n",
+              sum_8game_deltas[n],sum_8game_positive_deltas[n],
+              sum_8game_negative_deltas[n],num_8game_hands[n],
+              sum_8game_absolute_value_deltas[n],dwork1,dwork2,
+              eight_game_names[n]);
+        }
+        else {
+          if (!bAbsoluteValue)
+            printf("%10d %10d %10d %3d %s %s\n",
+              sum_8game_deltas[n],sum_8game_positive_deltas[n],
+              sum_8game_negative_deltas[n],num_8game_hands[n],
+              eight_game_names[n],save_dir);
+          else
+            printf("%10d %10d %10d %3d %10d %8.3lf %8.2lf %s %s\n",
+              sum_8game_deltas[n],sum_8game_positive_deltas[n],
+              sum_8game_negative_deltas[n],num_8game_hands[n],
+              sum_8game_absolute_value_deltas[n],dwork1,dwork2,
+              eight_game_names[n],save_dir);
+        }
+      }
     }
   }
   else if (bAvg) {
@@ -762,6 +869,20 @@ static int Contains(bool bCaseSens,char *line,int line_len,
   return false;
 }
 
+int get_8game_ix(char *game_name,int *ix)
+{
+  int n;
+
+  for (n = 0; n < NUM_8GAME_GAMES; n++) {
+    if (!strcmp(game_name,eight_game_names[n])) {
+      *ix = n;
+      return 0;
+    }
+  }
+
+  return 1;
+}
+
 int get_work_amount(char *line,int line_len)
 {
   int ix;
@@ -823,7 +944,7 @@ static int get_big_blind(
   return 0;
 }
 
-int get_game_name(
+int get_8game_name(
   char *line,
   int line_len,
   char *game_name,
