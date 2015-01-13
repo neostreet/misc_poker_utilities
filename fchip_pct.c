@@ -12,13 +12,13 @@ static char save_dir[_MAX_PATH];
 
 #define MAX_FILENAME_LEN 1024
 static char filename[MAX_FILENAME_LEN];
-static char max_filename[MAX_FILENAME_LEN];
+static char save_filename[MAX_FILENAME_LEN];
 
 #define MAX_LINE_LEN 1024
 static char line[MAX_LINE_LEN];
 
 static char usage[] =
-"usage: fchip_pct (-verbose) player_name filename\n";
+"usage: fchip_pct (-verbose) (-max) (-min) player_name filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char in_chips[] = " in chips";
@@ -32,6 +32,8 @@ int main(int argc,char **argv)
 {
   int curr_arg;
   bool bVerbose;
+  bool bMax;
+  bool bMin;
   int player_name_ix;
   int player_name_len;
   FILE *fptr0;
@@ -42,10 +44,13 @@ int main(int argc,char **argv)
   int ix;
   int table_chips;
   int player_chips;
+  int save_table_chips;
+  int save_player_chips;
   int work;
   double dwork;
+  double save_dwork;
 
-  if ((argc < 3) && (argc > 4)) {
+  if ((argc < 3) && (argc > 6)) {
     printf(usage);
     return 1;
   }
@@ -53,10 +58,16 @@ int main(int argc,char **argv)
   getcwd(save_dir,_MAX_PATH);
 
   bVerbose = false;
+  bMax = false;
+  bMin = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-verbose"))
       bVerbose = true;
+    else if (!strcmp(argv[curr_arg],"-max"))
+      bMax = true;
+    else if (!strcmp(argv[curr_arg],"-min"))
+      bMin = true;
     else
       break;
   }
@@ -66,12 +77,23 @@ int main(int argc,char **argv)
     return 2;
   }
 
+  if (bMax) {
+    if (bMin) {
+      printf("can't specify both -max and -min\n");
+      return 3;
+    }
+
+    save_dwork = (double)0;
+  }
+  else if (bMin)
+    save_dwork = (double)0;
+
   player_name_ix = curr_arg++;
   player_name_len = strlen(argv[player_name_ix]);
 
   if ((fptr0 = fopen(argv[curr_arg],"r")) == NULL) {
     printf(couldnt_open,argv[curr_arg]);
-    return 3;
+    return 4;
   }
 
   for ( ; ; ) {
@@ -123,11 +145,44 @@ int main(int argc,char **argv)
 
     dwork = (double)player_chips / (double)table_chips;
 
-    if (!bVerbose)
-      printf("%7.4lf %s/%s\n",dwork,save_dir,filename);
+    if (bMax) {
+      if (dwork > save_dwork) {
+        save_dwork = dwork;
+        strcpy(save_filename,filename);
+
+        if (bVerbose) {
+          save_player_chips = player_chips;
+          save_table_chips = table_chips;
+        }
+      }
+    }
+    else if (bMin) {
+      if ((save_dwork == (double)0) || (dwork < save_dwork)) {
+        save_dwork = dwork;
+        strcpy(save_filename,filename);
+
+        if (bVerbose) {
+          save_player_chips = player_chips;
+          save_table_chips = table_chips;
+        }
+      }
+    }
     else {
-      printf("%7.4lf (%10d %10d) %s/%s\n",dwork,
-        player_chips,table_chips,save_dir,filename);
+      if (!bVerbose)
+        printf("%7.4lf %s/%s\n",dwork,save_dir,filename);
+      else {
+        printf("%7.4lf (%10d %10d) %s/%s\n",dwork,
+          player_chips,table_chips,save_dir,filename);
+      }
+    }
+  }
+
+  if (bMax || bMin) {
+    if (!bVerbose)
+      printf("%7.4lf %s/%s\n",save_dwork,save_dir,save_filename);
+    else {
+      printf("%7.4lf (%10d %10d) %s/%s\n",save_dwork,
+        save_player_chips,save_table_chips,save_dir,save_filename);
     }
   }
 
