@@ -8,8 +8,6 @@
 #include <unistd.h>
 #endif
 
-static char save_dir[_MAX_PATH];
-
 #define MAX_FILENAME_LEN 1024
 static char filename[MAX_FILENAME_LEN];
 
@@ -61,21 +59,26 @@ int main(int argc,char **argv)
   int dbg_file_no;
   int dbg;
   char hole_cards[6];
+  int tot_num_hands;
+  int num_hands;
   int tot_numdecs;
   int numdecs;
   int tot_numfolds;
+  int numfolds;
   int tot_numbets;
+  int numbets;
   int tot_numcalls;
+  int numcalls;
   int tot_numraises;
+  int numraises;
   int tot_numchecks;
+  int numchecks;
   double dwork;
 
   if ((argc < 3) || (argc > 5)) {
     printf(usage);
     return 1;
   }
-
-  getcwd(save_dir,_MAX_PATH);
 
   bDebug = false;
   bVerbose = false;
@@ -107,6 +110,7 @@ int main(int argc,char **argv)
 
   hole_cards[5] = 0;
 
+  tot_num_hands = 0;
   tot_numdecs = 0;
   tot_numfolds = 0;
   tot_numbets = 0;
@@ -131,7 +135,13 @@ int main(int argc,char **argv)
     }
 
     line_no = 0;
+    num_hands = 0;
     numdecs = 0;
+    numfolds = 0;
+    numbets = 0;
+    numcalls = 0;
+    numraises = 0;
+    numchecks = 0;
 
     for ( ; ; ) {
       GetLine(fptr,line,&line_len,MAX_LINE_LEN);
@@ -170,52 +180,62 @@ int main(int argc,char **argv)
           line,line_len,
           folds,FOLDS_LEN,
           &ix)) {
-          tot_numfolds++;
+          numfolds++;
           numdecs++;
-
-          break;
         }
         else if (Contains(true,
           line,line_len,
           bets,BETS_LEN,
           &ix)) {
-          tot_numbets++;
+          numbets++;
           numdecs++;
         }
         else if (Contains(true,
           line,line_len,
           calls,CALLS_LEN,
           &ix)) {
-          tot_numcalls++;
+          numcalls++;
           numdecs++;
         }
         else if (Contains(true,
           line,line_len,
           raises,RAISES_LEN,
           &ix)) {
-          tot_numraises++;
+          numraises++;
           numdecs++;
         }
         else if (Contains(true,
           line,line_len,
           checks,CHECKS_LEN,
           &ix)) {
-          tot_numchecks++;
+          numchecks++;
           numdecs++;
         }
       }
       else {
         if (!strncmp(line,summary,SUMMARY_LEN))
-          break;
+          num_hands++;
       }
     }
 
     fclose(fptr);
 
-    if (bDebug)
-      printf("%d %s %s/%s\n",numdecs,hole_cards,save_dir,filename);
+    if (bVerbose) {
+      dwork = (double)numdecs / (double)num_hands;
 
+      printf("%5d %5d %5.2lf fld %5d bet %5d call %5d rse %5d chk %5d %s\n",
+         numdecs,num_hands,dwork,
+         numfolds,numbets,numcalls,numraises,numchecks,
+         filename);
+    }
+
+    tot_num_hands += num_hands;
     tot_numdecs += numdecs;
+    tot_numfolds += numfolds;
+    tot_numbets += numbets;
+    tot_numcalls += numcalls;
+    tot_numraises += numraises;
+    tot_numchecks += numchecks;
   }
 
   fclose(fptr0);
@@ -223,15 +243,14 @@ int main(int argc,char **argv)
   if (bDebug)
     putchar(0x0a);
 
-  dwork = (double)tot_numdecs / (double)file_no;
+  dwork = (double)tot_numdecs / (double)tot_num_hands;
 
   if (!bVerbose)
-    printf("%5d %5d %5.2lf %s\n",tot_numdecs,file_no,dwork,save_dir);
+    printf("%5d %5d %5.2lf\n",tot_numdecs,tot_num_hands,dwork);
   else {
-    printf("%3d %5d %5.2lf fld %3d bet %3d call %3d rse %3d chk %3d %s\n",
-       tot_numdecs,file_no,dwork,
-       tot_numfolds,tot_numbets,tot_numcalls,tot_numraises,tot_numchecks,
-       save_dir);
+    printf("%5d %5d %5.2lf fld %5d bet %5d call %5d rse %5d chk %5d\n",
+      tot_numdecs,tot_num_hands,dwork,
+      tot_numfolds,tot_numbets,tot_numcalls,tot_numraises,tot_numchecks);
   }
 
   return 0;

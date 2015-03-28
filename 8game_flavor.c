@@ -5,7 +5,7 @@
 static char line[MAX_LINE_LEN];
 
 static char usage[] =
-"usage: 8-game_flavor (-debug) filename\n";
+"usage: 8game_flavor (-debug) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char pokerstars[] = "PokerStars ";
