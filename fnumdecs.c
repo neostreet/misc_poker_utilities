@@ -223,7 +223,7 @@ int main(int argc,char **argv)
     if (bVerbose) {
       dwork = (double)numdecs / (double)num_hands;
 
-      printf("%5d %5d %5.2lf fld %5d bet %5d call %5d rse %5d chk %5d %s\n",
+      printf("%6d %6d %5.2lf fld %4d bet %4d call %4d rse %4d chk %4d %s\n",
          numdecs,num_hands,dwork,
          numfolds,numbets,numcalls,numraises,numchecks,
          filename);
@@ -246,9 +246,9 @@ int main(int argc,char **argv)
   dwork = (double)tot_numdecs / (double)tot_num_hands;
 
   if (!bVerbose)
-    printf("%5d %5d %5.2lf\n",tot_numdecs,tot_num_hands,dwork);
+    printf("%6d %6d %5.2lf\n",tot_numdecs,tot_num_hands,dwork);
   else {
-    printf("%5d %5d %5.2lf fld %5d bet %5d call %5d rse %5d chk %5d\n",
+    printf("%6d %6d %5.2lf fld %4d bet %4d call %4d rse %4d chk %4d\n",
       tot_numdecs,tot_num_hands,dwork,
       tot_numfolds,tot_numbets,tot_numcalls,tot_numraises,tot_numchecks);
   }
