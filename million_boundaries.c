@@ -5,7 +5,7 @@
 static char line[MAX_LINE_LEN];
 
 static char usage[] =
-"usage: million_boundaries (-debug) (-all) filename\n";
+"usage: million_boundaries (-debug) (-all) (-all_up) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
@@ -15,6 +15,7 @@ int main(int argc,char **argv)
   int curr_arg;
   bool bDebug;
   bool bAll;
+  bool bUp;
   bool bCrossed;
   FILE *fptr;
   int line_len;
@@ -24,20 +25,27 @@ int main(int argc,char **argv)
   char date_str[20];
   int starting_balance;
   int ending_balance;
+  int starting_million;
+  int ending_million;
 
-  if ((argc < 2) || (argc > 4)) {
+  if ((argc < 2) || (argc > 5)) {
     printf(usage);
     return 1;
   }
 
   bDebug = false;
   bAll = false;
+  bUp = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-debug"))
       bDebug = true;
     else if (!strcmp(argv[curr_arg],"-all"))
       bAll = true;
+    else if (!strcmp(argv[curr_arg],"-all_up")) {
+      bAll = true;
+      bUp = true;
+    }
     else
       break;
   }
@@ -57,7 +65,8 @@ int main(int argc,char **argv)
   if (!bAll)
     boundary = 1000000;
 
-  last_boundary_ix = 0;
+  if (bDebug)
+    last_boundary_ix = 0;
 
   for ( ; ; ) {
     GetLine(fptr,line,&line_len,MAX_LINE_LEN);
@@ -76,23 +85,27 @@ int main(int argc,char **argv)
         bCrossed = false;
     }
     else {
-      if ((starting_balance / 1000000) != (ending_balance / 1000000))
-        bCrossed = true;
-      else
-        bCrossed = false;
+      bCrossed = false;
+
+      starting_million = starting_balance / 1000000;
+      ending_million = ending_balance / 1000000;
+
+      if (starting_million != ending_million) {
+        if (!bUp)
+          bCrossed = true;
+        else if (starting_million < ending_million)
+          bCrossed = true;
+      }
     }
 
     if (bCrossed) {
-      if (!bDebug) {
-        printf("%s\t%d\t%d (%d)\n",date_str,starting_balance,ending_balance,
-          line_no - last_boundary_ix);
-      }
+      if (!bDebug)
+        printf("%s\t%d\t%d\n",date_str,starting_balance,ending_balance);
       else {
         printf("%s\t%d\t%d (%d %d %d)\n",date_str,starting_balance,ending_balance,
           last_boundary_ix,line_no,line_no - last_boundary_ix);
+        last_boundary_ix = line_no;
       }
-
-      last_boundary_ix = line_no;
 
       if (!bAll)
         boundary += 1000000;
