@@ -26,7 +26,7 @@ struct session_info_struct {
 static char usage[] =
 "usage: session_moving_sum (-no_sort) (-ascending) (-absolute_value)\n"
 "  (-skip_interim) (-terse) (-gesum) (-true_false) (-delta_first)\n"
-"  subset_size filename\n";
+"  (-outer_sort_by_winning_sessions) subset_size filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char malloc_failed1[] = "malloc of %d session info structures failed\n";
@@ -51,6 +51,7 @@ static char *months[] = {
 
 static struct session_info_struct *session_info;
 static bool bAscending;
+static bool bOuterSortByWinningSessions;
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
 static int get_session_info(
@@ -90,7 +91,7 @@ int main(int argc,char **argv)
   int retval;
   char *cpt;
 
-  if ((argc < 3) || (argc > 11)) {
+  if ((argc < 3) || (argc > 12)) {
     printf(usage);
     return 1;
   }
@@ -103,6 +104,7 @@ int main(int argc,char **argv)
   bGeSum = false;
   bTrueFalse = false;
   bDeltaFirst = false;
+  bOuterSortByWinningSessions = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-no_sort"))
@@ -123,6 +125,8 @@ int main(int argc,char **argv)
       bTrueFalse = true;
     else if (!strcmp(argv[curr_arg],"-delta_first"))
       bDeltaFirst = true;
+    else if (!strcmp(argv[curr_arg],"-outer_sort_by_winning_sessions"))
+      bOuterSortByWinningSessions = true;
     else
       break;
   }
@@ -434,10 +438,22 @@ int elem_compare(const void *elem1,const void *elem2)
   if (session_info[ix1].sum == session_info[ix2].sum)
     return session_info[ix2].end_date - session_info[ix1].end_date;
 
-  if (bAscending)
+  if (bAscending) {
+    if (bOuterSortByWinningSessions) {
+      if (session_info[ix1].num_winning_sessions != session_info[ix2].num_winning_sessions)
+        return session_info[ix1].num_winning_sessions - session_info[ix2].num_winning_sessions;
+    }
+
     return session_info[ix1].sum - session_info[ix2].sum;
-  else
+  }
+  else {
+    if (bOuterSortByWinningSessions) {
+      if (session_info[ix1].num_winning_sessions != session_info[ix2].num_winning_sessions)
+        return session_info[ix2].num_winning_sessions - session_info[ix1].num_winning_sessions;
+    }
+
     return session_info[ix2].sum - session_info[ix1].sum;
+  }
 }
 
 static char *format_date(char *cpt)
