@@ -165,11 +165,11 @@ int main(int argc,char **argv)
     fclose(fptr);
 
     printf("insert into poker_sessions (\n");
-    printf("  poker_style,poker_session_date,buy_in,entry_fee,initial_stake,"
+    printf("  poker_style,tournament_letter,poker_session_date,buy_in,entry_fee,initial_stake,"
       "big_blind_amount,num_players,poker_flavor,num_hands,place,winnings\n");
     printf(")\n");
-    printf("values (%s,'%s',%d,%d,%d,%s,%d,%s,%d,%d,%d);\n",
-      argv[ARG_POKER_STYLE],date_string,buy_in,entry_fee,
+    printf("values (%s,'%c','%s',%d,%d,%d,%s,%d,%s,%d,%d,%d);\n",
+      argv[ARG_POKER_STYLE],letter,date_string,buy_in,entry_fee,
       initial_stake,argv[ARG_BIG_BLIND_AMOUNT],
       num_players,argv[ARG_POKER_FLAVOR],
       num_hands,place,winnings);
