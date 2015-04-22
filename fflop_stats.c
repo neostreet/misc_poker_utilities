@@ -26,6 +26,8 @@ static char folded_str[] = " folded ";
 static char collected_str[] = " collected ";
 static char mucked_str[] = " mucked ";
 
+static char fmt_str[] = "%s (%d)\n";
+
 #define MAX_SEATS 9
 static int seats[MAX_SEATS];
 
@@ -270,7 +272,7 @@ int main(int argc,char **argv)
           small_blind_flops_seen++;
 
           if (bDebug)
-            printf("%s\n",hole_cards);
+            printf(fmt_str,hole_cards,total_hands);
         }
       }
       else {
@@ -280,7 +282,7 @@ int main(int argc,char **argv)
           big_blind_flops_seen++;
 
           if (bDebug)
-            printf("%s\n",hole_cards);
+            printf(fmt_str,hole_cards,total_hands);
         }
       }
 
@@ -294,7 +296,7 @@ int main(int argc,char **argv)
         other_flops_seen++;
 
         if (bDebug)
-          printf("%s\n",hole_cards);
+          printf(fmt_str,hole_cards,total_hands);
       }
 
       continue;
@@ -310,7 +312,7 @@ int main(int argc,char **argv)
         big_blind_flops_seen++;
 
         if (bDebug)
-          printf("%s\n",hole_cards);
+          printf(fmt_str,hole_cards,total_hands);
       }
     }
     else if (player_seat_ix - button_seat_ix == 1) {
@@ -320,7 +322,7 @@ int main(int argc,char **argv)
         small_blind_flops_seen++;
 
         if (bDebug)
-          printf("%s\n",hole_cards);
+          printf(fmt_str,hole_cards,total_hands);
       }
     }
     else {
@@ -330,7 +332,7 @@ int main(int argc,char **argv)
         other_flops_seen++;
 
         if (bDebug)
-          printf("%s\n",hole_cards);
+          printf(fmt_str,hole_cards,total_hands);
       }
     }
   }
