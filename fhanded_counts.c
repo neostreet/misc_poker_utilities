@@ -35,11 +35,14 @@ int main(int argc,char **argv)
   FILE *fptr0;
   int filename_len;
   int num_files;
+  int dbg_num_files;
+  int dbg;
   FILE *fptr;
+  int line_no;
   int line_len;
   int table_count;
   int num_hands;
-  int handed_counts[5];
+  int handed_counts[8];
   double handed_count_pct;
   int curr_file_num_hands;
 
@@ -83,7 +86,7 @@ int main(int argc,char **argv)
   num_files = 0;
   num_hands = 0;
 
-  for (n = 0; n < 5; n++)
+  for (n = 0; n < 8; n++)
     handed_counts[n] = 0;
 
   for ( ; ; ) {
@@ -100,11 +103,18 @@ int main(int argc,char **argv)
     curr_file_num_hands = 0;
     num_files++;
 
+    if (num_files == dbg_num_files)
+      dbg = 1;
+
+    line_no = 0;
+
     for ( ; ; ) {
       GetLine(fptr,line,&line_len,MAX_LINE_LEN);
 
       if (feof(fptr))
         break;
+
+      line_no++;
 
       if (!strncmp(line,"Table '",7)) {
         table_count = 0;
@@ -115,6 +125,8 @@ int main(int argc,char **argv)
 
           if (feof(fptr))
             break;
+
+          line_no++;
 
           if (!strncmp(line,street_marker,STREET_MARKER_LEN))
             break;
@@ -134,7 +146,7 @@ int main(int argc,char **argv)
 
   fclose(fptr0);
 
-  for (n = 4; (n >= 0); n--) {
+  for (n = 7; (n >= 0); n--) {
     if (!handed_counts[n])
       continue;
 
