@@ -420,7 +420,7 @@ int main(int argc,char **argv)
     printf(" - %d out of %d times in other positions (%d%%)\n",
       other_flops_seen,others,other_flops_seen_pct);
     printf(" - a total of %d out of %d (%d%%)\n",
-      total_flops_seen,total_hands,total_flops_seen_pct);
+      total_flops_seen,total_hands,total_flops_seen_pct_int);
     printf(" Pots won at showdown - %d of %d (%d%%)\n",
       pots_won_at_showdown,num_showdowns,pots_won_at_showdown_pct);
     printf(" Pots won without showdown - %d\n",pots_won_without_showdown);
