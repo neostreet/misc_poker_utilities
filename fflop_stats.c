@@ -1,6 +1,14 @@
 #include <stdio.h>
 #include <string.h>
+#ifdef WIN32
+#include <direct.h>
+#else
+#define _MAX_PATH 4096
+#include <unistd.h>
+#endif
 #include "str_misc.h"
+
+static char save_dir[_MAX_PATH];
 
 #define MAX_FILENAME_LEN 1024
 static char filename[MAX_FILENAME_LEN];
@@ -8,7 +16,8 @@ static char filename[MAX_FILENAME_LEN];
 #define MAX_LINE_LEN 1024
 static char line[MAX_LINE_LEN];
 
-static char usage[] = "usage: fflop_stats (-debug) player_name filename\n";
+static char usage[] =
+"usage: fflop_stats (-debug) (-verbose) (-pct_only) player_name filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 static char is_the_button[] = " is the button";
 static char dealt_to[] = "Dealt to ";
@@ -39,7 +48,9 @@ int main(int argc,char **argv)
   int n;
   int p;
   int curr_arg;
-  int bDebug;
+  bool bDebug;
+  bool bVerbose;
+  bool bPctOnly;
   FILE *fptr0;
   int filename_len;
   FILE *fptr;
@@ -70,7 +81,8 @@ int main(int argc,char **argv)
   int big_blind_flops_seen_pct;
   int small_blind_flops_seen_pct;
   int other_flops_seen_pct;
-  int total_flops_seen_pct;
+  double total_flops_seen_pct;
+  int total_flops_seen_pct_int;
   int found;
   int pots_won_at_showdown;
   int num_showdowns;
@@ -80,16 +92,24 @@ int main(int argc,char **argv)
   int pots_won_without_showdown;
   int player_folds_str_len;
 
-  if ((argc < 3) || (argc > 4)) {
+  if ((argc < 3) || (argc > 6)) {
     printf(usage);
     return 1;
   }
 
   bDebug = false;
+  bVerbose = false;
+  bPctOnly = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-debug"))
       bDebug = true;
+    else if (!strcmp(argv[curr_arg],"-verbose")) {
+      bVerbose = true;
+      getcwd(save_dir,_MAX_PATH);
+    }
+    else if (!strcmp(argv[curr_arg],"-pct_only"))
+      bPctOnly = true;
     else
       break;
   }
@@ -362,11 +382,14 @@ int main(int argc,char **argv)
     other_flops_seen_pct = (int)dwork;
   }
 
-  if (!total_hands)
-    total_flops_seen_pct = 0;
+  if (!total_hands) {
+    total_flops_seen_pct = (double)0;
+    total_flops_seen_pct_int = 0;
+  }
   else {
+    total_flops_seen_pct = (double)total_flops_seen / (double)total_hands;
     dwork = (double)total_flops_seen / (double)total_hands * (double)100;
-    total_flops_seen_pct = (int)dwork;
+    total_flops_seen_pct_int = (int)dwork;
   }
 
   if (!num_showdowns)
@@ -376,20 +399,32 @@ int main(int argc,char **argv)
     pots_won_at_showdown_pct = (int)dwork;
   }
 
-  printf("During current Hold'em session you were dealt %d hands and saw flop:\n",
-    total_hands);
+  if (bPctOnly) {
+    printf("%8.6lf ",total_flops_seen_pct);
+    printf("(%d %d)",
+      total_flops_seen,total_hands);
 
-  printf(" - %d out of %d times while in big blind (%d%%)\n",
-    big_blind_flops_seen,big_blinds,big_blind_flops_seen_pct);
-  printf(" - %d out of %d times while in small blind (%d%%)\n",
-    small_blind_flops_seen,small_blinds,small_blind_flops_seen_pct);
-  printf(" - %d out of %d times in other positions (%d%%)\n",
-    other_flops_seen,others,other_flops_seen_pct);
-  printf(" - a total of %d out of %d (%d%%)\n",
-    total_flops_seen,total_hands,total_flops_seen_pct);
-  printf(" Pots won at showdown - %d of %d (%d%%)\n",
-    pots_won_at_showdown,num_showdowns,pots_won_at_showdown_pct);
-  printf(" Pots won without showdown - %d\n",pots_won_without_showdown);
+    if (!bVerbose)
+      putchar(0x0a);
+    else
+      printf(" %s\n",save_dir);
+  }
+  else {
+    printf("During current Hold'em session you were dealt %d hands and saw flop:\n",
+      total_hands);
+
+    printf(" - %d out of %d times while in big blind (%d%%)\n",
+      big_blind_flops_seen,big_blinds,big_blind_flops_seen_pct);
+    printf(" - %d out of %d times while in small blind (%d%%)\n",
+      small_blind_flops_seen,small_blinds,small_blind_flops_seen_pct);
+    printf(" - %d out of %d times in other positions (%d%%)\n",
+      other_flops_seen,others,other_flops_seen_pct);
+    printf(" - a total of %d out of %d (%d%%)\n",
+      total_flops_seen,total_hands,total_flops_seen_pct);
+    printf(" Pots won at showdown - %d of %d (%d%%)\n",
+      pots_won_at_showdown,num_showdowns,pots_won_at_showdown_pct);
+    printf(" Pots won without showdown - %d\n",pots_won_without_showdown);
+  }
 
   return 0;
 }
