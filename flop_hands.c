@@ -126,7 +126,7 @@ int main(int argc,char **argv)
       if (!bVerbose)
         printf("%s\n",filename);
       else
-        printf("%s/%s\n",filename);
+        printf("%s/%s\n",save_dir,filename);
     }
   }
 
