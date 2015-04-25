@@ -17,10 +17,8 @@ static char filename[MAX_FILENAME_LEN];
 static char line[MAX_LINE_LEN];
 
 static char usage[] =
-"usage: fflop_stats_by_table_count (-debug) (-verbose) (-pct_only) player_name filename\n";
+"usage: fflop_stats_by_table_count (-verbose) player_name filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
-static char dealt_to[] = "Dealt to ";
-#define DEALT_TO_LEN (sizeof (dealt_to) - 1)
 static char seat_str[] = "Seat ";
 #define SEAT_STR_LEN (sizeof (seat_str) - 1)
 static char player_folds_str[128];
@@ -28,72 +26,58 @@ static char flop_str[] = "*** FLOP ***";
 #define FLOP_STR_LEN (sizeof (flop_str) - 1)
 static char summary_str[] = "*** SUMMARY ***";
 #define SUMMARY_STR_LEN (sizeof (summary_str) - 1)
-static char showed_str[] = " showed ";
-static char won_str[] = " won ";
-static char folded_str[] = " folded ";
-static char collected_str[] = " collected ";
-static char mucked_str[] = " mucked ";
 
 static char fmt_str[] = "%s (%d)\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
 
+struct flop_info {
+  int total_hands;
+  int total_flops_seen;
+};
+
+#define NUM_TABLE_COUNTS 8
+
+static struct flop_info fflop_stats_by_table_count[NUM_TABLE_COUNTS];
+
 int main(int argc,char **argv)
 {
-  int m;
   int n;
-  int p;
   int curr_arg;
-  bool bDebug;
   bool bVerbose;
-  bool bPctOnly;
   FILE *fptr0;
   int filename_len;
   FILE *fptr;
   int line_len;
   int line_no;
   static int dbg_line_no;
-  char hole_cards[6];
   int ix;
   int player_found;
   int player_seat_ix;
+  int seat_count;
   int saw_flop;
   int saw_summary;
   int player_folded_before_flop;
   int total_hands;
-  int total_flops_seen;
   static int dbg_hand;
   int dbg;
   double dwork;
   double total_flops_seen_pct;
   int total_flops_seen_pct_int;
-  int found;
-  int pots_won_at_showdown;
-  int num_showdowns;
-  int pots_won_at_showdown_pct;
-  int num_folded;
-  int num_mucked;
-  int pots_won_without_showdown;
   int player_folds_str_len;
 
-  if ((argc < 3) || (argc > 6)) {
+  if ((argc < 3) || (argc > 4)) {
     printf(usage);
     return 1;
   }
 
-  bDebug = false;
   bVerbose = false;
-  bPctOnly = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
-    if (!strcmp(argv[curr_arg],"-debug"))
-      bDebug = true;
-    else if (!strcmp(argv[curr_arg],"-verbose")) {
+    if (!strcmp(argv[curr_arg],"-verbose")) {
       bVerbose = true;
       getcwd(save_dir,_MAX_PATH);
     }
-    else if (!strcmp(argv[curr_arg],"-pct_only"))
-      bPctOnly = true;
     else
       break;
   }
@@ -111,16 +95,12 @@ int main(int argc,char **argv)
     return 3;
   }
 
-  hole_cards[5] = 0;
-
   total_hands = 0;
-  total_flops_seen = 0;
-  pots_won_at_showdown = 0;
-  num_showdowns = 0;
-  pots_won_without_showdown = 0;
-  num_folded = 0;
-  pots_won_without_showdown = 0;
-  num_mucked = 0;
+
+  for (n = 0; n < NUM_TABLE_COUNTS; n++) {
+    fflop_stats_by_table_count[n].total_hands = 0;
+    fflop_stats_by_table_count[n].total_flops_seen = 0;
+  }
 
   for ( ; ; ) {
     GetLine(fptr0,filename,&filename_len,MAX_FILENAME_LEN);
@@ -139,6 +119,7 @@ int main(int argc,char **argv)
     }
 
     line_no = 0;
+    seat_count = 0;
     player_seat_ix = -1;
     saw_flop = 0;
     saw_summary = 0;
@@ -156,74 +137,14 @@ int main(int argc,char **argv)
 
       player_found = find_substring(line,&ix,argv[curr_arg],true,false);
 
-      if ((player_found) && (saw_summary)) {
-        ix = 0;
-
-        found = find_substring(line,&ix,showed_str,true,false);
-
-        if (found) {
-          num_showdowns++;
-          ix = 0;
-
-          found = find_substring(line,&ix,won_str,true,false);
-
-          if (found)
-            pots_won_at_showdown++;
-        }
-        else {
-          ix = 0;
-
-          found = find_substring(line,&ix,folded_str,true,false);
-
-          if (found)
-            num_folded++;
-          else {
-            ix = 0;
-
-            found = find_substring(line,&ix,collected_str,true,false);
-
-            if (found)
-              pots_won_without_showdown++;
-            else {
-              ix = 0;
-
-              found = find_substring(line,&ix,mucked_str,true,false);
-
-              if (found) {
-                num_mucked++;
-                num_showdowns++;
-              }
-            }
-          }
-        }
-      }
-
       if (line_no == dbg_line_no)
         dbg = 1;
 
       if ((line_no >= 3) && (line_no <= 11) && !strncmp(line,seat_str,SEAT_STR_LEN)) {
         if (player_found)
           player_seat_ix = 0;
-      }
-      else if (bDebug && !strncmp(line,dealt_to,DEALT_TO_LEN)) {
-        for (n = 0; n < line_len; n++) {
-          if (line[n] == '[')
-            break;
-        }
 
-        if (n < line_len) {
-          n++;
-
-          for (m = n; m < line_len; m++) {
-            if (line[m] == ']')
-              break;
-          }
-
-          if (m < line_len) {
-            for (p = 0; p < 5; p++)
-              hole_cards[p] = line[n+p];
-          }
-        }
+        seat_count++;
       }
       else if (!strncmp(line,player_folds_str,player_folds_str_len)) {
         if (!saw_flop)
@@ -242,52 +163,35 @@ int main(int argc,char **argv)
       continue;
     }
 
-    if (saw_flop && !player_folded_before_flop) {
-      total_flops_seen++;
+    ix = seat_count - 2;
 
-      if (bDebug)
-        printf(fmt_str,hole_cards,total_hands);
-    }
+    fflop_stats_by_table_count[ix].total_hands++;
+
+    if (saw_flop && !player_folded_before_flop)
+      fflop_stats_by_table_count[ix].total_flops_seen++;
   }
 
   fclose(fptr0);
 
-  if (!total_hands) {
-    total_flops_seen_pct = (double)0;
-    total_flops_seen_pct_int = 0;
-  }
-  else {
-    total_flops_seen_pct = (double)total_flops_seen / (double)total_hands;
-    dwork = (double)total_flops_seen / (double)total_hands * (double)100;
+  for (n = 0; n < NUM_TABLE_COUNTS; n++) {
+    if (!fflop_stats_by_table_count[n].total_hands)
+      continue;
+
+    total_flops_seen_pct = (double)fflop_stats_by_table_count[n].total_flops_seen /
+      (double)fflop_stats_by_table_count[n].total_hands;
+    dwork = (double)fflop_stats_by_table_count[n].total_flops_seen /
+      (double)fflop_stats_by_table_count[n].total_hands * (double)100;
     total_flops_seen_pct_int = (int)dwork;
-  }
 
-  if (!num_showdowns)
-    pots_won_at_showdown_pct = 0;
-  else {
-    dwork = (double)pots_won_at_showdown / (double)num_showdowns * (double)100;
-    pots_won_at_showdown_pct = (int)dwork;
-  }
-
-  if (bPctOnly) {
-    printf("%8.6lf ",total_flops_seen_pct);
+    printf("%d: %8.6lf ",n + 2,total_flops_seen_pct);
     printf("(%d %d)",
-      total_flops_seen,total_hands);
+      fflop_stats_by_table_count[n].total_flops_seen,
+      fflop_stats_by_table_count[n].total_hands);
 
     if (!bVerbose)
       putchar(0x0a);
     else
       printf(" %s\n",save_dir);
-  }
-  else {
-    printf("During current Hold'em session you were dealt %d hands and saw flop:\n",
-      total_hands);
-
-    printf(" - a total of %d out of %d (%d%%)\n",
-      total_flops_seen,total_hands,total_flops_seen_pct_int);
-    printf(" Pots won at showdown - %d of %d (%d%%)\n",
-      pots_won_at_showdown,num_showdowns,pots_won_at_showdown_pct);
-    printf(" Pots won without showdown - %d\n",pots_won_without_showdown);
   }
 
   return 0;
