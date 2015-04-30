@@ -2,11 +2,12 @@
 #include <string.h>
 
 static char usage[] =
-"usage: bad_beat_distance (-expected_value) invested pot_size win_pct";
+"usage: bad_beat_distance (-verbose) (-expected_value) invested pot_size win_pct";
 
 int main(int argc,char **argv)
 {
   int curr_arg;
+  bool bVerbose;
   bool bExpectedValue;
   int invested;
   int pot_size;
@@ -14,13 +15,18 @@ int main(int argc,char **argv)
   int work;
   double expected_value;
 
-  if ((argc < 4) || (argc > 5)) {
+  if ((argc < 4) || (argc > 6)) {
     printf(usage);
     return 1;
   }
 
+  bVerbose = false;
+  bExpectedValue = false;
+
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
-    if (!strcmp(argv[curr_arg],"-expected_value"))
+    if (!strcmp(argv[curr_arg],"-verbose"))
+      bVerbose = true;
+    else if (!strcmp(argv[curr_arg],"-expected_value"))
       bExpectedValue = true;
     else
       break;
@@ -51,8 +57,14 @@ int main(int argc,char **argv)
 
   if (bExpectedValue)
     printf("%lf\n",expected_value);
-  else
-    printf("%lf\n",expected_value + (double)invested);
+  else {
+    if (!bVerbose)
+      printf("%lf\n",expected_value + (double)invested);
+    else {
+      printf("%lf (%lf %d)\n",expected_value + (double)invested,
+        expected_value,invested);
+    }
+  }
 
   return 0;
 }
