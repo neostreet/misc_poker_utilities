@@ -71,7 +71,7 @@ int main(int argc,char **argv)
   if (bDelta)
     total_delta = 0;
 
-  printf("buy_in entry_fee num_players num_hands place winnings\n\n");
+  printf("buy_in entry players hands place winnings\n\n");
 
   for (n = 0; n < MAX_SIT_AND_GOS; n++) {
     sprintf(outer_filename,"%c/sng_hands.ls0",letter);
@@ -129,12 +129,12 @@ int main(int argc,char **argv)
     fclose(fptr);
 
     if (!bDelta) {
-      printf("%6d %9d %11d %9d %5d %8d\n",
+      printf("%6d %5d %7d %5d %5d %8d\n",
         buy_in,entry_fee,num_players,num_hands,place,winnings);
     }
     else {
       delta += winnings;
-      printf("%6d %9d %11d %9d %5d %8d %8d\n",
+      printf("%6d %5d %7d %5d %5d %8d %8d\n",
         buy_in,entry_fee,num_players,num_hands,place,winnings,delta);
       total_delta += delta;
     }
@@ -143,7 +143,7 @@ int main(int argc,char **argv)
   }
 
   if (bDelta)
-    printf("\n                                                      %8d\n",total_delta);
+    printf("\n                                          %8d\n",total_delta);
 
   return 0;
 }
