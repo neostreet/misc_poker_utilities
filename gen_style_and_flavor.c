@@ -7,7 +7,7 @@ static char usage[] = "usage: gen_style_and_flavor filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char headings[] =
-  "Style Flavor\n";
+  "style flavor\n";
 
 static char *poker_styles[] = {
   "Cash ",
