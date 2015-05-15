@@ -1,7 +1,11 @@
 #include <stdio.h>
+#include <stdlib.h>
 
 static char usage[] = "usage: gen_twifs filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
+
+#define BUF_LEN 1024
+static char buf[BUF_LEN];
 
 int main(int argc,char **argv)
 {
@@ -48,9 +52,10 @@ int main(int argc,char **argv)
     return 1;
   }
 
-  printf("echo off\n");
-  printf("call twif0 %d %d %d\n",firsts,seconds,total);
-  printf("call twif %d %d %d\n",firsts,seconds,total);
+  sprintf(buf,"tournament_wif /cygdrive/c/aidan/pokerstars/50000a %d %d %d",firsts,seconds,total);
+  system(buf);
+  sprintf(buf,"tournament_wif /cygdrive/c/aidan/pokerstars/50000b %d %d %d",firsts,seconds,total);
+  system(buf);
 
   return 0;
 }
