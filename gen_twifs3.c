@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-static char usage[] = "usage: gen_twifs2 filename\n";
+static char usage[] = "usage: gen_twifs3 filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 #define MAX_LINE_LEN 1024
@@ -19,10 +19,6 @@ int main(int argc,char **argv)
   int line_no;
   int firsts;
   int seconds;
-  int thirds;
-  int fourths;
-  int fifths;
-  int sixths;
   int total;
 
   if (argc != 2) {
@@ -45,13 +41,12 @@ int main(int argc,char **argv)
 
     line_no++;
 
-    sscanf(line,"%d %d %d %d %d %d",&firsts,&seconds,&thirds,&fourths,&fifths,&sixths);
-    sprintf(buf,"echo %d %d %d %d %d %d\n",firsts,seconds,thirds,fourths,fifths,sixths);
+    sscanf(line,"%d %d %d",&firsts,&seconds,&total);
+    sprintf(buf,"echo %d %d %d",firsts,seconds,total);
     system(buf);
-    total = firsts + seconds + thirds + fourths + fifths + sixths;
-    sprintf(buf,"tournament_wif /cygdrive/c/aidan/pokerstars/50000a %d %d %d",firsts,seconds,total);
+    sprintf(buf,"tournament_wif /cygdrive/c/users/alloyd/misc/git/misc_poker_utilities/50000a %d %d %d",firsts,seconds,total);
     system(buf);
-    sprintf(buf,"tournament_wif /cygdrive/c/aidan/pokerstars/50000b %d %d %d",firsts,seconds,total);
+    sprintf(buf,"tournament_wif /cygdrive/c/users/alloyd/misc/git/misc_poker_utilities/50000b %d %d %d",firsts,seconds,total);
     system(buf);
   }
 
