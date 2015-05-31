@@ -3,11 +3,11 @@
 #define MAX_LINE_LEN 1024
 static char line[MAX_LINE_LEN];
 
-static char usage[] = "usage: skeleton filename\n";
+static char usage[] = "usage: gen_hands filename hands_filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
-static void print_modified_line(char *line,int line_len);
+static void print_modified_line(char *line,int line_len,char *hands_filename);
 
 int main(int argc,char **argv)
 {
@@ -15,7 +15,7 @@ int main(int argc,char **argv)
   int line_len;
   int line_no;
 
-  if (argc != 2) {
+  if (argc != 3) {
     printf(usage);
     return 1;
   }
@@ -34,7 +34,7 @@ int main(int argc,char **argv)
       break;
 
     line_no++;
-    print_modified_line(line,line_len);
+    print_modified_line(line,line_len,argv[2]);
   }
 
   fclose(fptr);
@@ -66,7 +66,7 @@ static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen)
   *line_len = local_line_len;
 }
 
-static void print_modified_line(char *line,int line_len)
+static void print_modified_line(char *line,int line_len,char *hands_filename)
 {
   int n;
 
@@ -87,5 +87,5 @@ static void print_modified_line(char *line,int line_len)
 
   putchar(line[10]);
 
-  printf("\\sng_hands\n");
+  printf("\\%s\n",hands_filename);
 }
