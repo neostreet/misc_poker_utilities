@@ -5,7 +5,7 @@
 static char line[MAX_LINE_LEN];
 
 static char usage[] =
-"usage: million_boundaries (-debug) (-all) (-all_up) filename\n";
+"usage: million_boundaries (-debug) (-all) (-all_up) (-all_down) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
@@ -16,6 +16,7 @@ int main(int argc,char **argv)
   bool bDebug;
   bool bAll;
   bool bUp;
+  bool bDown;
   bool bCrossed;
   FILE *fptr;
   int line_len;
@@ -28,7 +29,7 @@ int main(int argc,char **argv)
   int starting_million;
   int ending_million;
 
-  if ((argc < 2) || (argc > 5)) {
+  if ((argc < 2) || (argc > 6)) {
     printf(usage);
     return 1;
   }
@@ -36,6 +37,7 @@ int main(int argc,char **argv)
   bDebug = false;
   bAll = false;
   bUp = false;
+  bDown = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-debug"))
@@ -46,18 +48,27 @@ int main(int argc,char **argv)
       bAll = true;
       bUp = true;
     }
+    else if (!strcmp(argv[curr_arg],"-all_down")) {
+      bAll = true;
+      bDown = true;
+    }
     else
       break;
   }
 
+  if (bUp && bDown) {
+    printf("can't specify both -all_up and -all_down\n");
+    return 2;
+  }
+
   if (argc - curr_arg != 1) {
     printf(usage);
-    return 2;
+    return 3;
   }
 
   if ((fptr = fopen(argv[curr_arg],"r")) == NULL) {
     printf(couldnt_open,argv[curr_arg]);
-    return 3;
+    return 4;
   }
 
   line_no = 0;
@@ -91,9 +102,11 @@ int main(int argc,char **argv)
       ending_million = ending_balance / 1000000;
 
       if (starting_million != ending_million) {
-        if (!bUp)
+        if (!bUp && !bDown)
           bCrossed = true;
-        else if (starting_million < ending_million)
+        else if (bUp && (starting_million < ending_million))
+          bCrossed = true;
+        else if (bDown && (starting_million > ending_million))
           bCrossed = true;
       }
     }
