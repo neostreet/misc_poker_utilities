@@ -141,12 +141,16 @@ int main(int argc,char **argv)
     }
   }
 
+  if (bVerbose) {
+    cpt = ctime(&session_info[num_sessions-1].poker_session_date);
+    cpt[strlen(cpt) - 1] = 0;
+    printf("%8d %s\n",session_info[num_sessions-1].ending_amount,cpt);
+  }
+
   free(session_info);
 
-  if (bVerbose)
-    putchar(0x0a);
-
-  printf("%d\n",nll_count);
+  if (!bVerbose)
+    printf("%d\n",nll_count);
 
   return 0;
 }

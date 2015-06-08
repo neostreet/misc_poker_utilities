@@ -150,10 +150,8 @@ int main(int argc,char **argv)
 
   free(session_info);
 
-  if (bVerbose)
-    putchar(0x0a);
-
-  printf("%d\n",nll_nhb_count);
+  if (!bVerbose)
+    printf("%d\n",nll_nhb_count);
 
   return 0;
 }
