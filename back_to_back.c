@@ -4,7 +4,7 @@
 #define MAX_LINE_LEN 1024
 static char line[MAX_LINE_LEN];
 
-static char usage[] = "usage: back_to_back place filename\n";
+static char usage[] = "usage: back_to_back (-id) place filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
@@ -13,6 +13,8 @@ static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
 
 int main(int argc,char **argv)
 {
+  int curr_arg;
+  bool bId;
   int back_to_back_place;
   FILE *fptr;
   int line_len;
@@ -21,20 +23,37 @@ int main(int argc,char **argv)
   int prev_place;
   char session_date[DATE_STR_LEN+1];
   char prev_session_date[DATE_STR_LEN+1];
+  int id;
+  int prev_id;
 
-  if (argc != 3) {
+  if ((argc < 3) || (argc > 4)) {
     printf(usage);
     return 1;
   }
 
-  sscanf(argv[1],"%d",&back_to_back_place);
+  bId = false;
 
-  if ((fptr = fopen(argv[2],"r")) == NULL) {
-    printf(couldnt_open,argv[2]);
+  for (curr_arg = 1; curr_arg < argc; curr_arg++) {
+    if (!strcmp(argv[curr_arg],"-id"))
+      bId = true;
+    else
+      break;
+  }
+
+  if (argc - curr_arg != 2) {
+    printf(usage);
     return 2;
   }
 
+  sscanf(argv[curr_arg],"%d",&back_to_back_place);
+
+  if ((fptr = fopen(argv[curr_arg+1],"r")) == NULL) {
+    printf(couldnt_open,argv[curr_arg+1]);
+    return 3;
+  }
+
   line_no = 0;
+  prev_id = -1;
 
   for ( ; ; ) {
     GetLine(fptr,line,&line_len,MAX_LINE_LEN);
@@ -44,12 +63,25 @@ int main(int argc,char **argv)
 
     line_no++;
 
-    sscanf(line,"%d %s",&place,session_date);
+    if (!bId)
+      sscanf(line,"%d %s",&place,session_date);
+    else
+      sscanf(line,"%d %s %d",&place,session_date,&id);
 
     if (line_no > 1) {
       if ((place == back_to_back_place) && (place == prev_place) &&
         !strcmp(prev_session_date,session_date)) {
+
+        if (!bId)
           printf("%s\n",session_date);
+        else {
+          if (prev_id == -1)
+            printf("%s %d\n",session_date,id);
+          else
+            printf("%s %d (%d)\n",session_date,id,id - prev_id);
+        }
+
+        prev_id = id;
       }
     }
 
