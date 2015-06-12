@@ -4,7 +4,8 @@
 #define MAX_LINE_LEN 1024
 static char line[MAX_LINE_LEN];
 
-static char usage[] = "usage: back_to_back (-id) place filename\n";
+static char usage[] =
+"usage: back_to_back (-id) (-same_date) place filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
@@ -15,6 +16,7 @@ int main(int argc,char **argv)
 {
   int curr_arg;
   bool bId;
+  bool bSameDate;
   int back_to_back_place;
   FILE *fptr;
   int line_len;
@@ -23,19 +25,21 @@ int main(int argc,char **argv)
   int prev_place;
   char session_date[DATE_STR_LEN+1];
   char prev_session_date[DATE_STR_LEN+1];
-  int id;
   int prev_id;
 
-  if ((argc < 3) || (argc > 4)) {
+  if ((argc < 3) || (argc > 5)) {
     printf(usage);
     return 1;
   }
 
   bId = false;
+  bSameDate = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-id"))
       bId = true;
+    else if (!strcmp(argv[curr_arg],"-same_date"))
+      bSameDate = true;
     else
       break;
   }
@@ -53,7 +57,9 @@ int main(int argc,char **argv)
   }
 
   line_no = 0;
-  prev_id = -1;
+
+  if (bId)
+    prev_id = -1;
 
   for ( ; ; ) {
     GetLine(fptr,line,&line_len,MAX_LINE_LEN);
@@ -63,25 +69,22 @@ int main(int argc,char **argv)
 
     line_no++;
 
-    if (!bId)
-      sscanf(line,"%d %s",&place,session_date);
-    else
-      sscanf(line,"%d %s %d",&place,session_date,&id);
+    sscanf(line,"%d %s",&place,session_date);
 
     if (line_no > 1) {
       if ((place == back_to_back_place) && (place == prev_place) &&
-        !strcmp(prev_session_date,session_date)) {
+        (!bSameDate || !strcmp(prev_session_date,session_date))) {
 
         if (!bId)
           printf("%s\n",session_date);
         else {
           if (prev_id == -1)
-            printf("%s %d\n",session_date,id);
+            printf("%s %d\n",session_date,line_no);
           else
-            printf("%s %d (%d)\n",session_date,id,id - prev_id);
-        }
+            printf("%s %d (%d)\n",session_date,line_no,line_no - prev_id);
 
-        prev_id = id;
+          prev_id = line_no;
+        }
       }
     }
 
