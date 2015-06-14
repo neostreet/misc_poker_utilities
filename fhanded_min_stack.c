@@ -45,6 +45,7 @@ int main(int argc,char **argv)
   int stack;
   int min_stack;
   int min_stack_handed_count;
+  int min_stack_hand_number;
   int ix;
   int curr_file_num_hands;
 
@@ -134,6 +135,7 @@ int main(int argc,char **argv)
         if ((handed_count == -1) || (table_count == handed_count)) {
           if ((min_stack == -1) || (stack < min_stack)) {
             min_stack = stack;
+            min_stack_hand_number = curr_file_num_hands;
 
             if (handed_count == -1)
               min_stack_handed_count = table_count;
@@ -154,15 +156,15 @@ int main(int argc,char **argv)
     if (min_stack != -1) {
       if (!bDebug) {
         if (handed_count != -1)
-          printf("%d\n",min_stack);
+          printf("%d %d %d\n",min_stack,min_stack_hand_number,curr_file_num_hands);
         else
-          printf("%d (%d)\n",min_stack,min_stack_handed_count);
+          printf("%d %d %d (%d)\n",min_stack,min_stack_hand_number,curr_file_num_hands,min_stack_handed_count);
       }
       else {
         if (handed_count != -1)
-          printf("%d %s/%s\n",min_stack,save_dir,filename);
+          printf("%d %d %d %s/%s\n",min_stack,min_stack_hand_number,curr_file_num_hands,save_dir,filename);
         else
-          printf("%d (%d) %s/%s\n",min_stack,min_stack_handed_count,save_dir,filename);
+          printf("%d %d %d (%d) %s/%s\n",min_stack,min_stack_hand_number,curr_file_num_hands,min_stack_handed_count,save_dir,filename);
       }
     }
   }
