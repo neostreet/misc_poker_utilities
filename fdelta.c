@@ -34,7 +34,8 @@ static char game_name[MAX_GAME_NAME_LEN+1];
 static char usage[] =
 "usage: fdelta (-terse) (-verbose) (-debug) (-sum) (-avg) (-absolute_value)\n"
 "  (-winning_only) (-losing_only) (-pocket_pairs_only) (-file_names)\n"
-"  (-big_blind) (-8game) (-all_in) (-hand_number) player_name filename\n";
+"  (-big_blind) (-8game) (-all_in) (-hand_number) (-ge_valval)\n"
+"  player_name filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char pokerstars[] = "PokerStars";
@@ -116,6 +117,7 @@ int main(int argc,char **argv)
   bool bHandNumber;
   int player_name_ix;
   int player_name_len;
+  int ge_val;
   FILE *fptr0;
   int filename_len;
   FILE *fptr;
@@ -160,7 +162,7 @@ int main(int argc,char **argv)
   int curr_big_blind;
   int last_big_blind;
 
-  if ((argc < 3) || (argc > 17)) {
+  if ((argc < 3) || (argc > 18)) {
     printf(usage);
     return 1;
   }
@@ -179,6 +181,7 @@ int main(int argc,char **argv)
   b8game = false;
   bAllIn = false;
   bHandNumber = false;
+  ge_val = -1;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-terse"))
@@ -213,6 +216,8 @@ int main(int argc,char **argv)
       bAllIn = true;
     else if (!strcmp(argv[curr_arg],"-hand_number"))
       bHandNumber = true;
+    else if (!strncmp(argv[curr_arg],"-ge_val",7))
+      sscanf(&argv[curr_arg][7],"%d",&ge_val);
     else
       break;
   }
@@ -626,68 +631,70 @@ int main(int argc,char **argv)
       }
     }
     else if (!bAllIn || bHaveAllIn) {
-      if (bTerse) {
-        if (!bBigBlind) {
-          if (!b8game) {
-            if (!bHandNumber)
-              printf("%d\n",delta);
-            else
-              printf("%d (%d)\n",delta,num_hands);
-          }
-          else {
-            if (!bHandNumber)
-              printf("%10d %s\n",delta,game_name);
-            else
-              printf("%10d %6d %s\n",delta,num_hands,game_name);
-          }
-        }
-        else
-          printf("%d %d\n",delta,curr_big_blind);
-      }
-      else {
-        if (bFileNames) {
-          if (!bBigBlind)
-            printf("%10d %s/%s\n",delta,save_dir,filename);
-          else {
-            printf("%10d %5d%s %s/%s\n",delta,curr_big_blind,
-              (bAsterisk ? "*" : ""),save_dir,filename);
-          }
-        }
-        else if (!bVerbose) {
+      if ((ge_val == -1) || (delta >= ge_val)) {
+        if (bTerse) {
           if (!bBigBlind) {
-            if (!bStud && !bRazz)
-              printf("%s %10d\n",hole_cards,delta);
-            else
-              printf("%10d\n",delta);
-          }
-          else {
-            if (!bStud && !bRazz) {
-              printf("%s %10d %5d%s\n",hole_cards,delta,curr_big_blind,
-                (bAsterisk ? "*" : ""));
+            if (!b8game) {
+              if (!bHandNumber)
+                printf("%d\n",delta);
+              else
+                printf("%d (%d)\n",delta,num_hands);
             }
             else {
-              printf("%10d %5d%s\n",delta,curr_big_blind,
-                (bAsterisk ? "*" : ""));
+              if (!bHandNumber)
+                printf("%10d %s\n",delta,game_name);
+              else
+                printf("%10d %6d %s\n",delta,num_hands,game_name);
             }
           }
+          else
+            printf("%d %d\n",delta,curr_big_blind);
         }
         else {
-          if (!bBigBlind) {
-            if (!bStud && !bRazz)
-              printf("%s %10d %s/%s\n",hole_cards,delta,save_dir,filename);
-            else
+          if (bFileNames) {
+            if (!bBigBlind)
               printf("%10d %s/%s\n",delta,save_dir,filename);
+            else {
+              printf("%10d %5d%s %s/%s\n",delta,curr_big_blind,
+                (bAsterisk ? "*" : ""),save_dir,filename);
+            }
           }
-          else {
-            if (!bStud && !bRazz) {
-              printf("%s %10d %5d %s/%s\n",hole_cards,delta,
-                curr_big_blind,(bAsterisk ? "*" : ""),
-                save_dir,filename);
+          else if (!bVerbose) {
+            if (!bBigBlind) {
+              if (!bStud && !bRazz)
+                printf("%s %10d\n",hole_cards,delta);
+              else
+                printf("%10d\n",delta);
             }
             else {
-              printf("%10d %5d %s/%s\n",delta,
-                curr_big_blind,(bAsterisk ? "*" : ""),
-                save_dir,filename);
+              if (!bStud && !bRazz) {
+                printf("%s %10d %5d%s\n",hole_cards,delta,curr_big_blind,
+                  (bAsterisk ? "*" : ""));
+              }
+              else {
+                printf("%10d %5d%s\n",delta,curr_big_blind,
+                  (bAsterisk ? "*" : ""));
+              }
+            }
+          }
+          else {
+            if (!bBigBlind) {
+              if (!bStud && !bRazz)
+                printf("%s %10d %s/%s\n",hole_cards,delta,save_dir,filename);
+              else
+                printf("%10d %s/%s\n",delta,save_dir,filename);
+            }
+            else {
+              if (!bStud && !bRazz) {
+                printf("%s %10d %5d %s/%s\n",hole_cards,delta,
+                  curr_big_blind,(bAsterisk ? "*" : ""),
+                  save_dir,filename);
+              }
+              else {
+                printf("%10d %5d %s/%s\n",delta,
+                  curr_big_blind,(bAsterisk ? "*" : ""),
+                  save_dir,filename);
+              }
             }
           }
         }
