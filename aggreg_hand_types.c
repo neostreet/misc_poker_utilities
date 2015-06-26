@@ -5,7 +5,7 @@
 #define MAX_LINE_LEN 1024
 static char line[MAX_LINE_LEN];
 
-static char usage[] = "usage: aggregate_hand_types offset filename\n";
+static char usage[] = "usage: aggreg_hand_types offset filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char *plain_hand_types[] = {
@@ -78,7 +78,7 @@ int main(int argc,char **argv)
     retval = get_hand_type_and_delta(line,line_len,offset,&hand_type,&delta);
 
     if (retval) {
-      printf("get_hand_type() failed on line %d: %d\n",line_no,retval);
+      printf("get_hand_type_and_delta() failed on line %d: %d\n",line_no,retval);
       return 3;
     }
 
