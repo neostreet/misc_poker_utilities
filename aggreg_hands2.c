@@ -3,7 +3,7 @@
 
 static char usage[] =
 "usage: aggreg_hands2 (-debug) (-verbose) (-dbg_ixix) (-totals) (-avgs)\n"
-"  (-pairs_only) filename\n";
+"  (-pairs_only) (-s_or_o_between) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 static char avg_fmt[] = " %9.2lf %9.2lf\n";
 
@@ -58,6 +58,7 @@ int main(int argc,char **argv)
   bool bTotals;
   bool bAvgs;
   bool bPairsOnly;
+  bool bSorOBetween;
   int dbg_ix;
   int dbg;
   int m;
@@ -84,7 +85,7 @@ int main(int argc,char **argv)
   double loss_avg;
   int num_collapsed_hands;
 
-  if ((argc < 2) || (argc > 8)) {
+  if ((argc < 2) || (argc > 9)) {
     printf(usage);
     return 1;
   }
@@ -94,6 +95,7 @@ int main(int argc,char **argv)
   bTotals = false;
   bAvgs = false;
   bPairsOnly = false;
+  bSorOBetween = false;
   dbg_ix = -1;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
@@ -109,6 +111,8 @@ int main(int argc,char **argv)
       sscanf(&argv[curr_arg][7],"%d",&dbg_ix);
     else if (!strcmp(argv[curr_arg],"-pairs_only"))
       bPairsOnly = true;
+    else if (!strcmp(argv[curr_arg],"-s_or_o_between"))
+      bSorOBetween = true;
     else
       break;
   }
@@ -295,7 +299,10 @@ int main(int argc,char **argv)
   }
 
   if (!bPairsOnly) {
-    card_string[2] = 's';
+    if (!bSorOBetween)
+      card_string[2] = 's';
+    else
+      card_string[1] = 's';
 
     for (o = 0; o < NUM_SUITED_NONPAIRS; o++) {
       freq_factor = (double)aggreg[NUM_CARDS_IN_SUIT+o].hand_count * (double)SUITED_NONPAIR_PERIODICITY /
@@ -307,11 +314,19 @@ int main(int argc,char **argv)
 
       if (m > n) {
         card_string[0] = rank_chars[m];
-        card_string[1] = rank_chars[n];
+
+        if (!bSorOBetween)
+          card_string[1] = rank_chars[n];
+        else
+          card_string[2] = rank_chars[n];
       }
       else {
         card_string[0] = rank_chars[n];
-        card_string[1] = rank_chars[m];
+
+        if (!bSorOBetween)
+          card_string[1] = rank_chars[m];
+        else
+          card_string[2] = rank_chars[m];
       }
 
       if (bVerbose) {
@@ -364,7 +379,10 @@ int main(int argc,char **argv)
         putchar(0x0a);
     }
 
-    card_string[2] = 'o';
+    if (!bSorOBetween)
+      card_string[2] = 'o';
+    else
+      card_string[1] = 'o';
 
     for (o = 0; o < NUM_NONSUITED_NONPAIRS; o++) {
       freq_factor = (double)aggreg[NUM_CARDS_IN_SUIT+NUM_SUITED_NONPAIRS+o].hand_count * (double)NONSUITED_NONPAIR_PERIODICITY /
@@ -376,11 +394,19 @@ int main(int argc,char **argv)
 
       if (m > n) {
         card_string[0] = rank_chars[m];
-        card_string[1] = rank_chars[n];
+
+        if (!bSorOBetween)
+          card_string[1] = rank_chars[n];
+        else
+          card_string[2] = rank_chars[n];
       }
       else {
         card_string[0] = rank_chars[n];
-        card_string[1] = rank_chars[m];
+
+        if (!bSorOBetween)
+          card_string[1] = rank_chars[m];
+        else
+          card_string[2] = rank_chars[m];
       }
 
       if (bVerbose) {
