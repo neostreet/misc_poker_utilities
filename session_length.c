@@ -20,7 +20,7 @@ static char line[MAX_LINE_LEN];
 static char usage[] =
 "usage: session_length (-verbose) (-seconds) (-avg) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
-static char invalid_date_and_time[] = "%s %s: invalid date and time\n";
+static char invalid_date_and_time[] = "line %d: %s %s: invalid date and time\n";
 
 static char pokerstars[] = "PokerStars ";
 #define POKERSTARS_LEN (sizeof (pokerstars) - 1)
@@ -46,11 +46,11 @@ static struct digit_range time_checks[3] = {
   0, 59      /* second */
 };
 
-static time_t cvt_date_and_time(char *date_str,char *time_str);
-
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
 static int Contains(bool bCaseSens,char *line,int line_len,
   char *string,int string_len,int *index);
+int get_hyphen_ix(char *line,int line_len);
+static time_t cvt_date_and_time(char *date_str,char *time_str);
 
 int main(int argc,char **argv)
 {
@@ -63,6 +63,7 @@ int main(int argc,char **argv)
   int line_no;
   int num_hands;
   int ix;
+  int hyphen_ix;
   time_t date1;
   time_t date2;
   int seconds;
@@ -99,7 +100,7 @@ int main(int argc,char **argv)
 
   if ((fptr = fopen(argv[curr_arg],"r")) == NULL) {
     printf(couldnt_open,argv[curr_arg]);
-    return 2;
+    return 3;
   }
 
   line_no = 0;
@@ -120,14 +121,22 @@ int main(int argc,char **argv)
 
       num_hands++;
 
-      line[line_len - 13] = 0;
+      hyphen_ix = get_hyphen_ix(line,line_len);
+
+      if (hyphen_ix < 0) {
+        printf("line %d: get_hyphen_ix failed\n",line_no);
+        return 4;
+      }
+
+      line[hyphen_ix + 12] = 0;
       line[line_len - 4] = 0;
 
-      date2 = cvt_date_and_time(&line[line_len - 23],&line[line_len - 12]);
+      date2 = cvt_date_and_time(&line[hyphen_ix + 2],&line[hyphen_ix + 13]);
 
       if (date2 == -1L) {
-        printf(invalid_date_and_time,&line[line_len - 23],&line[line_len - 12]);
-        return 3;
+        printf(invalid_date_and_time,line_no,
+          &line[hyphen_ix + 2],&line[hyphen_ix + 13]);
+        return 5;
       }
 
       if (line_no == 1)
@@ -224,6 +233,18 @@ static int Contains(bool bCaseSens,char *line,int line_len,
   }
 
   return false;
+}
+
+int get_hyphen_ix(char *line,int line_len)
+{
+  int n;
+
+  for (n = line_len - 1; (n >= 0); n--) {
+    if (line[n] == '-')
+      break;
+  }
+
+  return n;
 }
 
 static time_t cvt_date_and_time(char *date_str,char *time_str)
