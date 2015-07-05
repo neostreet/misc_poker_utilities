@@ -13,7 +13,8 @@
 #define MAX_LINE_LEN 1024
 static char line[MAX_LINE_LEN];
 
-static char usage[] = "usage: missing_dates (-length) filename\n";
+static char usage[] =
+"usage: missing_dates (-length) (-ctime) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 struct missing_dates_info {
@@ -58,6 +59,7 @@ int main(int argc,char **argv)
 {
   int curr_arg;
   bool bLength;
+  bool bCtime;
   int m;
   int n;
   FILE *fptr;
@@ -68,16 +70,19 @@ int main(int argc,char **argv)
   time_t missing_date;
   char *cpt;
 
-  if ((argc < 2) || (argc > 3)) {
+  if ((argc < 2) || (argc > 4)) {
     printf(usage);
     return 1;
   }
 
   bLength = false;
+  bCtime = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-length"))
       bLength = true;
+    else if (!strcmp(argv[curr_arg],"-ctime"))
+      bCtime = true;
     else
       break;
   }
@@ -148,12 +153,20 @@ int main(int argc,char **argv)
         for (m = 0; m < missing_dates[n].datediff - 1; m++) {
           missing_date += SECS_PER_DAY;
           cpt = ctime(&missing_date);
-          printf("%s\n",format_date(cpt));
+
+          if (bCtime)
+            printf("%s",cpt);
+          else
+            printf("%s\n",format_date(cpt));
         }
       }
       else {
         cpt = ctime(&missing_date);
-        printf("%3d %s\n",missing_dates[n].datediff - 1,format_date(cpt));
+
+        if (bCtime)
+          printf("%3d %s",missing_dates[n].datediff - 1,cpt);
+        else
+          printf("%3d %s\n",missing_dates[n].datediff - 1,format_date(cpt));
       }
     }
   }
