@@ -34,8 +34,8 @@ static char game_name[MAX_GAME_NAME_LEN+1];
 static char usage[] =
 "usage: fdelta (-terse) (-verbose) (-debug) (-sum) (-avg) (-absolute_value)\n"
 "  (-winning_only) (-losing_only) (-pocket_pairs_only) (-file_names)\n"
-"  (-big_blind) (-8game) (-all_in) (-hand_number) (-ge_valval)\n"
-"  player_name filename\n";
+"  (-big_blind) (-8game) (-all_in) (-hand_number) (-ge_valval) (-no_rake)\n"
+"  (-no_hole_cards) player_name filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char pokerstars[] = "PokerStars";
@@ -48,8 +48,6 @@ static char eight_game[] = "8-Game";
 #define EIGHT_GAME_LEN (sizeof (eight_game) - 1)
 static char in_chips[] = " in chips";
 #define IN_CHIPS_LEN (sizeof (in_chips) - 1)
-static char summary[] = "*** SUMMARY ***";
-#define SUMMARY_LEN (sizeof (summary) - 1)
 static char street_marker[] = "*** ";
 #define STREET_MARKER_LEN (sizeof (street_marker) - 1)
 static char posts_the_ante[] = " posts the ante ";
@@ -74,6 +72,8 @@ static char collected[] = " collected ";
 #define COLLECTED_LEN (sizeof (collected) - 1)
 static char all_in[] = "all-in";
 #define ALL_IN_LEN (sizeof (all_in) - 1)
+static char rake_str[] = " Rake ";
+#define RAKE_STR_LEN (sizeof (rake_str) - 1)
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
 static int Contains(bool bCaseSens,char *line,int line_len,
@@ -115,6 +115,8 @@ int main(int argc,char **argv)
   bool bAllIn;
   bool bHaveAllIn;
   bool bHandNumber;
+  bool bNoRake;
+  bool bNoHoleCards;
   int player_name_ix;
   int player_name_len;
   int ge_val;
@@ -161,8 +163,9 @@ int main(int argc,char **argv)
   int retval;
   int curr_big_blind;
   int last_big_blind;
+  int rake;
 
-  if ((argc < 3) || (argc > 18)) {
+  if ((argc < 3) || (argc > 20)) {
     printf(usage);
     return 1;
   }
@@ -181,6 +184,8 @@ int main(int argc,char **argv)
   b8game = false;
   bAllIn = false;
   bHandNumber = false;
+  bNoRake = false;
+  bNoHoleCards = false;
   ge_val = -1;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
@@ -218,6 +223,10 @@ int main(int argc,char **argv)
       bHandNumber = true;
     else if (!strncmp(argv[curr_arg],"-ge_val",7))
       sscanf(&argv[curr_arg][7],"%d",&ge_val);
+    else if (!strcmp(argv[curr_arg],"-no_rake"))
+      bNoRake = true;
+    else if (!strcmp(argv[curr_arg],"-no_hole_cards"))
+      bNoHoleCards = true;
     else
       break;
   }
@@ -567,9 +576,16 @@ int main(int argc,char **argv)
         }
       }
       else {
-        if (!strncmp(line,summary,SUMMARY_LEN)) {
+        if (Contains(true,
+          line,line_len,
+          rake_str,RAKE_STR_LEN,
+          &ix)) {
+
+          if (bNoRake)
+            sscanf(&line[ix + RAKE_STR_LEN],"%d",&rake);
+
           if (bDebug)
-            printf("line %d SUMMARY line detected; breaking\n",line_no);
+            printf("line %d Rake detected; breaking\n",line_no);
 
           break;
         }
@@ -596,6 +612,9 @@ int main(int argc,char **argv)
 
     ending_balance = starting_balance - spent_this_hand + collected_from_pot;
     delta = ending_balance - starting_balance;
+
+    if (bNoRake && collected_from_pot)
+      delta += rake;
 
     if (bSum && b8game) {
       num_8game_hands[eight_game_ix]++;
@@ -679,16 +698,27 @@ int main(int argc,char **argv)
           }
           else {
             if (!bBigBlind) {
-              if (!bStud && !bRazz)
-                printf("%s %10d %s/%s\n",hole_cards,delta,save_dir,filename);
+              if (!bStud && !bRazz) {
+                if (!bNoHoleCards)
+                  printf("%s %10d %s/%s\n",hole_cards,delta,save_dir,filename);
+                else
+                  printf("%10d %s/%s\n",delta,save_dir,filename);
+              }
               else
                 printf("%10d %s/%s\n",delta,save_dir,filename);
             }
             else {
               if (!bStud && !bRazz) {
-                printf("%s %10d %5d %s/%s\n",hole_cards,delta,
-                  curr_big_blind,(bAsterisk ? "*" : ""),
-                  save_dir,filename);
+                if (!bNoHoleCards) {
+                  printf("%s %10d %5d %s/%s\n",hole_cards,delta,
+                    curr_big_blind,(bAsterisk ? "*" : ""),
+                    save_dir,filename);
+                }
+                else {
+                  printf("%10d %5d %s/%s\n",delta,
+                    curr_big_blind,(bAsterisk ? "*" : ""),
+                    save_dir,filename);
+                }
               }
               else {
                 printf("%10d %5d %s/%s\n",delta,
