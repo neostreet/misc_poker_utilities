@@ -24,6 +24,8 @@ static char in_chips[] = " in chips";
 static char summary[] = "*** SUMMARY ***";
 #define SUMMARY_LEN (sizeof (summary) - 1)
 
+static char fmt_str[] = "%10d %s %d\n";
+
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
 static int Contains(bool bCaseSens,char *line,int line_len,
   char *string,int string_len,int *index);
@@ -42,6 +44,7 @@ int main(int argc,char **argv)
   int ix;
   int table_chips;
   int max_table_chips;
+  int max_hand;
   int work;
 
   if ((argc < 2) && (argc > 4)) {
@@ -128,6 +131,7 @@ int main(int argc,char **argv)
             if (table_chips > max_table_chips) {
               strcpy(max_filename,filename);
               max_table_chips = table_chips;
+              max_hand = hand;
             }
           }
 
@@ -139,13 +143,13 @@ int main(int argc,char **argv)
     fclose(fptr);
 
     if (!bTerse && !bVerbose)
-      printf("%10d %s\n",max_table_chips,max_filename);
+      printf(fmt_str,max_table_chips,max_filename,max_hand);
   }
 
   fclose(fptr0);
 
   if (bTerse)
-    printf("%10d %s\n",max_table_chips,max_filename);
+    printf(fmt_str,max_table_chips,max_filename,max_hand);
 
   return 0;
 }
