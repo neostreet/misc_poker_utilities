@@ -16,7 +16,7 @@ static char max_filename[MAX_FILENAME_LEN];
 static char line[MAX_LINE_LEN];
 
 static char usage[] =
-"usage: ftable_chips3 (-verbose) filename\n";
+"usage: ftable_chips3 (-terse) (-verbose) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char in_chips[] = " in chips";
@@ -31,6 +31,7 @@ static int Contains(bool bCaseSens,char *line,int line_len,
 int main(int argc,char **argv)
 {
   int curr_arg;
+  bool bTerse;
   bool bVerbose;
   FILE *fptr0;
   int filenamelen;
@@ -43,15 +44,18 @@ int main(int argc,char **argv)
   int max_table_chips;
   int work;
 
-  if ((argc != 2) && (argc != 3)) {
+  if ((argc < 2) && (argc > 4)) {
     printf(usage);
     return 1;
   }
 
+  bTerse = false;
   bVerbose = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
-    if (!strcmp(argv[curr_arg],"-verbose"))
+    if (!strcmp(argv[curr_arg],"-terse"))
+      bTerse = true;
+    else if (!strcmp(argv[curr_arg],"-verbose"))
       bVerbose = true;
     else
       break;
@@ -62,12 +66,17 @@ int main(int argc,char **argv)
     return 2;
   }
 
-  if ((fptr0 = fopen(argv[curr_arg],"r")) == NULL) {
-    printf(couldnt_open,argv[curr_arg]);
+  if (bTerse && bVerbose) {
+    printf("can't specify both -terse and -verbose\n");
     return 3;
   }
 
-  if (!bVerbose)
+  if ((fptr0 = fopen(argv[curr_arg],"r")) == NULL) {
+    printf(couldnt_open,argv[curr_arg]);
+    return 4;
+  }
+
+  if (bTerse)
     max_table_chips = 0;
 
   for ( ; ; ) {
@@ -84,6 +93,9 @@ int main(int argc,char **argv)
     line_no = 0;
     hand = 0;
     table_chips = 0;
+
+    if (!bTerse && !bVerbose)
+      max_table_chips = 0;
 
     for ( ; ; ) {
       GetLine(fptr,line,&line_len,MAX_LINE_LEN);
@@ -112,9 +124,11 @@ int main(int argc,char **argv)
 
           if (bVerbose)
             printf("%10d %s, hand %d\n",table_chips,filename,hand);
-          else if (table_chips > max_table_chips) {
-            strcpy(max_filename,filename);
-            max_table_chips = table_chips;
+          else {
+            if (table_chips > max_table_chips) {
+              strcpy(max_filename,filename);
+              max_table_chips = table_chips;
+            }
           }
 
           table_chips = 0;
@@ -123,9 +137,14 @@ int main(int argc,char **argv)
     }
 
     fclose(fptr);
+
+    if (!bTerse && !bVerbose)
+      printf("%10d %s\n",max_table_chips,max_filename);
   }
 
-  if (!bVerbose)
+  fclose(fptr0);
+
+  if (bTerse)
     printf("%10d %s\n",max_table_chips,max_filename);
 
   return 0;
