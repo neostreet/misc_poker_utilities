@@ -8,7 +8,8 @@ static char line[MAX_LINE_LEN];
 
 static char usage[] =
 "usage: blue_distance2 (-terse) (-verbose) (-initial_bal) (-no_dates)\n"
-"  (-only_blue) (-from_nonblue) (-in_sessions) (-is_blue) (-skyfall) filename\n";
+"  (-only_blue) (-from_nonblue) (-in_sessions) (-is_blue) (-skyfall)\n"
+"  (-no_input_dates) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
@@ -24,6 +25,7 @@ int main(int argc,char **argv)
   bool bInSessions;
   bool bIsBlue;
   bool bSkyfall;
+  bool bNoInputDates;
   bool bPrevIsBlue;
   int initial_bal;
   FILE *fptr;
@@ -35,7 +37,7 @@ int main(int argc,char **argv)
   int max_balance;
   int max_balance_ix;
 
-  if ((argc < 2) || (argc > 11)) {
+  if ((argc < 2) || (argc > 12)) {
     printf(usage);
     return 1;
   }
@@ -48,6 +50,7 @@ int main(int argc,char **argv)
   bInSessions = false;
   bIsBlue = false;
   bSkyfall = false;
+  bNoInputDates = false;
   initial_bal = 0;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
@@ -69,6 +72,8 @@ int main(int argc,char **argv)
       bIsBlue = true;
     else if (!strcmp(argv[curr_arg],"-skyfall"))
       bSkyfall = true;
+    else if (!strcmp(argv[curr_arg],"-no_input_dates"))
+      bNoInputDates = true;
     else
       break;
   }
@@ -97,7 +102,10 @@ int main(int argc,char **argv)
     if (feof(fptr))
       break;
 
-    sscanf(line,"%s\t%d",str,&delta);
+    if (!bNoInputDates)
+      sscanf(line,"%s\t%d",str,&delta);
+    else
+      sscanf(line,"%d",&delta);
 
     if (!line_no) {
       max_balance_ix = 0;
