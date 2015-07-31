@@ -35,7 +35,8 @@ static char usage[] =
 "usage: fdelta (-terse) (-verbose) (-debug) (-sum) (-avg) (-absolute_value)\n"
 "  (-winning_only) (-losing_only) (-pocket_pairs_only) (-file_names)\n"
 "  (-big_blind) (-8game) (-all_in) (-hand_number) (-ge_valval) (-no_rake)\n"
-"  (-no_hole_cards) player_name filename\n";
+"  (-no_hole_cards) (-only_winning_deltas) (-only_losing_deltas)\n"
+"  player_name filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char pokerstars[] = "PokerStars";
@@ -117,6 +118,8 @@ int main(int argc,char **argv)
   bool bHandNumber;
   bool bNoRake;
   bool bNoHoleCards;
+  bool bOnlyWinningDeltas;
+  bool bOnlyLosingDeltas;
   int player_name_ix;
   int player_name_len;
   int ge_val;
@@ -165,7 +168,7 @@ int main(int argc,char **argv)
   int last_big_blind;
   int rake;
 
-  if ((argc < 3) || (argc > 20)) {
+  if ((argc < 3) || (argc > 22)) {
     printf(usage);
     return 1;
   }
@@ -186,6 +189,8 @@ int main(int argc,char **argv)
   bHandNumber = false;
   bNoRake = false;
   bNoHoleCards = false;
+  bOnlyWinningDeltas = false;
+  bOnlyLosingDeltas = false;
   ge_val = -1;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
@@ -227,6 +232,10 @@ int main(int argc,char **argv)
       bNoRake = true;
     else if (!strcmp(argv[curr_arg],"-no_hole_cards"))
       bNoHoleCards = true;
+    else if (!strcmp(argv[curr_arg],"-only_winning_deltas"))
+      bOnlyWinningDeltas = true;
+    else if (!strcmp(argv[curr_arg],"-only_losing_deltas"))
+      bOnlyLosingDeltas = true;
     else
       break;
   }
@@ -247,12 +256,18 @@ int main(int argc,char **argv)
     return 4;
   }
 
+  if (bOnlyWinningDeltas && bOnlyLosingDeltas) {
+    printf("only specify at most one of the flags -only_winning_deltas and "
+      "-only_losing_deltas\n");
+    return 5;
+  }
+
   player_name_ix = curr_arg++;
   player_name_len = strlen(argv[player_name_ix]);
 
   if ((fptr0 = fopen(argv[curr_arg],"r")) == NULL) {
     printf(couldnt_open,argv[curr_arg]);
-    return 5;
+    return 6;
   }
 
   ending_balance = -1;
@@ -366,19 +381,19 @@ int main(int argc,char **argv)
 
             if (retval) {
               printf("get_8game_name() failed on line %d: %d\n",line_no,retval);
-              return 6;
+              return 7;
             }
 
             retval = get_8game_ix(game_name,&eight_game_ix);
 
             if (retval) {
               printf("get_8game_ix() failed on line %d: %d\n",line_no,retval);
-              return 7;
+              return 8;
             }
           }
           else {
             printf("no 8-game name found on line %d\n",line_no);
-            return 8;
+            return 9;
           }
         }
 
@@ -387,7 +402,7 @@ int main(int argc,char **argv)
 
           if (retval) {
             printf("%s: get_big_blind() failed on line %d: %d\n",filename,line_len,retval);
-            return 9;
+            return 10;
           }
 
           if (file_no > 1) {
@@ -615,6 +630,12 @@ int main(int argc,char **argv)
 
     if (bNoRake && collected_from_pot)
       delta += rake;
+
+    if (bOnlyWinningDeltas && (delta < 0))
+      continue;
+
+    if (bOnlyLosingDeltas && (delta > 0))
+      continue;
 
     if (bSum && b8game) {
       num_8game_hands[eight_game_ix]++;
