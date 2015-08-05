@@ -18,7 +18,7 @@ static char game_name[MAX_GAME_NAME_LEN+1];
 
 static char usage[] =
 "usage: in_chips (-verbose) (-handed_countcount) (-first_handed_countcount)\n"
-"  player_name filename\n";
+"  (-only_8game) player_name filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char pokerstars[] = "PokerStars";
@@ -46,6 +46,7 @@ int main(int argc,char **argv)
   bool bVerbose;
   bool bHandedCount;
   bool bFirstHandedCount;
+  bool bOnly8game;
   int handed_count;
   FILE *fptr;
   int line_len;
@@ -59,7 +60,7 @@ int main(int argc,char **argv)
   int hand_count;
   int table_count;
 
-  if ((argc < 3) || (argc > 6)) {
+  if ((argc < 3) || (argc > 7)) {
     printf(usage);
     return 1;
   }
@@ -67,6 +68,7 @@ int main(int argc,char **argv)
   bVerbose = false;
   bHandedCount = false;
   bFirstHandedCount = false;
+  bOnly8game = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-verbose")) {
@@ -81,6 +83,8 @@ int main(int argc,char **argv)
       sscanf(&argv[curr_arg][19],"%d",&handed_count);
       bFirstHandedCount = true;
     }
+    else if (!strcmp(argv[curr_arg],"-only_8game"))
+      bOnly8game = true;
     else
       break;
   }
@@ -173,18 +177,20 @@ int main(int argc,char **argv)
         }
       }
 
-      if (!bHandedCount || (table_count == handed_count)) {
-        if (!bVerbose)
-          printf("%d\n",chips);
-        else {
-          if (!bHaveGameName)
-            printf("%d %d %s hand %d\n",chips,table_count,save_dir,hand_count);
-          else
-            printf("%d %s %d %s hand %d\n",chips,game_name,table_count,save_dir,hand_count);
-        }
+      if (!bOnly8game || bHaveGameName) {
+        if (!bHandedCount || (table_count == handed_count)) {
+          if (!bVerbose)
+            printf("%d\n",chips);
+          else {
+            if (!bHaveGameName)
+              printf("%d %d %s hand %d\n",chips,table_count,save_dir,hand_count);
+            else
+              printf("%d %s %d %s hand %d\n",chips,game_name,table_count,save_dir,hand_count);
+          }
 
-        if (bFirstHandedCount)
-          break;
+          if (bFirstHandedCount)
+            break;
+        }
       }
     }
   }
