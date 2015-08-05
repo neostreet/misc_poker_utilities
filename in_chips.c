@@ -1,5 +1,14 @@
 #include <stdio.h>
 #include <string.h>
+#include <string.h>
+#ifdef WIN32
+#include <direct.h>
+#else
+#define _MAX_PATH 4096
+#include <unistd.h>
+#endif
+
+static char save_dir[_MAX_PATH];
 
 #define MAX_LINE_LEN 1024
 static char line[MAX_LINE_LEN];
@@ -59,8 +68,10 @@ int main(int argc,char **argv)
   bFirstHandedCount = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
-    if (!strcmp(argv[curr_arg],"-verbose"))
+    if (!strcmp(argv[curr_arg],"-verbose")) {
       bVerbose = true;
+      getcwd(save_dir,_MAX_PATH);
+    }
     else if (!strncmp(argv[curr_arg],"-handed_count",13)) {
       sscanf(&argv[curr_arg][13],"%d",&handed_count);
       bHandedCount = true;
@@ -163,7 +174,7 @@ int main(int argc,char **argv)
         if (!bVerbose || !bHaveGameName)
           printf("%d\n",chips);
         else
-          printf("%d %s %d\n",chips,game_name,table_count);
+          printf("%d %s %d %s\n",chips,game_name,table_count,save_dir);
 
         if (bFirstHandedCount)
           break;
