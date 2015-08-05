@@ -16,11 +16,13 @@ static char eight_game[] = "8-Game";
 #define EIGHT_GAME_LEN (sizeof (eight_game) - 1)
 static char in_chips[] = " in chips";
 #define IN_CHIPS_LEN (sizeof (in_chips) - 1)
+static char street_marker[] = "*** ";
+#define STREET_MARKER_LEN (sizeof (street_marker) - 1)
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
 static int Contains(bool bCaseSens,char *line,int line_len,
   char *string,int string_len,int *index);
-static char *chips(char *line,int ix);
+static int get_chips(char *line,int ix);
 int get_game_name(
   char *line,
   int line_len,
@@ -39,6 +41,8 @@ int main(int argc,char **argv)
   int ix;
   bool bHaveGameName;
   int retval;
+  int chips;
+  int table_count;
 
   if ((argc < 3) || (argc > 4)) {
     printf(usage);
@@ -99,21 +103,43 @@ int main(int argc,char **argv)
         bHaveGameName = true;
       }
     }
-    else if (Contains(true,
-      line,line_len,
-      argv[player_name_ix],player_name_len,
-      &ix)) {
+    else if (!strncmp(line,"Table '",7)) {
+      table_count = 0;
 
-      if (Contains(true,
-        line,line_len,
-        in_chips,IN_CHIPS_LEN,
-        &ix)) {
+      for ( ; ; ) {
+        GetLine(fptr,line,&line_len,MAX_LINE_LEN);
 
-        if (!bVerbose || !bHaveGameName)
-          printf("%s\n",chips(line,ix));
-        else
-          printf("%s %s\n",chips(line,ix),game_name);
+        if (feof(fptr))
+          break;
+
+        line_no++;
+
+        if (!strncmp(line,street_marker,STREET_MARKER_LEN))
+          break;
+
+        if (!strncmp(line,"Seat ",5)) {
+          table_count++;
+
+          if (Contains(true,
+            line,line_len,
+            argv[player_name_ix],player_name_len,
+            &ix)) {
+
+            if (Contains(true,
+              line,line_len,
+              in_chips,IN_CHIPS_LEN,
+              &ix)) {
+
+              chips = get_chips(line,ix);
+            }
+          }
+        }
       }
+
+      if (!bVerbose || !bHaveGameName)
+        printf("%d\n",chips);
+      else
+        printf("%d %s %d\n",chips,game_name,table_count);
     }
   }
 
@@ -181,9 +207,10 @@ static int Contains(bool bCaseSens,char *line,int line_len,
   return false;
 }
 
-static char *chips(char *line,int ix)
+static int get_chips(char *line,int ix)
 {
   int n;
+  int chips;
 
   line[ix] = 0;
 
@@ -192,7 +219,9 @@ static char *chips(char *line,int ix)
       break;
   }
 
-  return &line[n+1];
+  sscanf(&line[n+1],"%d",&chips);
+
+  return chips;
 }
 
 int get_game_name(
