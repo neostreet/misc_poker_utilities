@@ -56,6 +56,7 @@ int main(int argc,char **argv)
   bool bHaveGameName;
   int retval;
   int chips;
+  int hand_count;
   int table_count;
 
   if ((argc < 3) || (argc > 6)) {
@@ -106,6 +107,7 @@ int main(int argc,char **argv)
   }
 
   line_no = 0;
+  hand_count = 0;
 
   for ( ; ; ) {
     GetLine(fptr,line,&line_len,MAX_LINE_LEN);
@@ -138,6 +140,7 @@ int main(int argc,char **argv)
       }
     }
     else if (!strncmp(line,"Table '",7)) {
+      hand_count++;
       table_count = 0;
 
       for ( ; ; ) {
@@ -174,7 +177,7 @@ int main(int argc,char **argv)
         if (!bVerbose || !bHaveGameName)
           printf("%d\n",chips);
         else
-          printf("%d %s %d %s\n",chips,game_name,table_count,save_dir);
+          printf("%d %s %d %s hand %d\n",chips,game_name,table_count,save_dir,hand_count);
 
         if (bFirstHandedCount)
           break;
