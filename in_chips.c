@@ -7,7 +7,8 @@ static char line[MAX_LINE_LEN];
 #define MAX_GAME_NAME_LEN 50
 static char game_name[MAX_GAME_NAME_LEN+1];
 
-static char usage[] = "usage: in_chips (-verbose) player_name filename\n";
+static char usage[] =
+"usage: in_chips (-verbose) (-handed_countcount) player_name filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char pokerstars[] = "PokerStars";
@@ -33,6 +34,8 @@ int main(int argc,char **argv)
 {
   int curr_arg;
   bool bVerbose;
+  bool bHandedCount;
+  int handed_count;
   FILE *fptr;
   int line_len;
   int line_no;
@@ -44,16 +47,21 @@ int main(int argc,char **argv)
   int chips;
   int table_count;
 
-  if ((argc < 3) || (argc > 4)) {
+  if ((argc < 3) || (argc > 5)) {
     printf(usage);
     return 1;
   }
 
   bVerbose = false;
+  bHandedCount = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-verbose"))
       bVerbose = true;
+    else if (!strncmp(argv[curr_arg],"-handed_count",13)) {
+      sscanf(&argv[curr_arg][13],"%d",&handed_count);
+      bHandedCount = true;
+    }
     else
       break;
   }
@@ -136,10 +144,12 @@ int main(int argc,char **argv)
         }
       }
 
-      if (!bVerbose || !bHaveGameName)
-        printf("%d\n",chips);
-      else
-        printf("%d %s %d\n",chips,game_name,table_count);
+      if (!bHandedCount || (table_count == handed_count)) {
+        if (!bVerbose || !bHaveGameName)
+          printf("%d\n",chips);
+        else
+          printf("%d %s %d\n",chips,game_name,table_count);
+      }
     }
   }
 
