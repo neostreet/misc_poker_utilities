@@ -8,7 +8,8 @@ static char line[MAX_LINE_LEN];
 static char game_name[MAX_GAME_NAME_LEN+1];
 
 static char usage[] =
-"usage: in_chips (-verbose) (-handed_countcount) player_name filename\n";
+"usage: in_chips (-verbose) (-handed_countcount) (-first_handed_countcount)\n"
+"  player_name filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char pokerstars[] = "PokerStars";
@@ -35,6 +36,7 @@ int main(int argc,char **argv)
   int curr_arg;
   bool bVerbose;
   bool bHandedCount;
+  bool bFirstHandedCount;
   int handed_count;
   FILE *fptr;
   int line_len;
@@ -47,13 +49,14 @@ int main(int argc,char **argv)
   int chips;
   int table_count;
 
-  if ((argc < 3) || (argc > 5)) {
+  if ((argc < 3) || (argc > 6)) {
     printf(usage);
     return 1;
   }
 
   bVerbose = false;
   bHandedCount = false;
+  bFirstHandedCount = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-verbose"))
@@ -61,6 +64,10 @@ int main(int argc,char **argv)
     else if (!strncmp(argv[curr_arg],"-handed_count",13)) {
       sscanf(&argv[curr_arg][13],"%d",&handed_count);
       bHandedCount = true;
+    }
+    else if (!strncmp(argv[curr_arg],"-first_handed_count",19)) {
+      sscanf(&argv[curr_arg][19],"%d",&handed_count);
+      bFirstHandedCount = true;
     }
     else
       break;
@@ -71,12 +78,20 @@ int main(int argc,char **argv)
     return 2;
   }
 
+  if (bHandedCount && bFirstHandedCount) {
+    printf("can't specify both -handed_countcount and -first_handed_countcount\n");
+    return 3;
+  }
+
+  if (bFirstHandedCount)
+    bHandedCount = true;
+
   player_name_ix = curr_arg;
   player_name_len = strlen(argv[player_name_ix]);
 
   if ((fptr = fopen(argv[curr_arg + 1],"r")) == NULL) {
     printf(couldnt_open,argv[curr_arg + 1]);
-    return 3;
+    return 4;
   }
 
   line_no = 0;
@@ -105,7 +120,7 @@ int main(int argc,char **argv)
 
         if (retval) {
           printf("get_game_name() failed on line %d: %d\n",line_no,retval);
-          return 4;
+          return 5;
         }
 
         bHaveGameName = true;
@@ -149,6 +164,9 @@ int main(int argc,char **argv)
           printf("%d\n",chips);
         else
           printf("%d %s %d\n",chips,game_name,table_count);
+
+        if (bFirstHandedCount)
+          break;
       }
     }
   }
