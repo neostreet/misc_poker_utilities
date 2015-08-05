@@ -174,10 +174,14 @@ int main(int argc,char **argv)
       }
 
       if (!bHandedCount || (table_count == handed_count)) {
-        if (!bVerbose || !bHaveGameName)
+        if (!bVerbose)
           printf("%d\n",chips);
-        else
-          printf("%d %s %d %s hand %d\n",chips,game_name,table_count,save_dir,hand_count);
+        else {
+          if (!bHaveGameName)
+            printf("%d %d %s hand %d\n",chips,table_count,save_dir,hand_count);
+          else
+            printf("%d %s %d %s hand %d\n",chips,game_name,table_count,save_dir,hand_count);
+        }
 
         if (bFirstHandedCount)
           break;
