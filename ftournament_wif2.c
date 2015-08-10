@@ -12,45 +12,33 @@ struct tournament_info {
 static char line[MAX_LINE_LEN];
 
 static char usage[] =
-"usage: ftournament_wif (-verbose) (-right_justify) tournament_info_file places_file\n";
+"usage: ftournament_wif2 (-verbose) tournament_info_file places_file\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
-int tournament_wif(
-  struct tournament_info *tournament_ptr,
-  int num_first_places,
-  int num_second_places,
-  int num_tournaments,
-  int *delta);
+static int get_delta(struct tournament_info *info_ptr,int place);
 
 int main(int argc,char **argv)
 {
   int curr_arg;
   bool bVerbose;
-  bool bRightJustify;
   FILE *fptr;
   int line_len;
   int line_no;
   struct tournament_info tournament;
-  int num_first_places;
-  int num_second_places;
-  int num_tournaments;
+  int place;
   int delta;
-  int retval;
 
-  if ((argc < 3) || (argc > 5)) {
+  if ((argc < 3) || (argc > 4)) {
     printf(usage);
     return 1;
   }
 
   bVerbose = false;
-  bRightJustify = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-verbose"))
       bVerbose = true;
-    else if (!strcmp(argv[curr_arg],"-right_justify"))
-      bRightJustify = true;
     else
       break;
   }
@@ -87,25 +75,14 @@ int main(int argc,char **argv)
 
     line_no++;
 
-    sscanf(line,"%d %d %d",
-      &num_first_places,&num_second_places,&num_tournaments);
+    sscanf(line,"%d",&place);
 
-    retval = tournament_wif(&tournament,
-      num_first_places,num_second_places,num_tournaments,&delta);
+    delta = get_delta(&tournament,place);
 
-    if (retval) {
-      printf("tournament_wif failed: %d\n",retval);
-      return 5;
-    }
-
-    if (!bVerbose) {
-      if (!bRightJustify)
-        printf("%d\n",delta);
-      else
-        printf("%7d\n",delta);
-    }
+    if (!bVerbose)
+      printf("%d %d\n",delta,place);
     else
-      printf("%7d %s\n",delta,line);
+      printf("%d %s\n",delta,line);
   }
 
   fclose(fptr);
@@ -137,21 +114,16 @@ static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen)
   *line_len = local_line_len;
 }
 
-int tournament_wif(
-  struct tournament_info *tourn_ptr,
-  int num_first_places,
-  int num_second_places,
-  int num_tournaments,
-  int *delta_ptr)
+static int get_delta(struct tournament_info *info_ptr,int place)
 {
-  if (num_first_places + num_second_places > num_tournaments) {
-    printf("num_first_places + num_second_places > num_tournaments\n");
-    return 1;
-  }
+  int delta;
 
-  *delta_ptr = num_first_places * tourn_ptr->first_place_prize +
-    num_second_places * tourn_ptr->second_place_prize -
-    num_tournaments * (tourn_ptr->buy_in + tourn_ptr->entry_fee);
+  delta = (info_ptr->buy_in + info_ptr->entry_fee) * -1;
 
-  return 0;
+  if (place == 1)
+    delta += info_ptr->first_place_prize;
+  else if (place == 2)
+    delta += info_ptr->second_place_prize;
+
+  return delta;
 }
