@@ -16,14 +16,16 @@ static char line[MAX_LINE_LEN];
 #define TAB 0x9
 
 static char usage[] =
-"usage: max_gain_left_to_right (-debug) (-verbose) (-no_sort) filename\n";
+"usage: max_gain_left_to_right (-debug) (-verbose) (-no_sort) (-sort_by_avg) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char malloc_failed1[] = "malloc of %d session info structures failed\n";
 static char malloc_failed2[] = "malloc of %d ints failed\n";
 
 static char fmt1[] = "%10d %4d ";
-static char fmt2[] = "%10d %4d\n";
+static char fmt2[] = "%10d %4d %10.2lf\n";
+
+static bool bSortByAvg;
 
 struct digit_range {
   int lower;
@@ -48,6 +50,7 @@ struct session_info_struct {
   int ending_amount;
   int gain_amount;
   int num_gain_sessions;
+  double avg_amount_gained;
   time_t gain_start_date;
   time_t gain_end_date;
 };
@@ -83,7 +86,7 @@ int main(int argc,char **argv)
   int retval;
   char *cpt;
 
-  if ((argc < 2) || (argc > 5)) {
+  if ((argc < 2) || (argc > 6)) {
     printf(usage);
     return 1;
   }
@@ -91,6 +94,7 @@ int main(int argc,char **argv)
   bDebug = false;
   bVerbose = false;
   bNoSort = false;
+  bSortByAvg = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-debug"))
@@ -99,6 +103,8 @@ int main(int argc,char **argv)
       bVerbose = true;
     else if (!strcmp(argv[curr_arg],"-no_sort"))
       bNoSort = true;
+    else if (!strcmp(argv[curr_arg],"-sort_by_avg"))
+      bSortByAvg = true;
     else
       break;
   }
@@ -108,9 +114,14 @@ int main(int argc,char **argv)
     return 2;
   }
 
+  if (bNoSort && bSortByAvg) {
+    printf("can't specify both -no_sort and -sort_by_avg\n");
+    return 3;
+  }
+
   if ((fptr = fopen(argv[curr_arg],"r")) == NULL) {
     printf(couldnt_open,argv[curr_arg]);
-    return 3;
+    return 4;
   }
 
   num_sessions = 0;
@@ -130,7 +141,7 @@ int main(int argc,char **argv)
     num_sessions * sizeof (struct session_info_struct))) == NULL) {
     printf(malloc_failed1,num_sessions);
     fclose(fptr);
-    return 4;
+    return 5;
   }
 
   ix = 0;
@@ -166,6 +177,8 @@ int main(int argc,char **argv)
     if (max_gain) {
       session_info[m].num_gain_sessions = max_gain_ix - m + 1;
       session_info[m].gain_amount = max_gain;
+      session_info[m].avg_amount_gained = (double)session_info[m].gain_amount /
+          (double)session_info[m].num_gain_sessions;
       session_info[m].gain_end_date = session_info[max_gain_ix].gain_start_date;
     }
   }
@@ -196,7 +209,8 @@ int main(int argc,char **argv)
 
         printf(fmt2,
           session_info[n].gain_amount,
-          session_info[n].num_gain_sessions);
+          session_info[n].num_gain_sessions,
+          session_info[n].avg_amount_gained);
       }
 
       num_gains++;
@@ -210,7 +224,7 @@ int main(int argc,char **argv)
     num_gains * sizeof (int))) == NULL) {
     printf(malloc_failed2,num_gains);
     fclose(fptr);
-    return 5;
+    return 6;
   }
 
   for (n = 0; n < num_gains; n++)
@@ -238,7 +252,8 @@ int main(int argc,char **argv)
 
     printf(fmt2,
       session_info[sort_ixs[n]].gain_amount,
-      session_info[sort_ixs[n]].num_gain_sessions);
+      session_info[sort_ixs[n]].num_gain_sessions,
+      session_info[sort_ixs[n]].avg_amount_gained);
 
     if (!bVerbose)
       break;
@@ -397,14 +412,29 @@ int elem_compare(const void *elem1,const void *elem2)
   ix1 = *(int *)elem1;
   ix2 = *(int *)elem2;
 
-  if (session_info[ix1].gain_amount !=
-      session_info[ix2].gain_amount) {
-    return session_info[ix2].gain_amount -
-      session_info[ix1].gain_amount;
+  if (!bSortByAvg) {
+    if (session_info[ix1].gain_amount !=
+        session_info[ix2].gain_amount) {
+      return session_info[ix2].gain_amount -
+        session_info[ix1].gain_amount;
+    }
+    else  {
+      return session_info[ix2].gain_start_date -
+        session_info[ix1].gain_start_date;
+    }
   }
-  else  {
-    return session_info[ix2].gain_start_date -
-      session_info[ix1].gain_start_date;
+  else {
+    if (session_info[ix1].avg_amount_gained !=
+        session_info[ix2].avg_amount_gained) {
+      if (session_info[ix2].avg_amount_gained < session_info[ix1].avg_amount_gained)
+        return -1;
+      else
+        return 1;
+    }
+    else  {
+      return session_info[ix2].gain_start_date -
+        session_info[ix1].gain_start_date;
+    }
   }
 }
 
