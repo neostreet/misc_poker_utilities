@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #ifdef WIN32
 #include <direct.h>
@@ -17,13 +16,12 @@ static char filename[MAX_FILENAME_LEN];
 static char line[MAX_LINE_LEN];
 
 static char usage[] =
-"usage: fspent (-debug) player_name filename\n";
+"usage: fspent (-debug) (-verbose) player_name filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char in_chips[] = " in chips";
 #define IN_CHIPS_LEN (sizeof (in_chips) - 1)
 static char summary[] = "*** SUMMARY ***";
-#define SUMMARY_LEN (sizeof (summary) - 1)
 static char street_marker[] = "*** ";
 #define STREET_MARKER_LEN (sizeof (street_marker) - 1)
 static char posts[] = " posts ";
@@ -40,19 +38,20 @@ static char raises[] = " raises ";
 #define RAISES_LEN (sizeof (raises) - 1)
 static char uncalled_bet[] = "Uncalled bet (";
 #define UNCALLED_BET_LEN (sizeof (uncalled_bet) - 1)
+static char collected[] = " collected ";
+#define COLLECTED_LEN (sizeof (collected) - 1)
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
 static int Contains(bool bCaseSens,char *line,int line_len,
   char *string,int string_len,int *index);
 int get_work_amount(char *line,int line_len);
+static int get_date_from_path(char *path,char slash_char,int num_slashes,char **date_string_ptr);
 
 int main(int argc,char **argv)
 {
-  int m;
-  int n;
-  int p;
   int curr_arg;
   bool bDebug;
+  bool bVerbose;
   int player_name_ix;
   int player_name_len;
   FILE *fptr0;
@@ -60,6 +59,8 @@ int main(int argc,char **argv)
   FILE *fptr;
   int line_len;
   int line_no;
+  int retval;
+  char *date_string;
   int ix;
   int street;
   int num_street_markers;
@@ -67,26 +68,30 @@ int main(int argc,char **argv)
   int spent_this_street;
   int spent_this_hand;
   int end_ix;
+  int wagered_amount;
   int uncalled_bet_amount;
+  int collected_from_pot;
+  int collected_from_pot_count;
   int ending_balance;
   int file_no;
   int dbg_file_no;
   int dbg;
   int work;
-  char hole_cards[6];
+  int total_spent;
 
-  if ((argc < 3) || (argc > 8)) {
+  if ((argc < 3) || (argc > 5)) {
     printf(usage);
     return 1;
   }
 
   bDebug = false;
+  bVerbose = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
-    if (!strcmp(argv[curr_arg],"-debug")) {
+    if (!strcmp(argv[curr_arg],"-debug"))
       bDebug = true;
-      getcwd(save_dir,_MAX_PATH);
-    }
+    else if (!strcmp(argv[curr_arg],"-verbose"))
+      bVerbose = true;
     else
       break;
   }
@@ -104,12 +109,23 @@ int main(int argc,char **argv)
     return 3;
   }
 
+  if (!bVerbose && bDebug) {
+    getcwd(save_dir,_MAX_PATH);
+    retval = get_date_from_path(save_dir,'/',2,&date_string);
+
+    if (retval) {
+      printf("get_date_from_path() on %s failed: %d\n",save_dir,retval);
+      return 4;
+    }
+  }
+
   ending_balance = -1;
 
   file_no = 0;
   dbg_file_no = -1;
 
-  hole_cards[5] = 0;
+  if (!bVerbose)
+    total_spent = 0;
 
   for ( ; ; ) {
     GetLine(fptr0,filename,&filename_len,MAX_FILENAME_LEN);
@@ -133,6 +149,8 @@ int main(int argc,char **argv)
     spent_this_street = 0;
     spent_this_hand = 0;
     uncalled_bet_amount = 0;
+    collected_from_pot = 0;
+    collected_from_pot_count = 0;
 
     for ( ; ; ) {
       GetLine(fptr,line,&line_len,MAX_LINE_LEN);
@@ -168,25 +186,31 @@ int main(int argc,char **argv)
           spent_this_street += get_work_amount(line,line_len);
           continue;
         }
-        else if (!strncmp(line,dealt_to,DEALT_TO_LEN)) {
-          for (n = 0; n < line_len; n++) {
-            if (line[n] == '[')
+        else if (!strncmp(line,dealt_to,DEALT_TO_LEN))
+          continue;
+        else if (Contains(true,
+          line,line_len,
+          collected,COLLECTED_LEN,
+          &ix)) {
+
+          for (end_ix = ix + COLLECTED_LEN; end_ix < line_len; end_ix++) {
+            if (line[end_ix] == ' ')
               break;
           }
 
-          if (n < line_len) {
-            n++;
+          line[end_ix] = 0;
+          sscanf(&line[ix + COLLECTED_LEN],"%d",&work);
 
-            for (m = n; m < line_len; m++) {
-              if (line[m] == ']')
-                break;
-            }
-
-            if (m < line_len) {
-              for (p = 0; p < 5; p++)
-                hole_cards[p] = line[n+p];
-            }
+          if (!collected_from_pot_count) {
+            spent_this_hand += spent_this_street;
+            street++;
+            spent_this_street = 0;
           }
+
+          collected_from_pot += work;
+          collected_from_pot_count++;
+
+          continue;
         }
         else if (!strncmp(line,uncalled_bet,UNCALLED_BET_LEN)) {
           sscanf(&line[UNCALLED_BET_LEN],"%d",&uncalled_bet_amount);
@@ -220,7 +244,7 @@ int main(int argc,char **argv)
         }
       }
       else {
-        if (!strncmp(line,summary,SUMMARY_LEN))
+        if (!strcmp(line,summary))
           break;
 
         if (!strncmp(line,street_marker,STREET_MARKER_LEN)) {
@@ -239,14 +263,28 @@ int main(int argc,char **argv)
 
     fclose(fptr);
 
-    if (!bDebug)
-      printf("%d\n",spent_this_hand);
-    else
-      printf("%10d %s %s/%s\n",
-        spent_this_hand,hole_cards,save_dir,filename);
+    ending_balance = starting_balance - spent_this_hand + collected_from_pot;
+
+    wagered_amount = spent_this_hand + uncalled_bet_amount;
+
+    if (!bVerbose)
+      total_spent += spent_this_hand;
+    else {
+      if (!bDebug)
+        printf("%d\n",spent_this_hand);
+      else
+        printf("%10d %s\n",spent_this_hand,filename);
+    }
   }
 
   fclose(fptr0);
+
+  if (!bVerbose) {
+    if (!bDebug)
+      printf("%d\n",total_spent);
+    else
+      printf("%10d %s\n",total_spent,date_string);
+  }
 
   return 0;
 }
@@ -338,4 +376,42 @@ int get_work_amount(char *line,int line_len)
   sscanf(&line[ix+1],"%d",&work_amount);
 
   return work_amount;
+}
+
+static char sql_date_string[11];
+
+static int get_date_from_path(char *path,char slash_char,int num_slashes,char **date_string_ptr)
+{
+  int n;
+  int len;
+  int slash_count;
+
+  len = strlen(path);
+  slash_count = 0;
+
+  for (n = len - 1; (n >= 0); n--) {
+    if (path[n] == slash_char) {
+      slash_count++;
+
+      if (slash_count == num_slashes)
+        break;
+    }
+  }
+
+  if (slash_count != num_slashes)
+    return 1;
+
+  if (path[n+5] != slash_char)
+    return 2;
+
+  strncpy(sql_date_string,&path[n+1],4);
+  sql_date_string[4] = '-';
+  strncpy(&sql_date_string[5],&path[n+6],2);
+  sql_date_string[7] = '-';
+  strncpy(&sql_date_string[8],&path[n+8],2);
+  sql_date_string[10] = 0;
+
+  *date_string_ptr = sql_date_string;
+
+  return 0;
 }
