@@ -8,6 +8,8 @@
 #include <unistd.h>
 #endif
 
+static char save_dir[_MAX_PATH];
+
 #define MAX_FILENAME_LEN 1024
 static char filename[MAX_FILENAME_LEN];
 
@@ -36,6 +38,7 @@ static char checks[] = " checks ";
 #define CHECKS_LEN (sizeof (checks) - 1)
 
 static char fmt1[] = "%6d %6d %lf\n";
+static char fmt2[] = "%6d %6d %lf %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
 static int Contains(bool bCaseSens,char *line,int line_len,
@@ -115,6 +118,9 @@ int main(int argc,char **argv)
     printf("can't specify both -action and -zero\n");
     return 3;
   }
+
+  if (bDebug)
+    getcwd(save_dir,_MAX_PATH);
 
   player_name_ix = curr_arg++;
   player_name_len = strlen(argv[player_name_ix]);
@@ -294,22 +300,31 @@ int main(int argc,char **argv)
 
   fclose(fptr0);
 
-  if (bDebug)
-    putchar(0x0a);
-
   if (bAction) {
     dwork = (double)tot_action_numdecs / (double)tot_numdecs;
-    printf(fmt1,tot_action_numdecs,tot_numdecs,dwork);
+
+    if (!bDebug)
+      printf(fmt1,tot_action_numdecs,tot_numdecs,dwork);
+    else
+      printf(fmt2,tot_action_numdecs,tot_numdecs,dwork,save_dir);
   }
   else if (bZero) {
     dwork = (double)tot_zero_numdecs / (double)tot_numdecs;
-    printf(fmt1,tot_zero_numdecs,tot_numdecs,dwork);
+
+    if (!bDebug)
+      printf(fmt1,tot_zero_numdecs,tot_numdecs,dwork);
+    else
+      printf(fmt2,tot_zero_numdecs,tot_numdecs,dwork,save_dir);
   }
   else {
     dwork = (double)tot_numdecs / (double)tot_num_hands;
 
-    if (!bVerbose)
-      printf(fmt1,tot_numdecs,tot_num_hands,dwork);
+    if (!bVerbose) {
+      if (!bDebug)
+        printf(fmt1,tot_numdecs,tot_num_hands,dwork);
+      else
+        printf(fmt2,tot_numdecs,tot_num_hands,dwork,save_dir);
+    }
     else {
       printf("%6d %6d %5.2lf fld %4d bet %4d call %4d rse %4d chk %4d\n",
         tot_numdecs,tot_num_hands,dwork,
