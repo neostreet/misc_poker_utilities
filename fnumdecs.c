@@ -35,7 +35,7 @@ static char raises[] = " raises ";
 static char checks[] = " checks ";
 #define CHECKS_LEN (sizeof (checks) - 1)
 
-static char fmt1[] = "%6d %6d %5.2lf\n";
+static char fmt1[] = "%6d %6d %lf\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
 static int Contains(bool bCaseSens,char *line,int line_len,
