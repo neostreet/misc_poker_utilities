@@ -15,7 +15,7 @@ static char filename[MAX_FILENAME_LEN];
 static char line[MAX_LINE_LEN];
 
 static char usage[] =
-"usage: fnumdecs (-debug) (-verbose) player_name filename\n";
+"usage: fnumdecs (-debug) (-verbose) (-action) (-zero) player_name filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char in_chips[] = " in chips";
@@ -35,6 +35,8 @@ static char raises[] = " raises ";
 static char checks[] = " checks ";
 #define CHECKS_LEN (sizeof (checks) - 1)
 
+static char fmt1[] = "%6d %6d %5.2lf\n";
+
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
 static int Contains(bool bCaseSens,char *line,int line_len,
   char *string,int string_len,int *index);
@@ -47,6 +49,8 @@ int main(int argc,char **argv)
   int curr_arg;
   bool bDebug;
   bool bVerbose;
+  bool bAction;
+  bool bZero;
   int player_name_ix;
   int player_name_len;
   FILE *fptr0;
@@ -73,21 +77,31 @@ int main(int argc,char **argv)
   int numraises;
   int tot_numchecks;
   int numchecks;
+  int tot_action_numdecs;
+  int action_numdecs;
+  int tot_zero_numdecs;
+  int zero_numdecs;
   double dwork;
 
-  if ((argc < 3) || (argc > 5)) {
+  if ((argc < 3) || (argc > 7)) {
     printf(usage);
     return 1;
   }
 
   bDebug = false;
   bVerbose = false;
+  bAction = false;
+  bZero = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-debug"))
       bDebug = true;
     else if (!strcmp(argv[curr_arg],"-verbose"))
       bVerbose = true;
+    else if (!strcmp(argv[curr_arg],"-action"))
+      bAction = true;
+    else if (!strcmp(argv[curr_arg],"-zero"))
+      bZero = true;
     else
       break;
   }
@@ -97,12 +111,17 @@ int main(int argc,char **argv)
     return 2;
   }
 
+  if (bAction && bZero) {
+    printf("can't specify both -action and -zero\n");
+    return 3;
+  }
+
   player_name_ix = curr_arg++;
   player_name_len = strlen(argv[player_name_ix]);
 
   if ((fptr0 = fopen(argv[curr_arg],"r")) == NULL) {
     printf(couldnt_open,argv[curr_arg]);
-    return 3;
+    return 4;
   }
 
   file_no = 0;
@@ -117,6 +136,11 @@ int main(int argc,char **argv)
   tot_numcalls = 0;
   tot_numraises = 0;
   tot_numchecks = 0;
+
+  if (bAction)
+    tot_action_numdecs = 0;
+  else if (bZero)
+    tot_zero_numdecs = 0;
 
   for ( ; ; ) {
     GetLine(fptr0,filename,&filename_len,MAX_FILENAME_LEN);
@@ -142,6 +166,11 @@ int main(int argc,char **argv)
     numcalls = 0;
     numraises = 0;
     numchecks = 0;
+
+    if (bAction)
+      action_numdecs = 0;
+    else if (bZero)
+      zero_numdecs = 0;
 
     for ( ; ; ) {
       GetLine(fptr,line,&line_len,MAX_LINE_LEN);
@@ -180,36 +209,56 @@ int main(int argc,char **argv)
           line,line_len,
           folds,FOLDS_LEN,
           &ix)) {
+
           numfolds++;
           numdecs++;
+
+          if (bZero)
+            zero_numdecs++;
         }
         else if (Contains(true,
           line,line_len,
           bets,BETS_LEN,
           &ix)) {
+
           numbets++;
           numdecs++;
+
+          if (bAction)
+            action_numdecs++;
         }
         else if (Contains(true,
           line,line_len,
           calls,CALLS_LEN,
           &ix)) {
+
           numcalls++;
           numdecs++;
+
+          if (bAction)
+            action_numdecs++;
         }
         else if (Contains(true,
           line,line_len,
           raises,RAISES_LEN,
           &ix)) {
+
           numraises++;
           numdecs++;
+
+          if (bAction)
+            action_numdecs++;
         }
         else if (Contains(true,
           line,line_len,
           checks,CHECKS_LEN,
           &ix)) {
+
           numchecks++;
           numdecs++;
+
+          if (bZero)
+            zero_numdecs++;
         }
       }
       else {
@@ -236,6 +285,11 @@ int main(int argc,char **argv)
     tot_numcalls += numcalls;
     tot_numraises += numraises;
     tot_numchecks += numchecks;
+
+    if (bAction)
+      tot_action_numdecs += action_numdecs;
+    else if (bZero)
+      tot_zero_numdecs += zero_numdecs;
   }
 
   fclose(fptr0);
@@ -243,14 +297,24 @@ int main(int argc,char **argv)
   if (bDebug)
     putchar(0x0a);
 
-  dwork = (double)tot_numdecs / (double)tot_num_hands;
-
-  if (!bVerbose)
-    printf("%6d %6d %5.2lf\n",tot_numdecs,tot_num_hands,dwork);
+  if (bAction) {
+    dwork = (double)tot_action_numdecs / (double)tot_numdecs;
+    printf(fmt1,tot_action_numdecs,tot_numdecs,dwork);
+  }
+  else if (bZero) {
+    dwork = (double)tot_zero_numdecs / (double)tot_numdecs;
+    printf(fmt1,tot_zero_numdecs,tot_numdecs,dwork);
+  }
   else {
-    printf("%6d %6d %5.2lf fld %4d bet %4d call %4d rse %4d chk %4d\n",
-      tot_numdecs,tot_num_hands,dwork,
-      tot_numfolds,tot_numbets,tot_numcalls,tot_numraises,tot_numchecks);
+    dwork = (double)tot_numdecs / (double)tot_num_hands;
+
+    if (!bVerbose)
+      printf(fmt1,tot_numdecs,tot_num_hands,dwork);
+    else {
+      printf("%6d %6d %5.2lf fld %4d bet %4d call %4d rse %4d chk %4d\n",
+        tot_numdecs,tot_num_hands,dwork,
+        tot_numfolds,tot_numbets,tot_numcalls,tot_numraises,tot_numchecks);
+    }
   }
 
   return 0;
