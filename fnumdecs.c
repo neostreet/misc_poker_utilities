@@ -17,7 +17,7 @@ static char filename[MAX_FILENAME_LEN];
 static char line[MAX_LINE_LEN];
 
 static char usage[] =
-"usage: fnumdecs (-debug) (-verbose) (-action) (-zero) player_name filename\n";
+"usage: fnumdecs (-debug) (-verbose) (-action) (-zero) (-folded) player_name filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char in_chips[] = " in chips";
@@ -52,8 +52,9 @@ int main(int argc,char **argv)
   int curr_arg;
   bool bDebug;
   bool bVerbose;
-  bool bAction;
-  bool bZero;
+  int action;
+  int zero;
+  int folded;
   int player_name_ix;
   int player_name_len;
   FILE *fptr0;
@@ -86,15 +87,16 @@ int main(int argc,char **argv)
   int zero_numdecs;
   double dwork;
 
-  if ((argc < 3) || (argc > 7)) {
+  if ((argc < 3) || (argc > 8)) {
     printf(usage);
     return 1;
   }
 
   bDebug = false;
   bVerbose = false;
-  bAction = false;
-  bZero = false;
+  action = 0;
+  zero = 0;
+  folded = 0;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-debug"))
@@ -102,9 +104,11 @@ int main(int argc,char **argv)
     else if (!strcmp(argv[curr_arg],"-verbose"))
       bVerbose = true;
     else if (!strcmp(argv[curr_arg],"-action"))
-      bAction = true;
+      action = 1;
     else if (!strcmp(argv[curr_arg],"-zero"))
-      bZero = true;
+      zero = 1;
+    else if (!strcmp(argv[curr_arg],"-folded"))
+      folded = 1;
     else
       break;
   }
@@ -114,8 +118,8 @@ int main(int argc,char **argv)
     return 2;
   }
 
-  if (bAction && bZero) {
-    printf("can't specify both -action and -zero\n");
+  if (action + zero + folded > 1) {
+    printf("can only specify one of -action, -zero, and -folded\n");
     return 3;
   }
 
@@ -143,9 +147,9 @@ int main(int argc,char **argv)
   tot_numraises = 0;
   tot_numchecks = 0;
 
-  if (bAction)
+  if (action)
     tot_action_numdecs = 0;
-  else if (bZero)
+  else if (zero)
     tot_zero_numdecs = 0;
 
   for ( ; ; ) {
@@ -173,9 +177,9 @@ int main(int argc,char **argv)
     numraises = 0;
     numchecks = 0;
 
-    if (bAction)
+    if (action)
       action_numdecs = 0;
-    else if (bZero)
+    else if (zero)
       zero_numdecs = 0;
 
     for ( ; ; ) {
@@ -219,7 +223,7 @@ int main(int argc,char **argv)
           numfolds++;
           numdecs++;
 
-          if (bZero)
+          if (zero)
             zero_numdecs++;
         }
         else if (Contains(true,
@@ -230,7 +234,7 @@ int main(int argc,char **argv)
           numbets++;
           numdecs++;
 
-          if (bAction)
+          if (action)
             action_numdecs++;
         }
         else if (Contains(true,
@@ -241,7 +245,7 @@ int main(int argc,char **argv)
           numcalls++;
           numdecs++;
 
-          if (bAction)
+          if (action)
             action_numdecs++;
         }
         else if (Contains(true,
@@ -252,7 +256,7 @@ int main(int argc,char **argv)
           numraises++;
           numdecs++;
 
-          if (bAction)
+          if (action)
             action_numdecs++;
         }
         else if (Contains(true,
@@ -263,7 +267,7 @@ int main(int argc,char **argv)
           numchecks++;
           numdecs++;
 
-          if (bZero)
+          if (zero)
             zero_numdecs++;
         }
       }
@@ -292,15 +296,15 @@ int main(int argc,char **argv)
     tot_numraises += numraises;
     tot_numchecks += numchecks;
 
-    if (bAction)
+    if (action)
       tot_action_numdecs += action_numdecs;
-    else if (bZero)
+    else if (zero)
       tot_zero_numdecs += zero_numdecs;
   }
 
   fclose(fptr0);
 
-  if (bAction) {
+  if (action) {
     dwork = (double)tot_action_numdecs / (double)tot_numdecs;
 
     if (!bDebug)
@@ -308,13 +312,21 @@ int main(int argc,char **argv)
     else
       printf(fmt2,tot_action_numdecs,tot_numdecs,dwork,save_dir);
   }
-  else if (bZero) {
+  else if (zero) {
     dwork = (double)tot_zero_numdecs / (double)tot_numdecs;
 
     if (!bDebug)
       printf(fmt1,tot_zero_numdecs,tot_numdecs,dwork);
     else
       printf(fmt2,tot_zero_numdecs,tot_numdecs,dwork,save_dir);
+  }
+  else if (folded) {
+    dwork = (double)tot_numfolds / (double)tot_numdecs;
+
+    if (!bDebug)
+      printf(fmt1,tot_numfolds,tot_numdecs,dwork);
+    else
+      printf(fmt2,tot_numfolds,tot_numdecs,dwork,save_dir);
   }
   else {
     dwork = (double)tot_numdecs / (double)tot_num_hands;
