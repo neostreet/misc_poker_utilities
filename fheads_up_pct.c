@@ -16,7 +16,8 @@ static char filename[MAX_FILENAME_LEN];
 #define MAX_LINE_LEN 1024
 static char line[MAX_LINE_LEN];
 
-static char usage[] = "usage: fheads_up_pct (-terse) (-verbose) filename\n";
+static char usage[] =
+"usage: fheads_up_pct (-terse) (-verbose) (-full_path) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char street_marker[] = "*** ";
@@ -30,6 +31,7 @@ int main(int argc,char **argv)
   int curr_arg;
   bool bTerse;
   bool bVerbose;
+  bool bFullPath;
   FILE *fptr0;
   int retval;
   char *date_string;
@@ -43,19 +45,22 @@ int main(int argc,char **argv)
   double heads_up_pct;
   int curr_file_num_hands;
 
-  if ((argc < 2) || (argc > 4)) {
+  if ((argc < 2) || (argc > 5)) {
     printf(usage);
     return 1;
   }
 
   bTerse = false;
   bVerbose = false;
+  bFullPath = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-terse"))
       bTerse = true;
     else if (!strcmp(argv[curr_arg],"-verbose"))
       bVerbose = true;
+    else if (!strcmp(argv[curr_arg],"-full_path"))
+      bFullPath = true;
     else
       break;
   }
@@ -73,11 +78,13 @@ int main(int argc,char **argv)
   if (!bTerse) {
     getcwd(save_dir,_MAX_PATH);
 
-    retval = get_date_from_cwd(save_dir,&date_string);
+    if (!bFullPath) {
+      retval = get_date_from_cwd(save_dir,&date_string);
 
-    if (retval) {
-      printf("get_date_from_cwd() failed: %d\n",retval);
-      return 4;
+      if (retval) {
+        printf("get_date_from_cwd() failed: %d\n",retval);
+        return 4;
+      }
     }
   }
 
@@ -147,8 +154,10 @@ int main(int argc,char **argv)
 
   if (bTerse)
     printf("%lf\n",heads_up_pct);
-  else
-    printf("%lf (%d %d) %s\n",heads_up_pct,num_heads_up_hands,num_hands,date_string);
+  else {
+    printf("%lf (%d %d) %s\n",heads_up_pct,num_heads_up_hands,num_hands,
+      (bFullPath ? save_dir : date_string));
+  }
 
   return 0;
 }

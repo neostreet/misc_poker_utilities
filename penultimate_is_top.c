@@ -14,7 +14,7 @@ static char save_dir[_MAX_PATH];
 static char line[MAX_LINE_LEN];
 
 static char usage[] =
-"usage: penultimate_is_top (-verbose) (-date_string) filename\n";
+"usage: penultimate_is_top (-verbose) (-date_string) (-final_delta) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
@@ -25,6 +25,7 @@ int main(int argc,char **argv)
   int curr_arg;
   bool bVerbose;
   bool bDateString;
+  bool bFinalDelta;
   FILE *fptr;
   int line_len;
   int line_no;
@@ -34,20 +35,25 @@ int main(int argc,char **argv)
   int val;
   int ending_balance;
   int max_ending_balance;
+  int penultimate_ending_balance;
+  int final_delta;
 
-  if ((argc < 2) || (argc > 4)) {
+  if ((argc < 2) || (argc > 5)) {
     printf(usage);
     return 1;
   }
 
   bVerbose = false;
   bDateString = false;
+  bFinalDelta = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-verbose"))
       bVerbose = true;
     else if (!strcmp(argv[curr_arg],"-date_string"))
       bDateString = true;
+    else if (!strcmp(argv[curr_arg],"-final_delta"))
+      bFinalDelta = true;
     else
       break;
   }
@@ -109,25 +115,32 @@ int main(int argc,char **argv)
         max_ending_balance = ending_balance;
 
       if (line_no == penultimate_line_no)
-        break;
+        penultimate_ending_balance = ending_balance;
+      else if (line_no == penultimate_line_no + 1)
+        final_delta = val;
     }
   }
 
   fclose(fptr);
 
-  if (ending_balance == max_ending_balance) {
+  if (penultimate_ending_balance == max_ending_balance) {
     if (!bVerbose) {
       if (!bDateString)
-        printf("%s/%s\n",save_dir,argv[curr_arg]);
+        printf("%s/%s",save_dir,argv[curr_arg]);
       else
-        printf("%s\n",date_string);
+        printf("%s",date_string);
     }
     else {
       if (!bDateString)
-        printf("%10d %s/%s\n",ending_balance,save_dir,argv[curr_arg]);
+        printf("%10d %s/%s",ending_balance,save_dir,argv[curr_arg]);
       else
-        printf("%10d %s\n",ending_balance,date_string);
+        printf("%10d %s",ending_balance,date_string);
     }
+
+    if (!bFinalDelta)
+      putchar(0x0a);
+    else
+      printf(" (%10d)\n",final_delta);
   }
 
   return 0;

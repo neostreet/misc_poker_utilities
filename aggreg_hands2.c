@@ -3,7 +3,7 @@
 
 static char usage[] =
 "usage: aggreg_hands2 (-debug) (-verbose) (-dbg_ixix) (-totals) (-avgs)\n"
-"  (-pairs_only) (-s_or_o_between) filename\n";
+"  (-pairs_only) (-s_or_o_between) (-denomdenom) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 static char avg_fmt[] = " %9.2lf %9.2lf\n";
 
@@ -59,6 +59,8 @@ int main(int argc,char **argv)
   bool bAvgs;
   bool bPairsOnly;
   bool bSorOBetween;
+  bool bDenom;
+  char denom;
   int dbg_ix;
   int dbg;
   int m;
@@ -85,7 +87,7 @@ int main(int argc,char **argv)
   double loss_avg;
   int num_collapsed_hands;
 
-  if ((argc < 2) || (argc > 9)) {
+  if ((argc < 2) || (argc > 10)) {
     printf(usage);
     return 1;
   }
@@ -96,6 +98,7 @@ int main(int argc,char **argv)
   bAvgs = false;
   bPairsOnly = false;
   bSorOBetween = false;
+  bDenom = false;
   dbg_ix = -1;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
@@ -113,6 +116,10 @@ int main(int argc,char **argv)
       bPairsOnly = true;
     else if (!strcmp(argv[curr_arg],"-s_or_o_between"))
       bSorOBetween = true;
+    else if (!strncmp(argv[curr_arg],"-denom",6)) {
+      bDenom = true;
+      denom = argv[curr_arg][6];
+    }
     else
       break;
   }
@@ -245,6 +252,9 @@ int main(int argc,char **argv)
 
     card_string[n] = ' ';
 
+    if (bDenom && (card_string[0] != denom))
+      continue;
+
     freq_factor = (double)aggreg[o].hand_count * (double)PAIR_PERIODICITY /
       (double)total_hand_count;
 
@@ -329,6 +339,9 @@ int main(int argc,char **argv)
           card_string[2] = rank_chars[m];
       }
 
+      if (bDenom && (card_string[0] != denom))
+        continue;
+
       if (bVerbose) {
         printf("%-3s %10d %10d %10d %6d %6d %6d %6d %5.2lf %6d %5.2lf",
           card_string,
@@ -408,6 +421,9 @@ int main(int argc,char **argv)
         else
           card_string[2] = rank_chars[m];
       }
+
+      if (bDenom && (card_string[0] != denom))
+        continue;
 
       if (bVerbose) {
         printf("%-3s %10d %10d %10d %6d %6d %6d %6d %5.2lf %6d %5.2lf",

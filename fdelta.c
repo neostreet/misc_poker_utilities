@@ -76,6 +76,14 @@ static char all_in[] = "all-in";
 static char rake_str[] = " Rake ";
 #define RAKE_STR_LEN (sizeof (rake_str) - 1)
 
+struct eight_game_info {
+  int num_hands;
+  int sum_deltas;
+  int sum_positive_deltas;
+  int sum_negative_deltas;
+  int sum_absolute_value_deltas;
+};
+
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
 static int Contains(bool bCaseSens,char *line,int line_len,
   char *string,int string_len,int *index);
@@ -158,11 +166,7 @@ int main(int argc,char **argv)
   int sum_positive_deltas;
   int sum_negative_deltas;
   int sum_absolute_value_deltas;
-  int num_8game_hands[NUM_8GAME_GAMES];
-  int sum_8game_deltas[NUM_8GAME_GAMES];
-  int sum_8game_positive_deltas[NUM_8GAME_GAMES];
-  int sum_8game_negative_deltas[NUM_8GAME_GAMES];
-  int sum_8game_absolute_value_deltas[NUM_8GAME_GAMES];
+  struct eight_game_info eight_game_inf[NUM_8GAME_GAMES];
   int retval;
   int curr_big_blind;
   int last_big_blind;
@@ -281,13 +285,13 @@ int main(int argc,char **argv)
 
   if (bSum && b8game) {
     for (n = 0 ; n < NUM_8GAME_GAMES; n++) {
-      num_8game_hands[n] = 0;
-      sum_8game_deltas[n] = 0;
-      sum_8game_positive_deltas[n] = 0;
-      sum_8game_negative_deltas[n] = 0;
+      eight_game_inf[n].num_hands = 0;
+      eight_game_inf[n].sum_deltas = 0;
+      eight_game_inf[n].sum_positive_deltas = 0;
+      eight_game_inf[n].sum_negative_deltas = 0;
 
       if (bAbsoluteValue)
-        sum_8game_absolute_value_deltas[n] = 0;
+        eight_game_inf[n].sum_absolute_value_deltas = 0;
     }
   }
   else if (bSum || bAvg) {
@@ -638,20 +642,20 @@ int main(int argc,char **argv)
       continue;
 
     if (bSum && b8game) {
-      num_8game_hands[eight_game_ix]++;
-      sum_8game_deltas[eight_game_ix] += delta;
+      eight_game_inf[eight_game_ix].num_hands++;
+      eight_game_inf[eight_game_ix].sum_deltas += delta;
 
       if (delta > 0) {
-        sum_8game_positive_deltas[eight_game_ix] += delta;
+        eight_game_inf[eight_game_ix].sum_positive_deltas += delta;
 
         if (bAbsoluteValue)
-          sum_8game_absolute_value_deltas[eight_game_ix] += delta;
+          eight_game_inf[eight_game_ix].sum_absolute_value_deltas += delta;
       }
       else {
-        sum_8game_negative_deltas[eight_game_ix] += delta;
+        eight_game_inf[eight_game_ix].sum_negative_deltas += delta;
 
         if (bAbsoluteValue)
-          sum_8game_absolute_value_deltas[eight_game_ix] -= delta;
+          eight_game_inf[eight_game_ix].sum_absolute_value_deltas -= delta;
       }
     }
     else if (bSum || bAvg) {
@@ -807,55 +811,55 @@ int main(int argc,char **argv)
     else {
       for (n = 0; n < NUM_8GAME_GAMES; n++) {
         if (bAbsoluteValue) {
-          if (!sum_8game_deltas[n])
+          if (!eight_game_inf[n].sum_deltas)
             dwork1 = (double)0;
           else {
-            if (sum_8game_deltas[n] < 0)
-              sum_deltas_dwork = (double)sum_8game_deltas[n] * (double)-1;
+            if (eight_game_inf[n].sum_deltas < 0)
+              sum_deltas_dwork = (double)eight_game_inf[n].sum_deltas * (double)-1;
             else
-              sum_deltas_dwork = (double)sum_8game_deltas[n];
+              sum_deltas_dwork = (double)eight_game_inf[n].sum_deltas;
 
-            dwork1 = (double)sum_8game_absolute_value_deltas[n] / sum_deltas_dwork;
+            dwork1 = (double)eight_game_inf[n].sum_absolute_value_deltas / sum_deltas_dwork;
           }
 
-          dwork2 = (double)sum_8game_absolute_value_deltas[n] / (double)num_8game_hands[n];
+          dwork2 = (double)eight_game_inf[n].sum_absolute_value_deltas / (double)eight_game_inf[n].num_hands;
         }
 
         if (bTerse)
-          printf("%d %s\n",sum_8game_deltas[n],eight_game_names[n]);
+          printf("%d %s\n",eight_game_inf[n].sum_deltas,eight_game_names[n]);
         else if (!bDebug) {
           if (!bAbsoluteValue) {
             if (!bVerbose) {
               printf("%10d %10d %10d %6d %s\n",
-                sum_8game_deltas[n],sum_8game_positive_deltas[n],
-                sum_8game_negative_deltas[n],num_8game_hands[n],
+                eight_game_inf[n].sum_deltas,eight_game_inf[n].sum_positive_deltas,
+                eight_game_inf[n].sum_negative_deltas,eight_game_inf[n].num_hands,
                 eight_game_names[n]);
             }
             else {
               printf("%10d %10d %10d %6d %s %s\n",
-                sum_8game_deltas[n],sum_8game_positive_deltas[n],
-                sum_8game_negative_deltas[n],num_8game_hands[n],
+                eight_game_inf[n].sum_deltas,eight_game_inf[n].sum_positive_deltas,
+                eight_game_inf[n].sum_negative_deltas,eight_game_inf[n].num_hands,
                 eight_game_names[n],save_dir);
             }
           }
           else
             printf("%d %d %d %d %d %lf %lf %s\n",
-              sum_8game_deltas[n],sum_8game_positive_deltas[n],
-              sum_8game_negative_deltas[n],num_8game_hands[n],
-              sum_8game_absolute_value_deltas[n],dwork1,dwork2,
+              eight_game_inf[n].sum_deltas,eight_game_inf[n].sum_positive_deltas,
+              eight_game_inf[n].sum_negative_deltas,eight_game_inf[n].num_hands,
+              eight_game_inf[n].sum_absolute_value_deltas,dwork1,dwork2,
               eight_game_names[n]);
         }
         else {
           if (!bAbsoluteValue)
             printf("%10d %10d %10d %3d %s %s\n",
-              sum_8game_deltas[n],sum_8game_positive_deltas[n],
-              sum_8game_negative_deltas[n],num_8game_hands[n],
+              eight_game_inf[n].sum_deltas,eight_game_inf[n].sum_positive_deltas,
+              eight_game_inf[n].sum_negative_deltas,eight_game_inf[n].num_hands,
               eight_game_names[n],save_dir);
           else
             printf("%10d %10d %10d %3d %10d %8.3lf %8.2lf %s %s\n",
-              sum_8game_deltas[n],sum_8game_positive_deltas[n],
-              sum_8game_negative_deltas[n],num_8game_hands[n],
-              sum_8game_absolute_value_deltas[n],dwork1,dwork2,
+              eight_game_inf[n].sum_deltas,eight_game_inf[n].sum_positive_deltas,
+              eight_game_inf[n].sum_negative_deltas,eight_game_inf[n].num_hands,
+              eight_game_inf[n].sum_absolute_value_deltas,dwork1,dwork2,
               eight_game_names[n],save_dir);
         }
       }
