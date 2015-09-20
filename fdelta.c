@@ -36,7 +36,7 @@ static char usage[] =
 "  (-winning_only) (-losing_only) (-pocket_pairs_only) (-file_names)\n"
 "  (-big_blind) (-8game) (-all_in) (-hand_number) (-ge_valval) (-no_rake)\n"
 "  (-no_hole_cards) (-only_winning_deltas) (-only_losing_deltas)\n"
-"  player_name filename\n";
+"  (-show_collected) (-show_spent) (-show_wagered) player_name filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char pokerstars[] = "PokerStars";
@@ -128,6 +128,9 @@ int main(int argc,char **argv)
   bool bNoHoleCards;
   bool bOnlyWinningDeltas;
   bool bOnlyLosingDeltas;
+  int show_collected;
+  int show_spent;
+  int show_wagered;
   int player_name_ix;
   int player_name_len;
   int ge_val;
@@ -152,7 +155,9 @@ int main(int argc,char **argv)
   int collected_from_pot;
   int collected_from_pot_count;
   int ending_balance;
+  int quantum;
   int delta;
+  int wagered_amount;
   int file_no;
   int dbg_file_no;
   int num_hands;
@@ -172,7 +177,7 @@ int main(int argc,char **argv)
   int last_big_blind;
   int rake;
 
-  if ((argc < 3) || (argc > 22)) {
+  if ((argc < 3) || (argc > 25)) {
     printf(usage);
     return 1;
   }
@@ -195,6 +200,9 @@ int main(int argc,char **argv)
   bNoHoleCards = false;
   bOnlyWinningDeltas = false;
   bOnlyLosingDeltas = false;
+  show_collected = 0;
+  show_spent = 0;
+  show_wagered = 0;
   ge_val = -1;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
@@ -240,6 +248,12 @@ int main(int argc,char **argv)
       bOnlyWinningDeltas = true;
     else if (!strcmp(argv[curr_arg],"-only_losing_deltas"))
       bOnlyLosingDeltas = true;
+    else if (!strcmp(argv[curr_arg],"-show_collected"))
+      show_collected = 1;
+    else if (!strcmp(argv[curr_arg],"-show_spent"))
+      show_spent = 1;
+    else if (!strcmp(argv[curr_arg],"-show_wagered"))
+      show_wagered = 1;
     else
       break;
   }
@@ -266,12 +280,18 @@ int main(int argc,char **argv)
     return 5;
   }
 
+  if (show_collected + show_spent + show_wagered > 1) {
+    printf("only specify at most one of the flags -show_collected and "
+      "-show_spent and -show_wagered\n");
+    return 6;
+  }
+
   player_name_ix = curr_arg++;
   player_name_len = strlen(argv[player_name_ix]);
 
   if ((fptr0 = fopen(argv[curr_arg],"r")) == NULL) {
     printf(couldnt_open,argv[curr_arg]);
-    return 6;
+    return 7;
   }
 
   ending_balance = -1;
@@ -385,19 +405,19 @@ int main(int argc,char **argv)
 
             if (retval) {
               printf("get_8game_name() failed on line %d: %d\n",line_no,retval);
-              return 7;
+              return 8;
             }
 
             retval = get_8game_ix(game_name,&eight_game_ix);
 
             if (retval) {
               printf("get_8game_ix() failed on line %d: %d\n",line_no,retval);
-              return 8;
+              return 9;
             }
           }
           else {
             printf("no 8-game name found on line %d\n",line_no);
-            return 9;
+            return 10;
           }
         }
 
@@ -406,7 +426,7 @@ int main(int argc,char **argv)
 
           if (retval) {
             printf("%s: get_big_blind() failed on line %d: %d\n",filename,line_len,retval);
-            return 10;
+            return 11;
           }
 
           if (file_no > 1) {
@@ -631,6 +651,7 @@ int main(int argc,char **argv)
 
     ending_balance = starting_balance - spent_this_hand + collected_from_pot;
     delta = ending_balance - starting_balance;
+    wagered_amount = spent_this_hand + uncalled_bet_amount;
 
     if (bNoRake && collected_from_pot)
       delta += rake;
@@ -676,47 +697,56 @@ int main(int argc,char **argv)
     }
     else if (!bAllIn || bHaveAllIn) {
       if ((ge_val == -1) || (delta >= ge_val)) {
+        if (show_collected)
+          quantum = collected_from_pot;
+        else if (show_spent)
+          quantum = spent_this_hand;
+        else if (show_wagered)
+          quantum = wagered_amount;
+        else
+          quantum = delta;
+
         if (bTerse) {
           if (!bBigBlind) {
             if (!b8game) {
               if (!bHandNumber)
-                printf("%d\n",delta);
+                printf("%d\n",quantum);
               else
-                printf("%d (%d)\n",delta,num_hands);
+                printf("%d (%d)\n",quantum,num_hands);
             }
             else {
               if (!bHandNumber)
-                printf("%10d %s\n",delta,game_name);
+                printf("%10d %s\n",quantum,game_name);
               else
-                printf("%10d %6d %s\n",delta,num_hands,game_name);
+                printf("%10d %6d %s\n",quantum,num_hands,game_name);
             }
           }
           else
-            printf("%d %d\n",delta,curr_big_blind);
+            printf("%d %d\n",quantum,curr_big_blind);
         }
         else {
           if (bFileNames) {
             if (!bBigBlind)
-              printf("%10d %s/%s\n",delta,save_dir,filename);
+              printf("%10d %s/%s\n",quantum,save_dir,filename);
             else {
-              printf("%10d %5d%s %s/%s\n",delta,curr_big_blind,
+              printf("%10d %5d%s %s/%s\n",quantum,curr_big_blind,
                 (bAsterisk ? "*" : ""),save_dir,filename);
             }
           }
           else if (!bVerbose) {
             if (!bBigBlind) {
-              if (!bStud && !bRazz)
-                printf("%s %10d\n",hole_cards,delta);
+              if (!bStud && !bRazz && !bNoHoleCards)
+                printf("%s %10d\n",hole_cards,quantum);
               else
-                printf("%10d\n",delta);
+                printf("%10d\n",quantum);
             }
             else {
               if (!bStud && !bRazz) {
-                printf("%s %10d %5d%s\n",hole_cards,delta,curr_big_blind,
+                printf("%s %10d %5d%s\n",hole_cards,quantum,curr_big_blind,
                   (bAsterisk ? "*" : ""));
               }
               else {
-                printf("%10d %5d%s\n",delta,curr_big_blind,
+                printf("%10d %5d%s\n",quantum,curr_big_blind,
                   (bAsterisk ? "*" : ""));
               }
             }
@@ -725,28 +755,28 @@ int main(int argc,char **argv)
             if (!bBigBlind) {
               if (!bStud && !bRazz) {
                 if (!bNoHoleCards)
-                  printf("%s %10d %s/%s\n",hole_cards,delta,save_dir,filename);
+                  printf("%s %10d %s/%s\n",hole_cards,quantum,save_dir,filename);
                 else
-                  printf("%10d %s/%s\n",delta,save_dir,filename);
+                  printf("%10d %s/%s\n",quantum,save_dir,filename);
               }
               else
-                printf("%10d %s/%s\n",delta,save_dir,filename);
+                printf("%10d %s/%s\n",quantum,save_dir,filename);
             }
             else {
               if (!bStud && !bRazz) {
                 if (!bNoHoleCards) {
-                  printf("%s %10d %5d %s/%s\n",hole_cards,delta,
+                  printf("%s %10d %5d %s/%s\n",hole_cards,quantum,
                     curr_big_blind,(bAsterisk ? "*" : ""),
                     save_dir,filename);
                 }
                 else {
-                  printf("%10d %5d %s/%s\n",delta,
+                  printf("%10d %5d %s/%s\n",quantum,
                     curr_big_blind,(bAsterisk ? "*" : ""),
                     save_dir,filename);
                 }
               }
               else {
-                printf("%10d %5d %s/%s\n",delta,
+                printf("%10d %5d %s/%s\n",quantum,
                   curr_big_blind,(bAsterisk ? "*" : ""),
                   save_dir,filename);
               }
