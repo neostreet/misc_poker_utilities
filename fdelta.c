@@ -36,7 +36,7 @@ static char usage[] =
 "  (-winning_only) (-losing_only) (-pocket_pairs_only) (-file_names)\n"
 "  (-big_blind) (-8game) (-all_in) (-hand_number) (-ge_valval) (-no_rake)\n"
 "  (-no_hole_cards) (-only_winning_deltas) (-only_losing_deltas)\n"
-"  (-show_collected) (-show_spent) (-show_wagered) player_name filename\n";
+"  (-show_collected) (-show_spent) (-show_wagered) (-sum2) player_name filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char pokerstars[] = "PokerStars";
@@ -131,6 +131,7 @@ int main(int argc,char **argv)
   int show_collected;
   int show_spent;
   int show_wagered;
+  bool bSum2;
   int player_name_ix;
   int player_name_len;
   int ge_val;
@@ -168,6 +169,7 @@ int main(int argc,char **argv)
   double sum_deltas_dwork;
   char hole_cards[6];
   int sum_deltas;
+  int sum_quanta;
   int sum_positive_deltas;
   int sum_negative_deltas;
   int sum_absolute_value_deltas;
@@ -177,7 +179,7 @@ int main(int argc,char **argv)
   int last_big_blind;
   int rake;
 
-  if ((argc < 3) || (argc > 25)) {
+  if ((argc < 3) || (argc > 26)) {
     printf(usage);
     return 1;
   }
@@ -203,6 +205,7 @@ int main(int argc,char **argv)
   show_collected = 0;
   show_spent = 0;
   show_wagered = 0;
+  bSum2 = false;
   ge_val = -1;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
@@ -254,6 +257,8 @@ int main(int argc,char **argv)
       show_spent = 1;
     else if (!strcmp(argv[curr_arg],"-show_wagered"))
       show_wagered = 1;
+    else if (!strcmp(argv[curr_arg],"-sum2"))
+      bSum2 = true;
     else
       break;
   }
@@ -286,12 +291,17 @@ int main(int argc,char **argv)
     return 6;
   }
 
+  if (bSum && bSum2) {
+    printf("only specify at most one of the flags -sum and -sum2\n");
+    return 7;
+  }
+
   player_name_ix = curr_arg++;
   player_name_len = strlen(argv[player_name_ix]);
 
   if ((fptr0 = fopen(argv[curr_arg],"r")) == NULL) {
     printf(couldnt_open,argv[curr_arg]);
-    return 7;
+    return 8;
   }
 
   ending_balance = -1;
@@ -322,6 +332,8 @@ int main(int argc,char **argv)
     if (bAbsoluteValue)
       sum_absolute_value_deltas = 0;
   }
+  else if (bSum2)
+    sum_quanta = 0;
 
   for ( ; ; ) {
     GetLine(fptr0,filename,&filename_len,MAX_FILENAME_LEN);
@@ -405,19 +417,19 @@ int main(int argc,char **argv)
 
             if (retval) {
               printf("get_8game_name() failed on line %d: %d\n",line_no,retval);
-              return 8;
+              return 9;
             }
 
             retval = get_8game_ix(game_name,&eight_game_ix);
 
             if (retval) {
               printf("get_8game_ix() failed on line %d: %d\n",line_no,retval);
-              return 9;
+              return 10;
             }
           }
           else {
             printf("no 8-game name found on line %d\n",line_no);
-            return 10;
+            return 11;
           }
         }
 
@@ -426,7 +438,7 @@ int main(int argc,char **argv)
 
           if (retval) {
             printf("%s: get_big_blind() failed on line %d: %d\n",filename,line_len,retval);
-            return 11;
+            return 12;
           }
 
           if (file_no > 1) {
@@ -706,7 +718,9 @@ int main(int argc,char **argv)
         else
           quantum = delta;
 
-        if (bTerse) {
+        if (bSum2)
+          sum_quanta += quantum;
+        else if (bTerse) {
           if (!bBigBlind) {
             if (!b8game) {
               if (!bHandNumber)
@@ -898,7 +912,7 @@ int main(int argc,char **argv)
   else if (bAvg) {
     dwork1 = (double)sum_deltas / (double)num_hands;
 
-    if (!bDebug) {
+    if (!bVerbose) {
       printf("%d %d %lf\n",
         sum_deltas,num_hands,dwork1);
     }
@@ -906,6 +920,12 @@ int main(int argc,char **argv)
       printf("%10d %3d %8.2lf %s\n",
         sum_deltas,num_hands,dwork1,save_dir);
     }
+  }
+  else if (bSum2) {
+    if (!bVerbose)
+      printf("%d\n",sum_quanta);
+    else
+      printf("%d %s\n",sum_quanta,save_dir);
   }
 
   return 0;
