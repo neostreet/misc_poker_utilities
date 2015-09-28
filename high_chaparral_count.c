@@ -18,7 +18,7 @@ static char save_dir[_MAX_PATH];
 #define TAB 0x09
 
 static char usage[] =
-"usage: high_chaparral_count (-verbose) filename\n";
+"usage: high_chaparral_count (-verbose) (-total) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char **cppt;
@@ -38,6 +38,7 @@ int main(int argc,char **argv)
   int p;
   int curr_arg;
   bool bVerbose;
+  bool bTotal;
   struct stat statbuf;
   int mem_amount;
   char *mempt;
@@ -48,19 +49,24 @@ int main(int argc,char **argv)
   int cppt_ix;
   int chara;
   char delta_buf[MAX_DELTA_STR_LEN+1];
+  int high_chaparral_total;
+  int work;
 
-  if ((argc < 2) || (argc > 3)) {
+  if ((argc < 2) || (argc > 4)) {
     printf(usage);
     return 1;
   }
 
   bVerbose = false;
+  bTotal = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-verbose")) {
       bVerbose = true;
       getcwd(save_dir,_MAX_PATH);
     }
+    else if (!strcmp(argv[curr_arg],"-total"))
+      bTotal = true;
     else
       break;
   }
@@ -166,15 +172,31 @@ int main(int argc,char **argv)
 
   qsort(ixs,num_lines,sizeof (int),compare);
 
+  if (bTotal)
+    high_chaparral_total = 0;
+
   for (n = 0; n < num_lines; n++) {
     if (cppt[ixs[n]][0] == '-')
       break;
+
+    if (bTotal) {
+      sscanf(&cppt[ixs[n]][0],"%d",&work);
+      high_chaparral_total += work;
+    }
   }
 
-  if (!bVerbose)
-    printf("%d\n",n);
-  else
-    printf("%d (%d) %s\n",n,num_lines,save_dir);
+  if (!bVerbose) {
+    if (!bTotal)
+      printf("%d\n",n);
+    else
+      printf("%d\n",high_chaparral_total);
+  }
+  else {
+    if (!bTotal)
+      printf("%d (%d) %s\n",n,num_lines,save_dir);
+    else
+      printf("%d (%d) %s\n",high_chaparral_total,num_lines,save_dir);
+  }
 
   free(ixs);
 
