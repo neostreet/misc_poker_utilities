@@ -174,7 +174,7 @@ int main(int argc,char **argv)
   if (!bVerbose)
     printf("%d\n",n);
   else
-    printf("%d %s\n",n,save_dir);
+    printf("%d (%d) %s\n",n,num_lines,save_dir);
 
   free(ixs);
 
