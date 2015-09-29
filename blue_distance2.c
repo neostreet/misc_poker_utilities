@@ -9,7 +9,7 @@ static char line[MAX_LINE_LEN];
 static char usage[] =
 "usage: blue_distance2 (-terse) (-verbose) (-initial_bal) (-no_dates)\n"
 "  (-only_blue) (-from_nonblue) (-in_sessions) (-is_blue) (-skyfall)\n"
-"  (-no_input_dates) filename\n";
+"  (-no_input_dates) (-only_max) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
@@ -26,6 +26,7 @@ int main(int argc,char **argv)
   bool bIsBlue;
   bool bSkyfall;
   bool bNoInputDates;
+  bool bOnlyMax;
   bool bPrevIsBlue;
   int initial_bal;
   FILE *fptr;
@@ -36,8 +37,10 @@ int main(int argc,char **argv)
   int balance;
   int max_balance;
   int max_balance_ix;
+  int blue_distance;
+  int max_blue_distance;
 
-  if ((argc < 2) || (argc > 12)) {
+  if ((argc < 2) || (argc > 13)) {
     printf(usage);
     return 1;
   }
@@ -51,6 +54,7 @@ int main(int argc,char **argv)
   bIsBlue = false;
   bSkyfall = false;
   bNoInputDates = false;
+  bOnlyMax = false;
   initial_bal = 0;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
@@ -74,6 +78,8 @@ int main(int argc,char **argv)
       bSkyfall = true;
     else if (!strcmp(argv[curr_arg],"-no_input_dates"))
       bNoInputDates = true;
+    else if (!strcmp(argv[curr_arg],"-only_max"))
+      bOnlyMax = true;
     else
       break;
   }
@@ -95,6 +101,7 @@ int main(int argc,char **argv)
 
   line_no = 0;
   bPrevIsBlue = true;
+  max_blue_distance = 0;
 
   for ( ; ; ) {
     GetLine(fptr,line,&line_len,MAX_LINE_LEN);
@@ -141,9 +148,17 @@ int main(int argc,char **argv)
             if (!bVerbose) {
               if (!bIsBlue) {
                 if (!bSkyfall || ((delta < 0) && (line_no == max_balance_ix + 1))) {
-                  printf("%d\t%s\n",
-                  ((max_balance > 0) ? max_balance - balance : max_balance * -1),
-                  line);
+                  if (max_balance > 0)
+                    blue_distance = max_balance - balance;
+                  else
+                    blue_distance = max_balance * -1;
+
+                  if (blue_distance >= max_blue_distance) {
+                    max_blue_distance = blue_distance;
+                    printf("%d\t%s *\n",blue_distance,line);
+                  }
+                  else if (!bOnlyMax)
+                    printf("%d\t%s\n",blue_distance,line);
                 }
               }
               else {
