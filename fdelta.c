@@ -37,7 +37,7 @@ static char usage[] =
 "  (-big_blind) (-8game) (-all_in) (-hand_number) (-ge_valval) (-no_rake)\n"
 "  (-no_hole_cards) (-only_winning_deltas) (-only_losing_deltas)\n"
 "  (-show_collected) (-show_spent) (-show_wagered) (-sum2)\n"
-"  (-print_ending_balance) player_name filename\n";
+"  (-print_balances) player_name filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char pokerstars[] = "PokerStars";
@@ -133,7 +133,7 @@ int main(int argc,char **argv)
   int show_spent;
   int show_wagered;
   bool bSum2;
-  bool bPrintEndingBalance;
+  bool bPrintBalances;
   int player_name_ix;
   int player_name_len;
   int ge_val;
@@ -208,7 +208,7 @@ int main(int argc,char **argv)
   show_spent = 0;
   show_wagered = 0;
   bSum2 = false;
-  bPrintEndingBalance = false;
+  bPrintBalances = false;
   ge_val = -1;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
@@ -262,8 +262,8 @@ int main(int argc,char **argv)
       show_wagered = 1;
     else if (!strcmp(argv[curr_arg],"-sum2"))
       bSum2 = true;
-    else if (!strcmp(argv[curr_arg],"-print_ending_balance"))
-      bPrintEndingBalance = true;
+    else if (!strcmp(argv[curr_arg],"-print_balances"))
+      bPrintBalances = true;
     else
       break;
   }
@@ -729,16 +729,16 @@ int main(int argc,char **argv)
           if (!bBigBlind) {
             if (!b8game) {
               if (!bHandNumber) {
-                if (!bPrintEndingBalance)
+                if (!bPrintBalances)
                   printf("%d\n",quantum);
                 else
-                  printf("%d %d\n",quantum,ending_balance);
+                  printf("%d %d %d\n",quantum,starting_balance,ending_balance);
               }
               else {
-                if (!bPrintEndingBalance)
+                if (!bPrintBalances)
                   printf("%d (%d)\n",quantum,num_hands);
                 else
-                  printf("%d %d (%d)\n",quantum,ending_balance,num_hands);
+                  printf("%d %d %d (%d)\n",quantum,starting_balance,ending_balance,num_hands);
               }
             }
             else {
