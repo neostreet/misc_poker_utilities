@@ -1,5 +1,13 @@
 #include <stdio.h>
 #include <string.h>
+#ifdef WIN32
+#include <direct.h>
+#else
+#define _MAX_PATH 4096
+#include <unistd.h>
+#endif
+
+static char save_dir[_MAX_PATH];
 
 #define MAX_FILENAME_LEN 1024
 static char filename[MAX_FILENAME_LEN];
@@ -7,10 +15,9 @@ static char filename[MAX_FILENAME_LEN];
 #define MAX_LINE_LEN 1024
 static char line[MAX_LINE_LEN];
 
-static char usage[] = "usage: fsaw_flop (-debug) (-not) player_name filename\n";
+static char usage[] =
+"usage: fopening_folds (-verbose) player_name filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
-static char dealt_to[] = "Dealt to ";
-#define DEALT_TO_LEN (sizeof (dealt_to) - 1)
 static char player_folds_str[128];
 static char flop_str[] = "*** FLOP ***";
 #define FLOP_STR_LEN (sizeof (flop_str) - 1)
@@ -25,35 +32,29 @@ int main(int argc,char **argv)
   int n;
   int p;
   int curr_arg;
-  bool bDebug;
-  bool bNot;
+  bool bVerbose;
   FILE *fptr0;
   int filename_len;
   FILE *fptr;
   int line_len;
   int line_no;
-  static int dbg_line_no;
-  char hole_cards[6];
   bool bSawFlop;
   bool bFolded;
   int total_hands;
-  static int dbg_hand;
-  int dbg;
   int player_folds_str_len;
 
-  if ((argc < 3) || (argc > 5)) {
+  if ((argc < 3) || (argc > 4)) {
     printf(usage);
     return 1;
   }
 
-  bDebug = false;
-  bNot = false;
+  bVerbose = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
-    if (!strcmp(argv[curr_arg],"-debug"))
-      bDebug = true;
-    else if (!strcmp(argv[curr_arg],"-not"))
-      bNot = true;
+    if (!strcmp(argv[curr_arg],"-verbose")) {
+      bVerbose = true;
+      getcwd(save_dir,_MAX_PATH);
+    }
     else
       break;
   }
@@ -71,8 +72,6 @@ int main(int argc,char **argv)
     return 3;
   }
 
-  hole_cards[5] = 0;
-
   total_hands = 0;
 
   for ( ; ; ) {
@@ -82,9 +81,6 @@ int main(int argc,char **argv)
       break;
 
     total_hands++;
-
-    if (total_hands == dbg_hand)
-      dbg = 1;
 
     if ((fptr = fopen(filename,"r")) == NULL) {
       printf(couldnt_open,filename);
@@ -103,66 +99,26 @@ int main(int argc,char **argv)
 
       line_no++;
 
-      if (line_no == dbg_line_no)
-        dbg = 1;
-
-      if (!strncmp(line,dealt_to,DEALT_TO_LEN)) {
-        for (n = 0; n < line_len; n++) {
-          if (line[n] == '[')
-            break;
-        }
-
-        if (n < line_len) {
-          n++;
-
-          for (m = n; m < line_len; m++) {
-            if (line[m] == ']')
-              break;
-          }
-
-          if (m < line_len) {
-            for (p = 0; p < 5; p++)
-              hole_cards[p] = line[n+p];
-          }
-        }
-      }
-      else if (!strncmp(line,flop_str,FLOP_STR_LEN)) {
+      if (!strncmp(line,flop_str,FLOP_STR_LEN)) {
         bSawFlop = true;
 
-        if (!bNot) {
-          if (!bFolded) {
-            if (!bDebug)
-              printf("%s\n",hole_cards);
-            else
-              printf("%s (%d)\n",hole_cards,total_hands);
-          }
-        }
-      }
-      else if (!strncmp(line,player_folds_str,player_folds_str_len)) {
-        bFolded = true;
+        if (!bFolded) {
+          if (!bVerbose)
+            printf("%d\n",total_hands - 1);
+          else
+            printf("%d %s\n",total_hands - 1,save_dir);
 
-        if (bNot) {
-          if (!bSawFlop) {
-            if (!bDebug)
-              printf("%s\n",hole_cards);
-            else
-              printf("%s (%d)\n",hole_cards,total_hands);
-          }
+          break;
         }
       }
-      else if (!strncmp(line,summary_str,SUMMARY_STR_LEN)) {
-        if (bNot && !bFolded) {
-          if (!bSawFlop) {
-            if (!bDebug)
-              printf("%s\n",hole_cards);
-            else
-              printf("%s (%d)\n",hole_cards,total_hands);
-          }
-        }
-      }
+      else if (!strncmp(line,player_folds_str,player_folds_str_len))
+        bFolded = true;
     }
 
     fclose(fptr);
+
+    if (bSawFlop && !bFolded)
+      break;
   }
 
   fclose(fptr0);
