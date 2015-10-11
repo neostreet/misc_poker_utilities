@@ -7,7 +7,7 @@
 static char line[MAX_LINE_LEN];
 
 static char usage[] =
-"usage: blue_distance2 (-terse) (-verbose) (-initial_bal) (-no_dates)\n"
+"usage: blue_distance2 (-terse) (-verbose) (-sum) (-initial_bal) (-no_dates)\n"
 "  (-only_blue) (-from_nonblue) (-in_sessions) (-is_blue) (-skyfall)\n"
 "  (-no_input_dates) (-only_max) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
@@ -19,6 +19,7 @@ int main(int argc,char **argv)
   int curr_arg;
   bool bTerse;
   bool bVerbose;
+  bool bSum;
   bool bNoDates;
   bool bOnlyBlue;
   bool bFromNonblue;
@@ -40,13 +41,14 @@ int main(int argc,char **argv)
   int blue_distance;
   int max_blue_distance;
 
-  if ((argc < 2) || (argc > 13)) {
+  if ((argc < 2) || (argc > 14)) {
     printf(usage);
     return 1;
   }
 
   bTerse = false;
   bVerbose = false;
+  bSum = false;
   bNoDates = false;
   bOnlyBlue = false;
   bFromNonblue = false;
@@ -62,6 +64,8 @@ int main(int argc,char **argv)
       bTerse = true;
     else if (!strcmp(argv[curr_arg],"-verbose"))
       bVerbose = true;
+    else if (!strcmp(argv[curr_arg],"-sum"))
+      bSum = true;
     else if (!strncmp(argv[curr_arg],"-initial_bal",12))
       sscanf(&argv[curr_arg][12],"%d",&initial_bal);
     else if (!strcmp(argv[curr_arg],"-no_dates"))
@@ -141,7 +145,7 @@ int main(int argc,char **argv)
       }
     }
 
-    if (!bTerse) {
+    if (!bSum) {
       if (!bNoDates) {
         if (!bOnlyBlue) {
           if (!bInSessions) {
@@ -153,12 +157,16 @@ int main(int argc,char **argv)
                   else
                     blue_distance = max_balance * -1;
 
-                  if (blue_distance >= max_blue_distance) {
-                    max_blue_distance = blue_distance;
-                    printf("%d\t%s *\n",blue_distance,line);
+                  if (bTerse)
+                    printf("%d\n",blue_distance);
+                  else {
+                    if (blue_distance >= max_blue_distance) {
+                      max_blue_distance = blue_distance;
+                      printf("%d\t%s *\n",blue_distance,line);
+                    }
+                    else if (!bOnlyMax)
+                      printf("%d\t%s\n",blue_distance,line);
                   }
-                  else if (!bOnlyMax)
-                    printf("%d\t%s\n",blue_distance,line);
                 }
               }
               else {
@@ -233,7 +241,7 @@ int main(int argc,char **argv)
     line_no++;
   }
 
-  if (bTerse) {
+  if (bSum) {
     if (!bNoDates) {
       if (!bInSessions) {
         printf("%d\t%s\n",
