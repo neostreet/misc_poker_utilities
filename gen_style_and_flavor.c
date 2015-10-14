@@ -12,7 +12,8 @@ static char headings[] =
 static char *poker_styles[] = {
   "Cash ",
   "SNG  ",
-  "MTT  "
+  "MTT  ",
+  "Sp&Go"
 };
 #define NUM_POKER_STYLES (sizeof poker_styles / sizeof (char *))
 
