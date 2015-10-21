@@ -16,16 +16,18 @@ static char filename[MAX_FILENAME_LEN];
 #define MAX_LINE_LEN 1024
 static char line[MAX_LINE_LEN];
 
-#define MAX_PLAYERS 9
-
 static char usage[] =
-"usage: fhanded_counts (-terse) (-verbose) (-debug) filename\n";
+"usage: finitial_heads_up_stack (-terse) (-verbose) (-debug) player_name filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
+static char in_chips[] = " in chips";
+#define IN_CHIPS_LEN (sizeof (in_chips) - 1)
 static char street_marker[] = "*** ";
 #define STREET_MARKER_LEN (sizeof (street_marker) - 1)
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
+static int Contains(bool bCaseSens,char *line,int line_len,
+  char *string,int string_len,int *index);
 
 int main(int argc,char **argv)
 {
@@ -34,8 +36,12 @@ int main(int argc,char **argv)
   bool bTerse;
   bool bVerbose;
   bool bDebug;
+  int player_name_ix;
+  int player_name_len;
   FILE *fptr0;
   int filename_len;
+  int ix;
+  int starting_balance;
   int num_files;
   int dbg_num_files;
   int dbg;
@@ -43,12 +49,8 @@ int main(int argc,char **argv)
   int line_no;
   int line_len;
   int table_count;
-  int num_hands;
-  int handed_counts[(MAX_PLAYERS - 1)];
-  double handed_count_pct;
-  int curr_file_num_hands;
 
-  if ((argc < 2) || (argc > 5)) {
+  if ((argc < 3) || (argc > 6)) {
     printf(usage);
     return 1;
   }
@@ -70,7 +72,7 @@ int main(int argc,char **argv)
       break;
   }
 
-  if (argc - curr_arg != 1) {
+  if (argc - curr_arg != 2) {
     printf(usage);
     return 2;
   }
@@ -80,16 +82,15 @@ int main(int argc,char **argv)
     return 3;
   }
 
+  player_name_ix = curr_arg++;
+  player_name_len = strlen(argv[player_name_ix]);
+
   if ((fptr0 = fopen(argv[curr_arg],"r")) == NULL) {
     printf(couldnt_open,argv[curr_arg]);
     return 4;
   }
 
   num_files = 0;
-  num_hands = 0;
-
-  for (n = 0; n < (MAX_PLAYERS - 1); n++)
-    handed_counts[n] = 0;
 
   for ( ; ; ) {
     GetLine(fptr0,filename,&filename_len,MAX_FILENAME_LEN);
@@ -102,7 +103,6 @@ int main(int argc,char **argv)
       continue;
     }
 
-    curr_file_num_hands = 0;
     num_files++;
 
     if (num_files == dbg_num_files)
@@ -120,7 +120,6 @@ int main(int argc,char **argv)
 
       if (!strncmp(line,"Table '",7)) {
         table_count = 0;
-        curr_file_num_hands++;
 
         for ( ; ; ) {
           GetLine(fptr,line,&line_len,MAX_LINE_LEN);
@@ -133,34 +132,48 @@ int main(int argc,char **argv)
           if (!strncmp(line,street_marker,STREET_MARKER_LEN))
             break;
 
-          if (!strncmp(line,"Seat ",5))
+          if (!strncmp(line,"Seat ",5)) {
             table_count++;
+
+            if (Contains(true,
+              line,line_len,
+              argv[player_name_ix],player_name_len,
+              &ix)) {
+
+              if (Contains(true,
+                line,line_len,
+                in_chips,IN_CHIPS_LEN,
+                &ix)) {
+
+                line[ix] = 0;
+
+                for (ix--; (ix >= 0) && (line[ix] != '('); ix--)
+                  ;
+
+                sscanf(&line[ix+1],"%d",&starting_balance);
+              }
+            }
+          }
         }
 
-        handed_counts[table_count - 2]++;
+        if (table_count == 2) {
+          if (!bDebug)
+            printf("%d\n",starting_balance);
+          else
+            printf("%d %s (%d)\n",starting_balance,save_dir,num_files);
+
+          break;
+        }
       }
     }
 
     fclose(fptr);
 
-    num_hands += curr_file_num_hands;
+    if (table_count == 2)
+      break;
   }
 
   fclose(fptr0);
-
-  for (n = 7; (n >= 0); n--) {
-    if (!handed_counts[n])
-      continue;
-
-    handed_count_pct = (double)handed_counts[n] / (double)num_hands;
-
-    if (bTerse)
-      printf("%d %lf\n",n+2,handed_count_pct);
-    else if (!bDebug)
-      printf("%d %lf (%d of %d)\n",n+2,handed_count_pct,handed_counts[n],num_hands);
-    else
-      printf("%d %lf (%d of %d) %s\n",n+2,handed_count_pct,handed_counts[n],num_hands,save_dir);
-  }
 
   return 0;
 }
@@ -187,4 +200,39 @@ static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen)
 
   line[local_line_len] = 0;
   *line_len = local_line_len;
+}
+
+static int Contains(bool bCaseSens,char *line,int line_len,
+  char *string,int string_len,int *index)
+{
+  int m;
+  int n;
+  int tries;
+  char chara;
+
+  tries = line_len - string_len + 1;
+
+  if (tries <= 0)
+    return false;
+
+  for (m = 0; m < tries; m++) {
+    for (n = 0; n < string_len; n++) {
+      chara = line[m + n];
+
+      if (!bCaseSens) {
+        if ((chara >= 'A') && (chara <= 'Z'))
+          chara += 'a' - 'A';
+      }
+
+      if (chara != string[n])
+        break;
+    }
+
+    if (n == string_len) {
+      *index = m;
+      return true;
+    }
+  }
+
+  return false;
 }
