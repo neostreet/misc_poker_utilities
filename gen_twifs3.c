@@ -44,9 +44,9 @@ int main(int argc,char **argv)
     sscanf(line,"%d %d %d",&firsts,&seconds,&total);
     sprintf(buf,"echo %d %d %d",firsts,seconds,total);
     system(buf);
-    sprintf(buf,"tournament_wif /cygdrive/c/users/alloyd/misc/git/misc_poker_utilities/50000a %d %d %d",firsts,seconds,total);
+    sprintf(buf,"tournament_wif /cygdrive/c/aidan/pokerstars/50000 %d %d %d",firsts,seconds,total);
     system(buf);
-    sprintf(buf,"tournament_wif /cygdrive/c/users/alloyd/misc/git/misc_poker_utilities/50000b %d %d %d",firsts,seconds,total);
+    sprintf(buf,"tournament_wif /cygdrive/c/aidan/pokerstars/45000 %d %d %d",firsts,seconds,total);
     system(buf);
   }
 

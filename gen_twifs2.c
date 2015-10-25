@@ -49,9 +49,9 @@ int main(int argc,char **argv)
     sprintf(buf,"echo %d %d %d %d %d %d\n",firsts,seconds,thirds,fourths,fifths,sixths);
     system(buf);
     total = firsts + seconds + thirds + fourths + fifths + sixths;
-    sprintf(buf,"tournament_wif /cygdrive/c/aidan/pokerstars/50000a %d %d %d",firsts,seconds,total);
+    sprintf(buf,"tournament_wif /cygdrive/c/aidan/pokerstars/50000 %d %d %d",firsts,seconds,total);
     system(buf);
-    sprintf(buf,"tournament_wif /cygdrive/c/aidan/pokerstars/50000b %d %d %d",firsts,seconds,total);
+    sprintf(buf,"tournament_wif /cygdrive/c/aidan/pokerstars/45000 %d %d %d",firsts,seconds,total);
     system(buf);
   }
 
