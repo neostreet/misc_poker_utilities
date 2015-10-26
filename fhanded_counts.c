@@ -19,7 +19,7 @@ static char line[MAX_LINE_LEN];
 #define MAX_PLAYERS 9
 
 static char usage[] =
-"usage: fhanded_counts (-terse) (-verbose) (-debug) filename\n";
+"usage: fhanded_counts (-terse) (-verbose) (-debug) (-only_countcount) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char street_marker[] = "*** ";
@@ -34,6 +34,8 @@ int main(int argc,char **argv)
   bool bTerse;
   bool bVerbose;
   bool bDebug;
+  bool bOnlyCount;
+  int only_count;
   FILE *fptr0;
   int filename_len;
   int num_files;
@@ -48,7 +50,7 @@ int main(int argc,char **argv)
   double handed_count_pct;
   int curr_file_num_hands;
 
-  if ((argc < 2) || (argc > 5)) {
+  if ((argc < 2) || (argc > 6)) {
     printf(usage);
     return 1;
   }
@@ -56,6 +58,7 @@ int main(int argc,char **argv)
   bTerse = false;
   bVerbose = false;
   bDebug = false;
+  bOnlyCount = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-terse"))
@@ -65,6 +68,10 @@ int main(int argc,char **argv)
     else if (!strcmp(argv[curr_arg],"-debug")) {
       bDebug = true;
       getcwd(save_dir,_MAX_PATH);
+    }
+    else if (!strncmp(argv[curr_arg],"-only_count",11)) {
+      bOnlyCount = true;
+      sscanf(&argv[curr_arg][11],"%d",&only_count);
     }
     else
       break;
@@ -150,6 +157,9 @@ int main(int argc,char **argv)
 
   for (n = 7; (n >= 0); n--) {
     if (!handed_counts[n])
+      continue;
+
+    if (bOnlyCount && (n + 2 != only_count))
       continue;
 
     handed_count_pct = (double)handed_counts[n] / (double)num_hands;
