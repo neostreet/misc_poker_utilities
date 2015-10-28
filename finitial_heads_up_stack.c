@@ -17,7 +17,7 @@ static char filename[MAX_FILENAME_LEN];
 static char line[MAX_LINE_LEN];
 
 static char usage[] =
-"usage: finitial_heads_up_stack (-terse) (-verbose) (-debug) player_name filename\n";
+"usage: finitial_heads_up_stack (-verbose) (-debug) (-percent_only) player_name filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char in_chips[] = " in chips";
@@ -33,15 +33,18 @@ int main(int argc,char **argv)
 {
   int n;
   int curr_arg;
-  bool bTerse;
   bool bVerbose;
   bool bDebug;
+  bool bPercentOnly;
   int player_name_ix;
   int player_name_len;
   FILE *fptr0;
   int filename_len;
   int ix;
-  int starting_balance;
+  int chips;
+  int total_chips_in_play;
+  int my_chips;
+  double my_percent;
   int num_files;
   int dbg_num_files;
   int dbg;
@@ -55,19 +58,19 @@ int main(int argc,char **argv)
     return 1;
   }
 
-  bTerse = false;
   bVerbose = false;
   bDebug = false;
+  bPercentOnly = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
-    if (!strcmp(argv[curr_arg],"-terse"))
-      bTerse = true;
-    else if (!strcmp(argv[curr_arg],"-verbose"))
+    if (!strcmp(argv[curr_arg],"-verbose"))
       bVerbose = true;
     else if (!strcmp(argv[curr_arg],"-debug")) {
       bDebug = true;
       getcwd(save_dir,_MAX_PATH);
     }
+    else if (!strcmp(argv[curr_arg],"-percent_only"))
+      bPercentOnly = true;
     else
       break;
   }
@@ -77,17 +80,12 @@ int main(int argc,char **argv)
     return 2;
   }
 
-  if (bTerse && bVerbose) {
-    printf("can't specify both -terse and -verbose\n");
-    return 3;
-  }
-
   player_name_ix = curr_arg++;
   player_name_len = strlen(argv[player_name_ix]);
 
   if ((fptr0 = fopen(argv[curr_arg],"r")) == NULL) {
     printf(couldnt_open,argv[curr_arg]);
-    return 4;
+    return 3;
   }
 
   num_files = 0;
@@ -120,6 +118,7 @@ int main(int argc,char **argv)
 
       if (!strncmp(line,"Table '",7)) {
         table_count = 0;
+        total_chips_in_play = 0;
 
         for ( ; ; ) {
           GetLine(fptr,line,&line_len,MAX_LINE_LEN);
@@ -137,30 +136,51 @@ int main(int argc,char **argv)
 
             if (Contains(true,
               line,line_len,
+              in_chips,IN_CHIPS_LEN,
+              &ix)) {
+
+              line[ix] = 0;
+
+              for (ix--; (ix >= 0) && (line[ix] != '('); ix--)
+                ;
+
+              sscanf(&line[ix+1],"%d",&chips);
+            }
+
+            total_chips_in_play += chips;
+
+            if (Contains(true,
+              line,line_len,
               argv[player_name_ix],player_name_len,
               &ix)) {
 
-              if (Contains(true,
-                line,line_len,
-                in_chips,IN_CHIPS_LEN,
-                &ix)) {
-
-                line[ix] = 0;
-
-                for (ix--; (ix >= 0) && (line[ix] != '('); ix--)
-                  ;
-
-                sscanf(&line[ix+1],"%d",&starting_balance);
-              }
+              my_chips = chips;
             }
           }
         }
 
         if (table_count == 2) {
-          if (!bDebug)
-            printf("%d\n",starting_balance);
-          else
-            printf("%d %s (%d)\n",starting_balance,save_dir,num_files);
+          if (bVerbose)
+            my_percent = (double)my_chips / (double)total_chips_in_play;
+
+          if (!bDebug) {
+            if (!bVerbose)
+              printf("%d\n",my_chips);
+            else
+              printf("%d of %d (%lf)\n",my_chips,total_chips_in_play,my_percent);
+          }
+          else {
+            if (!bVerbose)
+              printf("%d %s (%d)\n",my_chips,save_dir,num_files);
+            else {
+              if (bPercentOnly)
+                printf("%lf %s (%d)\n",my_percent,save_dir,num_files);
+              else {
+                printf("%d of %d (%lf) %s (%d)\n",my_chips,total_chips_in_play,
+                  my_percent,save_dir,num_files);
+              }
+            }
+          }
 
           break;
         }
