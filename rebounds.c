@@ -25,7 +25,8 @@ struct rebound_struct {
 
 #define TAB 0x9
 
-static char usage[] = "usage: rebounds (-debug) (-no_sort) filename\n";
+static char usage[] =
+"usage: rebounds (-debug) (-no_sort) (-date_last) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char malloc_failed1[] = "malloc of %d session info structures failed\n";
@@ -67,6 +68,7 @@ int main(int argc,char **argv)
   int curr_arg;
   bool bDebug;
   bool bNoSort;
+  bool bDateLast;
   int session_ix;
   FILE *fptr;
   int line_len;
@@ -79,19 +81,22 @@ int main(int argc,char **argv)
   int rebound_ix;
   int curr_rebound;
 
-  if ((argc < 2) || (argc > 4)) {
+  if ((argc < 2) || (argc > 5)) {
     printf(usage);
     return 1;
   }
 
   bDebug = false;
   bNoSort = false;
+  bDateLast = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-debug"))
       bDebug = true;
     else if (!strcmp(argv[curr_arg],"-no_sort"))
       bNoSort = true;
+    else if (!strcmp(argv[curr_arg],"-date_last"))
+      bDateLast = true;
     else
       break;
   }
@@ -191,7 +196,7 @@ int main(int argc,char **argv)
 
   rebound_ix = 0;
 
-  for (n = 0; n < set_size; n++) {
+  for (n = 1; n < set_size; n++) {
     if ((session_info[n-1].delta < 0) && (session_info[n].delta > 0)) {
       curr_rebound = session_info[n-1].delta * -1;
 
@@ -212,8 +217,14 @@ int main(int argc,char **argv)
   for (n = 0; n < num_rebounds; n++) {
     cpt = ctime(&rebound[sort_ixs[n]].poker_session_date);
 
-    printf("%s %10d\n",
-      format_date(cpt),rebound[sort_ixs[n]].rebound);
+    if (!bDateLast) {
+      printf("%s %10d\n",
+        format_date(cpt),rebound[sort_ixs[n]].rebound);
+    }
+    else {
+      printf("%10d %s\n",
+        rebound[sort_ixs[n]].rebound,format_date(cpt));
+    }
   }
 
   free(session_info);
