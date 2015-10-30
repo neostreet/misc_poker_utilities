@@ -26,7 +26,7 @@ struct rebound_struct {
 #define TAB 0x9
 
 static char usage[] =
-"usage: rebounds (-debug) (-no_sort) (-date_last) filename\n";
+"usage: rebounds (-debug) (-no_sort) (-date_last) (-full) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char malloc_failed1[] = "malloc of %d session info structures failed\n";
@@ -69,6 +69,7 @@ int main(int argc,char **argv)
   bool bDebug;
   bool bNoSort;
   bool bDateLast;
+  bool bFull;
   int session_ix;
   FILE *fptr;
   int line_len;
@@ -78,10 +79,11 @@ int main(int argc,char **argv)
   int retval;
   char *cpt;
   int num_rebounds;
+  int is_rebound;
   int rebound_ix;
   int curr_rebound;
 
-  if ((argc < 2) || (argc > 5)) {
+  if ((argc < 2) || (argc > 6)) {
     printf(usage);
     return 1;
   }
@@ -89,6 +91,7 @@ int main(int argc,char **argv)
   bDebug = false;
   bNoSort = false;
   bDateLast = false;
+  bFull = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-debug"))
@@ -97,6 +100,8 @@ int main(int argc,char **argv)
       bNoSort = true;
     else if (!strcmp(argv[curr_arg],"-date_last"))
       bDateLast = true;
+    else if (!strcmp(argv[curr_arg],"-full"))
+      bFull = true;
     else
       break;
   }
@@ -173,8 +178,12 @@ int main(int argc,char **argv)
   num_rebounds = 0;
 
   for (n = 1; n < set_size; n++) {
-    if ((session_info[n-1].delta < 0) && (session_info[n].delta > 0))
-      num_rebounds++;
+    if ((session_info[n-1].delta < 0) && (session_info[n].delta > 0)) {
+      if (!bFull)
+        num_rebounds++;
+      else if (session_info[n-1].delta * -1 >= session_info[n].delta)
+        num_rebounds++;
+    }
   }
 
   if (bDebug)
@@ -198,13 +207,22 @@ int main(int argc,char **argv)
 
   for (n = 1; n < set_size; n++) {
     if ((session_info[n-1].delta < 0) && (session_info[n].delta > 0)) {
-      curr_rebound = session_info[n-1].delta * -1;
+      is_rebound = 0;
 
-      if (curr_rebound > session_info[n].delta)
-        curr_rebound = session_info[n].delta;
+      if (!bFull)
+        is_rebound = 1;
+      else if (session_info[n-1].delta * -1 >= session_info[n].delta)
+        is_rebound = 1;
 
-      rebound[rebound_ix].poker_session_date = session_info[n].poker_session_date;
-      rebound[rebound_ix++].rebound = curr_rebound;
+      if (is_rebound) {
+        curr_rebound = session_info[n-1].delta * -1;
+
+        if (curr_rebound > session_info[n].delta)
+          curr_rebound = session_info[n].delta;
+
+        rebound[rebound_ix].poker_session_date = session_info[n].poker_session_date;
+        rebound[rebound_ix++].rebound = curr_rebound;
+      }
     }
   }
 
