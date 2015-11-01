@@ -96,9 +96,9 @@ int main(int argc,char **argv)
   fclose(fptr);
 
   for (n = MAX_PLAYERS - 3; (n >= 0); n--) {
-    delta = sum_delta[n].sum_pos_delta + sum_delta[n].sum_neg_delta;
+    if (sum_delta[n].count) {
+      delta = sum_delta[n].sum_pos_delta + sum_delta[n].sum_neg_delta;
 
-    if (delta) {
       if (!bVerbose)
         printf("%d %10d %5d\n",n + 2,delta,sum_delta[n].count);
       else {
