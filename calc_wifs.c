@@ -1,7 +1,7 @@
 #include <stdio.h>
 
-#define NUM_PLACES      6
-#define NUM_TOURNAMENTS 6
+static char usage[] =
+"usage: calc_wifs num_tournaments tournament_info_file\n";
 
 struct tournament_info {
   int buy_in;
@@ -19,6 +19,7 @@ int tournament_wif(
 
 int main(int argc,char **argv)
 {
+  int num_tournaments;
   FILE *fptr;
   struct tournament_info tournament;
   int m;
@@ -31,13 +32,15 @@ int main(int argc,char **argv)
   int delta;
   int retval;
 
-  if (argc != 2) {
-    printf("usage: calc_wifs tournament_info_file\n");
+  if (argc != 3) {
+    printf(usage);
     return 1;
   }
 
-  if ((fptr = fopen(argv[1],"r")) == NULL) {
-    printf("couldn't open %s\n",argv[1]);
+  sscanf(argv[1],"%d",&num_tournaments);
+
+  if ((fptr = fopen(argv[2],"r")) == NULL) {
+    printf("couldn't open %s\n",argv[2]);
     return 2;
   }
 
@@ -48,15 +51,15 @@ int main(int argc,char **argv)
 
   fclose(fptr);
 
-  for (m = 0; m <= NUM_PLACES; m++) {
-    for (n = 0; n <= NUM_PLACES; n++) {
+  for (m = 0; m <= num_tournaments; m++) {
+    for (n = 0; n <= num_tournaments; n++) {
       count = 0;
 
-      for (o = 0; o <= NUM_PLACES; o++) {
-        for (p = 0; p <= NUM_PLACES; p++) {
-          for (q = 0; q <= NUM_PLACES; q++) {
-            for (r = 0; r <= NUM_PLACES; r++) {
-              if (m + n + o + p + q + r <= NUM_PLACES)
+      for (o = 0; o <= num_tournaments; o++) {
+        for (p = 0; p <= num_tournaments; p++) {
+          for (q = 0; q <= num_tournaments; q++) {
+            for (r = 0; r <= num_tournaments; r++) {
+              if (m + n + o + p + q + r <= num_tournaments)
                 count++;
             }
           }
@@ -65,7 +68,7 @@ int main(int argc,char **argv)
 
       if (count) {
         retval = tournament_wif(&tournament,
-          m,n,NUM_TOURNAMENTS,&delta);
+          m,n,num_tournaments,&delta);
 
         if (retval) {
           printf("tournament_wif failed: %d\n",retval);
