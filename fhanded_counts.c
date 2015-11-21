@@ -20,7 +20,7 @@ static char line[MAX_LINE_LEN];
 
 static char usage[] =
 "usage: fhanded_counts (-terse) (-verbose) (-debug) (-only_countcount)\n"
-"  player_name filename\n";
+"  (-silent) player_name filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char in_chips[] = " in chips";
@@ -46,6 +46,7 @@ int main(int argc,char **argv)
   bool bDebug;
   bool bOnlyCount;
   int only_count;
+  bool bSilent;
   int player_name_ix;
   int player_name_len;
   int ix;
@@ -64,7 +65,7 @@ int main(int argc,char **argv)
   double handed_count_pct;
   int curr_file_num_hands;
 
-  if ((argc < 2) || (argc > 7)) {
+  if ((argc < 2) || (argc > 8)) {
     printf(usage);
     return 1;
   }
@@ -73,6 +74,7 @@ int main(int argc,char **argv)
   bVerbose = false;
   bDebug = false;
   bOnlyCount = false;
+  bSilent = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-terse"))
@@ -87,6 +89,8 @@ int main(int argc,char **argv)
       bOnlyCount = true;
       sscanf(&argv[curr_arg][11],"%d",&only_count);
     }
+    else if (!strcmp(argv[curr_arg],"-silent"))
+      bSilent = true;
     else
       break;
   }
@@ -106,7 +110,7 @@ int main(int argc,char **argv)
 
   if ((fptr0 = fopen(argv[curr_arg],"r")) == NULL) {
     printf(couldnt_open,argv[curr_arg]);
-    return 4;
+    return (bSilent ? 0 : 4);
   }
 
   num_files = 0;
