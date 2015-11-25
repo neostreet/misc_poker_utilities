@@ -7,7 +7,7 @@ static char line[MAX_LINE_LEN];
 #define MAX_GAME_NAME_LEN 50
 static char game_name[MAX_GAME_NAME_LEN+1];
 
-static char usage[] = "usage: aggreg_8game filename\n";
+static char usage[] = "usage: aggreg_8game offset filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char *eight_game_names[] = {
@@ -25,9 +25,10 @@ static char *eight_game_names[] = {
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
 static int Contains(bool bCaseSens,char *line,int line_len,
   char *string,int string_len,int *index);
-int get_delta_and_8game_name(
+void get_delta_and_8game_name(
   char *line,
   int line_len,
+  int offset,
   int *delta_ptr,
   char *game_name,
   int max_game_name_len);
@@ -36,6 +37,7 @@ int get_8game_ix(char *game_name,int *ix);
 int main(int argc,char **argv)
 {
   int n;
+  int offset;
   int retval;
   int delta;
   int ix;
@@ -44,13 +46,15 @@ int main(int argc,char **argv)
   int line_no;
   int balances[NUM_8GAME_GAMES];
 
-  if (argc != 2) {
+  if (argc != 3) {
     printf(usage);
     return 1;
   }
 
-  if ((fptr = fopen(argv[1],"r")) == NULL) {
-    printf(couldnt_open,argv[1]);
+  sscanf(argv[1],"%d",&offset);
+
+  if ((fptr = fopen(argv[2],"r")) == NULL) {
+    printf(couldnt_open,argv[2]);
     return 2;
   }
 
@@ -67,18 +71,13 @@ int main(int argc,char **argv)
 
     line_no++;
 
-    retval = get_delta_and_8game_name(line,line_len,&delta,game_name,MAX_GAME_NAME_LEN);
-
-    if (retval) {
-      printf("get_delta_and_8game_name() failed on line %d: %d\n",line_no,retval);
-      return 3;
-    }
+    get_delta_and_8game_name(line,line_len,offset,&delta,game_name,MAX_GAME_NAME_LEN);
 
     retval = get_8game_ix(game_name,&ix);
 
     if (retval) {
       printf("get_8game_ix() failed on line %d: %d\n",line_no,retval);
-      return 4;
+      return 3;
     }
 
     balances[ix] += delta;
@@ -151,9 +150,10 @@ static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen)
   *line_len = local_line_len;
 }
 
-int get_delta_and_8game_name(
+void get_delta_and_8game_name(
   char *line,
   int line_len,
+  int offset,
   int *delta_ptr,
   char *game_name,
   int max_game_name_len)
@@ -168,15 +168,13 @@ int get_delta_and_8game_name(
     " /cygdrive",10,
     &ix)) {
 
-    return 1;
+    ix = line_len;
   }
 
-  for (n = 40; n < ix; n++)
-    game_name[n - 40] = line[n];
+  for (n = offset; n < ix; n++)
+    game_name[n - offset] = line[n];
 
-  game_name[n - 40] = 0;
-
-  return 0;
+  game_name[n - offset] = 0;
 }
 
 int get_8game_ix(char *game_name,int *ix)
