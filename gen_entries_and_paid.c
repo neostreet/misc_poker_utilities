@@ -7,7 +7,7 @@ static char usage[] = "usage: gen_entries_and_paid filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char headings[] =
-  "entries places_paid\n";
+  "entries paid\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
 
@@ -43,7 +43,7 @@ int main(int argc,char **argv)
 
     sscanf(line,"%d %d",&entries,&paid);
 
-    printf("%7d %11d\n",entries,paid);
+    printf("%7d %4d\n",entries,paid);
   }
 
   fclose(fptr);
