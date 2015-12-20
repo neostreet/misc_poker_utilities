@@ -1,15 +1,19 @@
 #include <stdio.h>
+#include <string.h>
 
 #define MAX_LINE_LEN 1024
 static char line[MAX_LINE_LEN];
 
-static char usage[] = "usage: blue_count filename\n";
+static char usage[] =
+"usage: blue_count (-offsetoffset) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
 
 int main(int argc,char **argv)
 {
+  int curr_arg;
+  int offset;
   FILE *fptr;
   int line_len;
   int line_no;
@@ -18,14 +22,28 @@ int main(int argc,char **argv)
   int max;
   double blue_pct;
 
-  if (argc != 2) {
+  if ((argc < 2) || (argc > 3)) {
     printf(usage);
     return 1;
   }
 
-  if ((fptr = fopen(argv[1],"r")) == NULL) {
-    printf(couldnt_open,argv[1]);
+  offset = 0;
+
+  for (curr_arg = 1; curr_arg < argc; curr_arg++) {
+    if (!strncmp(argv[curr_arg],"-offset",7))
+      sscanf(&argv[curr_arg][7],"%d",&offset);
+    else
+      break;
+  }
+
+  if (argc - curr_arg != 1) {
+    printf(usage);
     return 2;
+  }
+
+  if ((fptr = fopen(argv[curr_arg],"r")) == NULL) {
+    printf(couldnt_open,argv[curr_arg]);
+    return 3;
   }
 
   line_no = 0;
@@ -40,7 +58,7 @@ int main(int argc,char **argv)
 
     line_no++;
 
-    sscanf(line,"%d",&work);
+    sscanf(&line[offset],"%d",&work);
 
     if (work > max) {
       if (line_no > 1)
