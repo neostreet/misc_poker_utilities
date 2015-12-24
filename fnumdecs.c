@@ -343,7 +343,7 @@ int main(int argc,char **argv)
 
     if (!bVerbose) {
       if (bTerse) {
-        printf("%6d %6d %5.2lf fld %4d chk %4d call %4d %4d bet rse %4d\n",
+        printf("%6d %6d %5.2lf fld %4d chk %4d call %4d bet %4d rse %4d\n",
           tot_numdecs,tot_num_hands,dwork,
           tot_numfolds,tot_numchecks,tot_numcalls,tot_numbets,tot_numraises);
       }
