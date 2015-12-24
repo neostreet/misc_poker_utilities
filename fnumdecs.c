@@ -17,7 +17,8 @@ static char filename[MAX_FILENAME_LEN];
 static char line[MAX_LINE_LEN];
 
 static char usage[] =
-"usage: fnumdecs (-debug) (-verbose) (-action) (-zero) (-folded) player_name filename\n";
+"usage: fnumdecs (-debug) (-verbose) (-terse) (-action) (-zero) (-folded)\n"
+"  player_name filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char in_chips[] = " in chips";
@@ -52,6 +53,7 @@ int main(int argc,char **argv)
   int curr_arg;
   bool bDebug;
   bool bVerbose;
+  bool bTerse;
   int action;
   int zero;
   int folded;
@@ -73,27 +75,28 @@ int main(int argc,char **argv)
   int numdecs;
   int tot_numfolds;
   int numfolds;
-  int tot_numbets;
-  int numbets;
-  int tot_numcalls;
-  int numcalls;
-  int tot_numraises;
-  int numraises;
   int tot_numchecks;
   int numchecks;
+  int tot_numcalls;
+  int numcalls;
+  int tot_numbets;
+  int numbets;
+  int tot_numraises;
+  int numraises;
   int tot_action_numdecs;
   int action_numdecs;
   int tot_zero_numdecs;
   int zero_numdecs;
   double dwork;
 
-  if ((argc < 3) || (argc > 8)) {
+  if ((argc < 3) || (argc > 9)) {
     printf(usage);
     return 1;
   }
 
   bDebug = false;
   bVerbose = false;
+  bTerse = false;
   action = 0;
   zero = 0;
   folded = 0;
@@ -103,6 +106,8 @@ int main(int argc,char **argv)
       bDebug = true;
     else if (!strcmp(argv[curr_arg],"-verbose"))
       bVerbose = true;
+    else if (!strcmp(argv[curr_arg],"-terse"))
+      bTerse = true;
     else if (!strcmp(argv[curr_arg],"-action"))
       action = 1;
     else if (!strcmp(argv[curr_arg],"-zero"))
@@ -123,6 +128,11 @@ int main(int argc,char **argv)
     return 3;
   }
 
+  if (bVerbose && bTerse) {
+    printf("can't specify both -verbose and -terse\n");
+    return 4;
+  }
+
   if (bDebug)
     getcwd(save_dir,_MAX_PATH);
 
@@ -131,7 +141,7 @@ int main(int argc,char **argv)
 
   if ((fptr0 = fopen(argv[curr_arg],"r")) == NULL) {
     printf(couldnt_open,argv[curr_arg]);
-    return 4;
+    return 5;
   }
 
   file_no = 0;
@@ -142,10 +152,10 @@ int main(int argc,char **argv)
   tot_num_hands = 0;
   tot_numdecs = 0;
   tot_numfolds = 0;
-  tot_numbets = 0;
-  tot_numcalls = 0;
-  tot_numraises = 0;
   tot_numchecks = 0;
+  tot_numcalls = 0;
+  tot_numbets = 0;
+  tot_numraises = 0;
 
   if (action)
     tot_action_numdecs = 0;
@@ -172,10 +182,10 @@ int main(int argc,char **argv)
     num_hands = 0;
     numdecs = 0;
     numfolds = 0;
-    numbets = 0;
-    numcalls = 0;
-    numraises = 0;
     numchecks = 0;
+    numcalls = 0;
+    numbets = 0;
+    numraises = 0;
 
     if (action)
       action_numdecs = 0;
@@ -282,19 +292,19 @@ int main(int argc,char **argv)
     if (bVerbose) {
       dwork = (double)numdecs / (double)num_hands;
 
-      printf("%6d %6d %5.2lf fld %4d bet %4d call %4d rse %4d chk %4d %s\n",
+      printf("%6d %6d %5.2lf fld %4d chk %4d call %4d bet %4d rse %4d %s\n",
          numdecs,num_hands,dwork,
-         numfolds,numbets,numcalls,numraises,numchecks,
+         numfolds,numchecks,numcalls,numbets,numraises,
          filename);
     }
 
     tot_num_hands += num_hands;
     tot_numdecs += numdecs;
     tot_numfolds += numfolds;
-    tot_numbets += numbets;
-    tot_numcalls += numcalls;
-    tot_numraises += numraises;
     tot_numchecks += numchecks;
+    tot_numcalls += numcalls;
+    tot_numbets += numbets;
+    tot_numraises += numraises;
 
     if (action)
       tot_action_numdecs += action_numdecs;
@@ -332,15 +342,20 @@ int main(int argc,char **argv)
     dwork = (double)tot_numdecs / (double)tot_num_hands;
 
     if (!bVerbose) {
-      if (!bDebug)
+      if (bTerse) {
+        printf("%6d %6d %5.2lf fld %4d chk %4d call %4d %4d bet rse %4d\n",
+          tot_numdecs,tot_num_hands,dwork,
+          tot_numfolds,tot_numchecks,tot_numcalls,tot_numbets,tot_numraises);
+      }
+      else if (!bDebug)
         printf(fmt1,tot_numdecs,tot_num_hands,dwork);
       else
         printf(fmt2,tot_numdecs,tot_num_hands,dwork,save_dir);
     }
     else {
-      printf("%6d %6d %5.2lf fld %4d bet %4d call %4d rse %4d chk %4d\n",
+      printf("%6d %6d %5.2lf fld %4d chk %4d call %4d %4d bet rse %4d\n",
         tot_numdecs,tot_num_hands,dwork,
-        tot_numfolds,tot_numbets,tot_numcalls,tot_numraises,tot_numchecks);
+        tot_numfolds,tot_numchecks,tot_numcalls,tot_numbets,tot_numraises);
     }
   }
 
