@@ -97,7 +97,7 @@ int main(int argc,char **argv)
         blue_gap = line_no - prev_blue;
 
         if (!bVerbose)
-          printf("%d\n",balance);
+          printf("%d %s\n",balance,line);
         else {
           printf("%6d: %12d %6d %6d (%d) %3d\n",
             line_no,balance,losing_sessions,winning_sessions,golden,blue_gap);
@@ -105,7 +105,7 @@ int main(int argc,char **argv)
       }
       else {
         if (!bVerbose)
-          printf("%d\n",balance);
+          printf("%d %s\n",balance,line);
         else {
           printf("%6d: %12d %6d %6d (%d)\n",
             line_no,balance,losing_sessions,winning_sessions,golden);
