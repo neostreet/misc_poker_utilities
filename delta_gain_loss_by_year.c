@@ -7,20 +7,19 @@
 #include <unistd.h>
 #endif
 
-struct min_last {
-  int have_min;
-  int min;
-  int last;
+struct delta_gain_loss {
+  int delta_gain;
+  int delta_loss;
 };
 
 #define MAX_YEARS 50
-static struct min_last min_last_by_year[MAX_YEARS];
+static struct delta_gain_loss delta_gain_loss_by_year[MAX_YEARS];
 
 #define MAX_LINE_LEN 1024
 static char line[MAX_LINE_LEN];
 
 static char usage[] =
-"usage: min_last_by_year (-verbose) filename\n";
+"usage: delta_gain_loss_by_year (-verbose) filename\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
 
@@ -62,8 +61,8 @@ int main(int argc,char **argv)
   }
 
   for (n = 0; n < MAX_YEARS; n++) {
-    min_last_by_year[n].have_min = 0;
-    min_last_by_year[n].last = 0;
+    delta_gain_loss_by_year[n].delta_gain = 0;
+    delta_gain_loss_by_year[n].delta_loss = 0;
   }
 
   line_no = 0;
@@ -88,27 +87,24 @@ int main(int argc,char **argv)
       return 4;
     }
 
-    min_last_by_year[year_ix].last += work;
-
-    if (!min_last_by_year[year_ix].have_min ||
-       (min_last_by_year[year_ix].last < min_last_by_year[year_ix].min)) {
-      min_last_by_year[year_ix].min = min_last_by_year[year_ix].last;
-      min_last_by_year[year_ix].have_min = 1;
-    }
+    if (work < 0)
+      delta_gain_loss_by_year[year_ix].delta_loss += work;
+    else if (work > 0)
+      delta_gain_loss_by_year[year_ix].delta_gain += work;
   }
 
   fclose(fptr);
 
   for (n = 0; n < MAX_YEARS; n++) {
-    if (min_last_by_year[n].have_min) {
+    if (delta_gain_loss_by_year[n].delta_gain || delta_gain_loss_by_year[n].delta_loss) {
       if (!bVerbose) {
         printf("%d: %d\n",first_year + n,
-          min_last_by_year[n].last - min_last_by_year[n].min);
+          delta_gain_loss_by_year[n].delta_gain + delta_gain_loss_by_year[n].delta_loss);
       }
       else {
         printf("%d: %12d (%12d %12d)\n",first_year + n,
-          min_last_by_year[n].last - min_last_by_year[n].min,
-          min_last_by_year[n].last,min_last_by_year[n].min);
+          delta_gain_loss_by_year[n].delta_gain + delta_gain_loss_by_year[n].delta_loss,
+          delta_gain_loss_by_year[n].delta_gain,delta_gain_loss_by_year[n].delta_loss);
       }
     }
   }
