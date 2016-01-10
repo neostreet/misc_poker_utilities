@@ -17,7 +17,7 @@ static char filename[MAX_FILENAME_LEN];
 static char line[MAX_LINE_LEN];
 
 static char usage[] =
-"usage: min_chip_pct (-verbose) player_name filename\n";
+"usage: min_chip_pct (-verbose) (-heads_up) player_name filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char in_chips[] = " in chips";
@@ -34,6 +34,7 @@ int main(int argc,char **argv)
   int n;
   int curr_arg;
   bool bVerbose;
+  bool bHeadsUp;
   int player_name_ix;
   int player_name_len;
   FILE *fptr0;
@@ -52,19 +53,23 @@ int main(int argc,char **argv)
   int dbg;
   FILE *fptr;
   int line_len;
+  int table_count;
 
-  if ((argc < 3) || (argc > 4)) {
+  if ((argc < 3) || (argc > 5)) {
     printf(usage);
     return 1;
   }
 
   bVerbose = false;
+  bHeadsUp = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-verbose")) {
       bVerbose = true;
       getcwd(save_dir,_MAX_PATH);
     }
+    else if (!strcmp(argv[curr_arg],"-heads_up"))
+      bHeadsUp = true;
     else
       break;
   }
@@ -108,6 +113,7 @@ int main(int argc,char **argv)
         break;
 
       if (!strncmp(line,"Table '",7)) {
+        table_count = 0;
         total_chips_in_play = 0;
 
         for ( ; ; ) {
@@ -120,6 +126,8 @@ int main(int argc,char **argv)
             break;
 
           if (!strncmp(line,"Seat ",5)) {
+            table_count++;
+
             if (Contains(true,
               line,line_len,
               in_chips,IN_CHIPS_LEN,
@@ -145,6 +153,9 @@ int main(int argc,char **argv)
           }
         }
 
+        if (bHeadsUp && (table_count != 2))
+          break;
+
         my_percent = (double)my_chips / (double)total_chips_in_play * (double)100;
 
         if (my_percent < min_chip_pct) {
@@ -167,12 +178,14 @@ int main(int argc,char **argv)
 
   fclose(fptr0);
 
-  if (!bVerbose)
-    printf("%lf hand %d\n",min_chip_pct,min_chip_hand);
-  else {
-    printf("%lf (%d %d) hand %d %s\n",min_chip_pct,
-      min_chip_pct_num,min_chip_pct_denom,
-      min_chip_hand,save_dir);
+  if (min_chip_pct != (double)100) {
+    if (!bVerbose)
+      printf("%lf hand %d\n",min_chip_pct,min_chip_hand);
+    else {
+      printf("%lf (%d %d) hand %d %s\n",min_chip_pct,
+        min_chip_pct_num,min_chip_pct_denom,
+        min_chip_hand,save_dir);
+    }
   }
 
   return 0;
