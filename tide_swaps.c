@@ -182,10 +182,12 @@ int main(int argc,char **argv)
 
   fclose(fptr0);
 
-  if (!bVerbose)
-    printf("%d\n",tide_swaps);
-  else
-    printf("%d (%d) %s\n",tide_swaps,qualifying_hands,save_dir);
+  if (qualifying_hands) {
+    if (!bVerbose)
+      printf("%d\n",tide_swaps);
+    else
+      printf("%d (%d) %s\n",tide_swaps,qualifying_hands,save_dir);
+  }
 
   return 0;
 }

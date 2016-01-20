@@ -169,7 +169,7 @@ int main(int argc,char **argv)
 
   fclose(fptr0);
 
-  if (high_tide_pct_num) {
+  if (high_tide_pct_denom) {
     high_tide_pct = (double)high_tide_pct_num / (double)high_tide_pct_denom;
 
     if (!bVerbose)
