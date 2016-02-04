@@ -46,6 +46,7 @@ static int Contains(bool bCaseSens,char *line,int line_len,
   char *string,int string_len,int *index);
 static int get_num_hands(char *line,int line_len,int *num_hands);
 static int get_buy_in_and_entry_fee(char *line,int line_len,int *buy_in,int *entry_fee);
+static int get_num_players(char *line,int line_len,int *num_players);
 static int get_initial_stake(char *player_name,int player_name_len,FILE *fptr,int *initial_stake);
 static int get_place_and_winnings(char *player_name,int player_name_len,FILE *fptr,int *place,int *winnings);
 
@@ -81,7 +82,6 @@ int main(int argc,char **argv)
   }
 
   letter = 'a';
-  num_players = 6;
 
   for (n = 0; n < MAX_SIT_AND_GOS; n++) {
     sprintf(outer_filename,"%c/sng_hands.lst",letter);
@@ -156,6 +156,20 @@ int main(int argc,char **argv)
     if (retval) {
       printf("get_buy_in_and_entry_fee() failed: %d\n",retval);
       return 10;
+    }
+
+    GetLine(fptr,line,&line_len,MAX_LINE_LEN);
+
+    if (feof(fptr)) {
+      printf(unexpected_eof,filename);
+      return 11;
+    }
+
+    retval = get_num_players(line,line_len,&num_players);
+
+    if (retval) {
+      printf("get_num_players() failed: %d\n",retval);
+      return 12;
     }
 
     retval = get_place_and_winnings(
@@ -326,6 +340,25 @@ static int get_buy_in_and_entry_fee(char *line,int line_len,int *buy_in,int *ent
     return 2;
 
   sscanf(&line[n+1],"%d",buy_in);
+
+  return 0;
+}
+
+static int get_num_players(char *line,int line_len,int *num_players)
+{
+  int n;
+
+  for (n = 0; n < line_len; n++) {
+    if (line[n] == '-')
+      break;
+  }
+
+  if (n == line_len)
+    return 1;
+
+  line[n] = 0;
+
+  sscanf(&line[n-1],"%d",num_players);
 
   return 0;
 }
