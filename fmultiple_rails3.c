@@ -147,6 +147,9 @@ int main(int argc,char **argv)
     }
 
     fclose(fptr);
+
+    if (prev_table_count > 2)
+      printf("%d 1 %s %3d\n",prev_table_count,filename,num_hands - 1);
   }
 
   fclose(fptr0);
