@@ -23,7 +23,12 @@ static char couldnt_open[] = "couldn't open %s\n";
 static char in_chips[] = " in chips";
 #define IN_CHIPS_LEN (sizeof (in_chips) - 1)
 
+static char finished[] = "finished the tournament";
+#define FINISHED_LEN (sizeof (finished) - 1)
+
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
+static int Contains(bool bCaseSens,char *line,int line_len,
+  char *string,int string_len,int *index);
 
 int main(int argc,char **argv)
 {
@@ -46,7 +51,8 @@ int main(int argc,char **argv)
   int num_hands;
   int dbg;
   int table_count;
-  int prev_table_count;
+  int finished_count;
+  int ix;
 
   if ((argc < 2) || (argc > 5)) {
     printf(usage);
@@ -122,6 +128,7 @@ int main(int argc,char **argv)
       if (!strncmp(line,"Table '",7)) {
         num_hands++;
         table_count = 0;
+        finished_count = 0;
 
         for ( ; ; ) {
           GetLine(fptr,line,&line_len,MAX_LINE_LEN);
@@ -135,21 +142,22 @@ int main(int argc,char **argv)
           if (!strncmp(line,"Seat ",5))
             table_count++;
         }
+      }
+      else {
+        if (Contains(true,
+          line,line_len,
+          finished,FINISHED_LEN,
+          &ix)) {
 
-        if ((num_hands > 1) && (prev_table_count - table_count > 1))
-          printf("%d %d %s %3d\n",prev_table_count,table_count,filename,num_hands - 1);
-
-        if (feof(fptr))
-          break;
-
-        prev_table_count = table_count;
+          finished_count++;
+        }
       }
     }
 
-    fclose(fptr);
+    if (finished_count > 1)
+      printf("%d %d %s %3d\n",table_count,table_count - finished_count,filename,num_hands);
 
-    if (prev_table_count > 2)
-      printf("%d 1 %s %3d\n",prev_table_count,filename,num_hands - 1);
+    fclose(fptr);
   }
 
   fclose(fptr0);
@@ -179,4 +187,39 @@ static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen)
 
   line[local_line_len] = 0;
   *line_len = local_line_len;
+}
+
+static int Contains(bool bCaseSens,char *line,int line_len,
+  char *string,int string_len,int *index)
+{
+  int m;
+  int n;
+  int tries;
+  char chara;
+
+  tries = line_len - string_len + 1;
+
+  if (tries <= 0)
+    return false;
+
+  for (m = 0; m < tries; m++) {
+    for (n = 0; n < string_len; n++) {
+      chara = line[m + n];
+
+      if (!bCaseSens) {
+        if ((chara >= 'A') && (chara <= 'Z'))
+          chara += 'a' - 'A';
+      }
+
+      if (chara != string[n])
+        break;
+    }
+
+    if (n == string_len) {
+      *index = m;
+      return true;
+    }
+  }
+
+  return false;
 }
