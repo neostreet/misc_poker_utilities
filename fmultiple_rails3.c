@@ -17,7 +17,8 @@ static char filename[MAX_FILENAME_LEN];
 static char line[MAX_LINE_LEN];
 
 static char usage[] =
-"usage: fmultiple_rails3 (-terse) (-verbose) (-debug) filename\n";
+"usage: fmultiple_rails3 (-terse) (-verbose) (-debug)\n"
+"  (-player_namename) (-player_hit_rail) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char in_chips[] = " in chips";
@@ -40,6 +41,11 @@ int main(int argc,char **argv)
   bool bTerse;
   bool bVerbose;
   bool bDebug;
+  bool bHavePlayerName;
+  char *player_name;
+  int player_name_len;
+  bool bHavePlayerHitRail;
+  bool bPlayerHitRail;
   FILE *fptr0;
   int filename_len;
   FILE *fptr;
@@ -54,7 +60,7 @@ int main(int argc,char **argv)
   int finished_count;
   int ix;
 
-  if ((argc < 2) || (argc > 5)) {
+  if ((argc < 2) || (argc > 7)) {
     printf(usage);
     return 1;
   }
@@ -62,6 +68,8 @@ int main(int argc,char **argv)
   bTerse = false;
   bVerbose = false;
   bDebug = false;
+  bHavePlayerName = false;
+  bHavePlayerHitRail = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-terse"))
@@ -70,6 +78,13 @@ int main(int argc,char **argv)
       bVerbose = true;
     else if (!strcmp(argv[curr_arg],"-debug"))
       bDebug = true;
+    else if (!strncmp(argv[curr_arg],"-player_name",12)) {
+      player_name = &argv[curr_arg][12];
+      player_name_len = strlen(player_name);
+      bHavePlayerName = true;
+    }
+    else if (!strcmp(argv[curr_arg],"-player_hit_rail"))
+      bHavePlayerHitRail = true;
     else
       break;
   }
@@ -84,9 +99,14 @@ int main(int argc,char **argv)
     return 3;
   }
 
+  if (bHavePlayerHitRail && !bHavePlayerName) {
+    printf("if -player_hit_rail is specified, -player_namename must be also\n");
+    return 4;
+  }
+
   if ((fptr0 = fopen(argv[curr_arg],"r")) == NULL) {
     printf(couldnt_open,argv[curr_arg]);
-    return 4;
+    return 5;
   }
 
   file_no = 0;
@@ -110,6 +130,9 @@ int main(int argc,char **argv)
 
     line_no = 0;
     num_hands = 0;
+
+    if (bHavePlayerName)
+      bPlayerHitRail = false;
 
     for ( ; ; ) {
       GetLine(fptr,line,&line_len,MAX_LINE_LEN);
@@ -150,12 +173,24 @@ int main(int argc,char **argv)
           &ix)) {
 
           finished_count++;
+
+          if (bHavePlayerName) {
+            if (Contains(true,
+              line,line_len,
+              player_name,player_name_len,
+              &ix)) {
+
+              bPlayerHitRail = true;
+            }
+          }
         }
       }
     }
 
-    if (finished_count > 1)
-      printf("%d %d %s %3d\n",table_count,table_count - finished_count,filename,num_hands);
+    if (finished_count > 1) {
+      if (!bHavePlayerName || (!bHavePlayerHitRail && !bPlayerHitRail) || (bHavePlayerHitRail && bPlayerHitRail))
+        printf("%d %d %s %3d\n",table_count,table_count - finished_count,filename,num_hands);
+    }
 
     fclose(fptr);
   }
