@@ -18,7 +18,7 @@ static char line[MAX_LINE_LEN];
 
 static char usage[] =
 "usage: fmultiple_rails3 (-terse) (-verbose) (-debug)\n"
-"  (-player_namename) (-player_hit_rail) filename\n";
+"  (-player_namename) (-player_hit_rail) (-verbose_style2) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char in_chips[] = " in chips";
@@ -30,6 +30,7 @@ static char finished[] = "finished the tournament";
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
 static int Contains(bool bCaseSens,char *line,int line_len,
   char *string,int string_len,int *index);
+static char *style2(char *filename);
 
 int main(int argc,char **argv)
 {
@@ -40,6 +41,7 @@ int main(int argc,char **argv)
   int curr_arg;
   bool bTerse;
   bool bVerbose;
+  bool bVerboseStyle2;
   bool bDebug;
   bool bHavePlayerName;
   char *player_name;
@@ -60,13 +62,14 @@ int main(int argc,char **argv)
   int finished_count;
   int ix;
 
-  if ((argc < 2) || (argc > 7)) {
+  if ((argc < 2) || (argc > 8)) {
     printf(usage);
     return 1;
   }
 
   bTerse = false;
   bVerbose = false;
+  bVerboseStyle2 = false;
   bDebug = false;
   bHavePlayerName = false;
   bHavePlayerHitRail = false;
@@ -85,6 +88,10 @@ int main(int argc,char **argv)
     }
     else if (!strcmp(argv[curr_arg],"-player_hit_rail"))
       bHavePlayerHitRail = true;
+    else if (!strcmp(argv[curr_arg],"-verbose_style2")) {
+      bVerbose = true;
+      bVerboseStyle2 = true;
+    }
     else
       break;
   }
@@ -188,8 +195,12 @@ int main(int argc,char **argv)
     }
 
     if (finished_count > 1) {
-      if (!bHavePlayerName || (!bHavePlayerHitRail && !bPlayerHitRail) || (bHavePlayerHitRail && bPlayerHitRail))
-        printf("%d %d %s %3d\n",table_count,table_count - finished_count,filename,num_hands);
+      if (!bHavePlayerName || (!bHavePlayerHitRail && !bPlayerHitRail) || (bHavePlayerHitRail && bPlayerHitRail)) {
+        if (!bVerboseStyle2)
+          printf("%d %d %s %3d\n",table_count,table_count - finished_count,filename,num_hands);
+        else
+          printf("%d %d %s%d.txt\n",table_count,table_count - finished_count,style2(filename),num_hands);
+      }
     }
 
     fclose(fptr);
@@ -257,4 +268,25 @@ static int Contains(bool bCaseSens,char *line,int line_len,
   }
 
   return false;
+}
+
+#define MAX_STYLE2_LEN 512
+static char style2_buf[MAX_STYLE2_LEN];
+
+static char *style2(char *filename)
+{
+  int n;
+
+  strcpy(style2_buf,filename);
+
+  for (n = strlen(style2_buf) - 1; (n >= 0); n--) {
+    if (style2_buf[n] == '\\')
+      break;
+  }
+
+  n++;
+
+  sprintf(&style2_buf[n],"hand");
+
+  return style2_buf;
 }
