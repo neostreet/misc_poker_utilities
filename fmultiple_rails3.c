@@ -18,7 +18,8 @@ static char line[MAX_LINE_LEN];
 
 static char usage[] =
 "usage: fmultiple_rails3 (-terse) (-verbose) (-debug)\n"
-"  (-player_namename) (-player_hit_rail) (-verbose_style2) filename\n";
+"  (-player_namename) (-player_hit_rail) (-verbose_style2)\n"
+"  (-only_filename)filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char in_chips[] = " in chips";
@@ -48,6 +49,7 @@ int main(int argc,char **argv)
   int player_name_len;
   bool bHavePlayerHitRail;
   bool bPlayerHitRail;
+  bool bOnlyFilename;
   FILE *fptr0;
   int filename_len;
   FILE *fptr;
@@ -62,7 +64,7 @@ int main(int argc,char **argv)
   int finished_count;
   int ix;
 
-  if ((argc < 2) || (argc > 8)) {
+  if ((argc < 2) || (argc > 9)) {
     printf(usage);
     return 1;
   }
@@ -73,6 +75,7 @@ int main(int argc,char **argv)
   bDebug = false;
   bHavePlayerName = false;
   bHavePlayerHitRail = false;
+  bOnlyFilename = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-terse"))
@@ -92,6 +95,8 @@ int main(int argc,char **argv)
       bVerbose = true;
       bVerboseStyle2 = true;
     }
+    else if (!strcmp(argv[curr_arg],"-only_filename"))
+      bOnlyFilename = true;
     else
       break;
   }
@@ -195,11 +200,14 @@ int main(int argc,char **argv)
     }
 
     if (finished_count > 1) {
+      if (!bOnlyFilename)
+        printf("%d %d ",table_count,table_count - finished_count);
+
       if (!bHavePlayerName || (!bHavePlayerHitRail && !bPlayerHitRail) || (bHavePlayerHitRail && bPlayerHitRail)) {
         if (!bVerboseStyle2)
-          printf("%d %d %s %3d\n",table_count,table_count - finished_count,filename,num_hands);
+          printf("%s %3d\n",filename,num_hands);
         else
-          printf("%d %d %s%d.txt\n",table_count,table_count - finished_count,style2(filename),num_hands);
+          printf("%s%d.txt\n",style2(filename),num_hands);
       }
     }
 
