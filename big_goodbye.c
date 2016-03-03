@@ -12,7 +12,8 @@ static char save_dir[_MAX_PATH];
 #define MAX_LINE_LEN 1024
 static char line[MAX_LINE_LEN];
 
-static char usage[] = "usage: big_goodbye (-verbose) (-neg) filename\n";
+static char usage[] =
+"usage: big_goodbye (-verbose) (-neg) (-either) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
@@ -22,6 +23,7 @@ int main(int argc,char **argv)
   int curr_arg;
   bool bVerbose;
   bool bNeg;
+  bool bEither;
   FILE *fptr;
   int line_len;
   int line_no;
@@ -31,13 +33,14 @@ int main(int argc,char **argv)
   int max_abs_sign;
   int max_abs_line_no;
 
-  if ((argc < 2) || (argc > 4)) {
+  if ((argc < 2) || (argc > 5)) {
     printf(usage);
     return 1;
   }
 
   bVerbose = false;
   bNeg = false;
+  bEither = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-verbose")) {
@@ -46,6 +49,8 @@ int main(int argc,char **argv)
     }
     else if (!strcmp(argv[curr_arg],"-neg"))
       bNeg = true;
+    else if (!strcmp(argv[curr_arg],"-either"))
+      bEither = true;
     else
       break;
   }
@@ -55,9 +60,14 @@ int main(int argc,char **argv)
     return 2;
   }
 
+  if (bNeg && bEither) {
+    printf("can's specify both -neg and -either\n");
+    return 3;
+  }
+
   if ((fptr = fopen(argv[curr_arg],"r")) == NULL) {
     printf(couldnt_open,argv[curr_arg]);
-    return 2;
+    return 4;
   }
 
   line_no = 0;
@@ -87,7 +97,7 @@ int main(int argc,char **argv)
   fclose(fptr);
 
   if (max_abs_line_no == line_no) {
-    if ((!bNeg && (max_abs_sign == 1)) || (bNeg && (max_abs_sign == -1))) {
+    if (bEither || (!bNeg && (max_abs_sign == 1)) || (bNeg && (max_abs_sign == -1))) {
       if (!bVerbose)
         printf("%d\n",max_abs * max_abs_sign);
       else
