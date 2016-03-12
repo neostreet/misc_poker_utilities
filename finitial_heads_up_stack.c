@@ -52,6 +52,7 @@ int main(int argc,char **argv)
   int line_no;
   int line_len;
   int table_count;
+  bool bHeadsUp;
 
   if ((argc < 3) || (argc > 6)) {
     printf(usage);
@@ -61,6 +62,7 @@ int main(int argc,char **argv)
   bVerbose = false;
   bDebug = false;
   bPercentOnly = false;
+  bHeadsUp = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-verbose"))
@@ -189,11 +191,17 @@ int main(int argc,char **argv)
 
     fclose(fptr);
 
-    if (table_count == 2)
+    if (table_count == 2) {
+      bHeadsUp = true;
+
       break;
+    }
   }
 
   fclose(fptr0);
+
+  if (bVerbose && !bHeadsUp)
+    printf("failed to detect heads up play in %s\n",save_dir);
 
   return 0;
 }
