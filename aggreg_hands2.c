@@ -237,6 +237,7 @@ int main(int argc,char **argv)
 
   fclose(fptr);
 
+  card_string[2] = 0;
   card_string[3] = 0;
 
   total_sum_delta = 0;
