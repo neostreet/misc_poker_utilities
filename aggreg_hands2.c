@@ -260,7 +260,7 @@ int main(int argc,char **argv)
       (double)total_hand_count;
 
     if (bVerbose) {
-      printf("%-3s %10d %10d %10d %6d %6d %6d %6d %9.6lf %6d %9.6lf",
+      printf("%-3s %10d %10d %10d %6d %6d %6d %6d %9.2lf %6d %9.2lf",
         card_string,
         aggreg[o].sum_delta,
         aggreg[o].sum_wins,
@@ -274,7 +274,7 @@ int main(int argc,char **argv)
         freq_factor);
     }
     else {
-      printf("%-3s %10d %10d %10d %6d %6d %6d %6d %9.6lf",card_string,
+      printf("%-3s %10d %10d %10d %6d %6d %6d %6d %9.2lf",card_string,
         aggreg[o].sum_delta,
         aggreg[o].sum_wins,
         aggreg[o].sum_losses,
@@ -344,7 +344,7 @@ int main(int argc,char **argv)
         continue;
 
       if (bVerbose) {
-        printf("%-3s %10d %10d %10d %6d %6d %6d %6d %9.6lf %6d %9.6lf",
+        printf("%-3s %10d %10d %10d %6d %6d %6d %6d %9.2lf %6d %9.2lf",
           card_string,
           aggreg[NUM_CARDS_IN_SUIT+o].sum_delta,
           aggreg[NUM_CARDS_IN_SUIT+o].sum_wins,
@@ -358,7 +358,7 @@ int main(int argc,char **argv)
           freq_factor);
       }
       else {
-        printf("%-3s %10d %10d %10d %6d %6d %6d %6d %9.6lf",card_string,
+        printf("%-3s %10d %10d %10d %6d %6d %6d %6d %9.2lf",card_string,
           aggreg[NUM_CARDS_IN_SUIT+o].sum_delta,
           aggreg[NUM_CARDS_IN_SUIT+o].sum_wins,
           aggreg[NUM_CARDS_IN_SUIT+o].sum_losses,
@@ -427,7 +427,7 @@ int main(int argc,char **argv)
         continue;
 
       if (bVerbose) {
-        printf("%-3s %10d %10d %10d %6d %6d %6d %6d %9.6lf %6d %9.6lf",
+        printf("%-3s %10d %10d %10d %6d %6d %6d %6d %9.2lf %6d %9.2lf",
           card_string,
           aggreg[NUM_CARDS_IN_SUIT+NUM_SUITED_NONPAIRS+o].sum_delta,
           aggreg[NUM_CARDS_IN_SUIT+NUM_SUITED_NONPAIRS+o].sum_wins,
@@ -441,7 +441,7 @@ int main(int argc,char **argv)
           freq_factor);
       }
       else {
-        printf("%-3s %10d %10d %10d %6d %6d %6d %6d %9.6lf",card_string,
+        printf("%-3s %10d %10d %10d %6d %6d %6d %6d %9.2lf",card_string,
           aggreg[NUM_CARDS_IN_SUIT+NUM_SUITED_NONPAIRS+o].sum_delta,
           aggreg[NUM_CARDS_IN_SUIT+NUM_SUITED_NONPAIRS+o].sum_wins,
           aggreg[NUM_CARDS_IN_SUIT+NUM_SUITED_NONPAIRS+o].sum_losses,
