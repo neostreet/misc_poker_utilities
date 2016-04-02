@@ -23,11 +23,9 @@ static char line[MAX_LINE_LEN];
 
 #define PAIR_PERIODICITY                17.0
 
-char suit_chars[] = "cdhs";
 char rank_chars[] = "23456789TJQKA";
 
 static char bad_rank_in_line[] = "bad rank in line %d: %s\n";
-static char bad_suit_in_line[] = "bad suit in line %d: %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
 
@@ -42,9 +40,7 @@ int main(int argc,char **argv)
   FILE *fptr;
   int line_len;
   int rank_ix1;
-  int suit_ix1;
   int rank_ix2;
-  int suit_ix2;
   int pocks;
   int total_hand_count;
   double pock_freq;
@@ -97,16 +93,6 @@ int main(int argc,char **argv)
       return 4;
     }
 
-    for (suit_ix1 = 0; suit_ix1 < NUM_SUITS; suit_ix1++) {
-      if (line[12] == suit_chars[suit_ix1])
-        break;
-    }
-
-    if (suit_ix1 == NUM_SUITS) {
-      printf(bad_suit_in_line,total_hand_count+1,line);
-      return 5;
-    }
-
     for (rank_ix2 = 0; rank_ix2 < NUM_CARDS_IN_SUIT; rank_ix2++) {
       if (line[14] == rank_chars[rank_ix2])
         break;
@@ -114,17 +100,7 @@ int main(int argc,char **argv)
 
     if (rank_ix2 == NUM_CARDS_IN_SUIT) {
       printf(bad_rank_in_line,total_hand_count+1,line);
-      return 6;
-    }
-
-    for (suit_ix2 = 0; suit_ix2 < NUM_SUITS; suit_ix2++) {
-      if (line[15] == suit_chars[suit_ix2])
-        break;
-    }
-
-    if (suit_ix2 == NUM_SUITS) {
-      printf(bad_suit_in_line,total_hand_count+1,line);
-      return 7;
+      return 5;
     }
 
     if (rank_ix1 == rank_ix2)
