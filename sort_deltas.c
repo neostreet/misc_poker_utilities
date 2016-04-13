@@ -10,7 +10,8 @@
 #define TAB 0x09
 
 static char usage[] =
-"usage: sort_deltas (-no_sort) (-reverse) (-offsetoffset) (-float) filename\n";
+"usage: sort_deltas (-no_sort) (-reverse) (-offsetoffset) (-float)\n"
+"  (-line_numbers) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static bool bReverse;
@@ -36,6 +37,7 @@ int main(int argc,char **argv)
   int curr_arg;
   bool bNoSort;
   int offset;
+  bool bLineNumbers;
   struct stat statbuf;
   int mem_amount;
   char *mempt;
@@ -47,7 +49,7 @@ int main(int argc,char **argv)
   int chara;
   char delta_buf[MAX_DELTA_STR_LEN+1];
 
-  if ((argc < 2) || (argc > 5)) {
+  if ((argc < 2) || (argc > 7)) {
     printf(usage);
     return 1;
   }
@@ -56,6 +58,7 @@ int main(int argc,char **argv)
   bReverse = false;
   bFloat = false;
   offset = 0;
+  bLineNumbers = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-no_sort"))
@@ -66,6 +69,8 @@ int main(int argc,char **argv)
       bFloat = true;
     else if (!strncmp(argv[curr_arg],"-offset",7))
       sscanf(&argv[curr_arg][7],"%d",&offset);
+    else if (!strcmp(argv[curr_arg],"-line_numbers"))
+      bLineNumbers = true;
     else
       break;
   }
@@ -188,8 +193,12 @@ int main(int argc,char **argv)
   if (!bNoSort)
     qsort(ixs,num_lines,sizeof (int),compare);
 
-  for (n = 0; n < num_lines; n++)
-    printf("%s\n",cppt[ixs[n]]);
+  for (n = 0; n < num_lines; n++) {
+    if (!bLineNumbers)
+      printf("%s\n",cppt[ixs[n]]);
+    else
+      printf("%s (%d)\n",cppt[ixs[n]],ixs[n] + 1);
+  }
 
   free(ixs);
 
