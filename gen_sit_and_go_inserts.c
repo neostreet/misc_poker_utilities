@@ -318,13 +318,16 @@ static int get_initial_stake(char *player_name,int player_name_len,FILE *fptr,in
 static int get_buy_in_and_entry_fee(char *line,int line_len,int *buy_in,int *entry_fee)
 {
   int n;
+  int work;
 
-  for (n = 0; n < line_len; n++) {
+  *buy_in = 0;
+
+  for (n = line_len - 1; (n >= 0); n--) {
     if (line[n] == '+')
       break;
   }
 
-  if (n == line_len)
+  if (n < 0)
     return 1;
 
   line[n] = 0;
@@ -332,6 +335,17 @@ static int get_buy_in_and_entry_fee(char *line,int line_len,int *buy_in,int *ent
   sscanf(&line[n+1],"%d",entry_fee);
 
   for (n--; (n >= 0); n--) {
+    if (line[n] == '+') {
+      line[n] = 0;
+      sscanf(&line[n+1],"%d",&work);
+      *buy_in += work;
+
+      n--;
+
+      if (n < 0)
+        break;
+    }
+
     if (line[n] == ' ')
       break;
   }
@@ -339,7 +353,8 @@ static int get_buy_in_and_entry_fee(char *line,int line_len,int *buy_in,int *ent
   if (n < 0)
     return 2;
 
-  sscanf(&line[n+1],"%d",buy_in);
+  sscanf(&line[n+1],"%d",&work);
+  *buy_in += work;
 
   return 0;
 }
