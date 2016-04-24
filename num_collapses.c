@@ -5,7 +5,7 @@
 static char line[MAX_LINE_LEN];
 
 static char usage[] =
-"usage: collapse_deltas (-debug) filename\n";
+"usage: num_collapses (-debug) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
@@ -19,6 +19,7 @@ int main(int argc,char **argv)
   int line_no;
   int delta;
   int running_delta;
+  int num_collapses;
 
   if ((argc < 2) || (argc > 3)) {
     printf(usage);
@@ -45,6 +46,7 @@ int main(int argc,char **argv)
   }
 
   line_no = 0;
+  num_collapses = 0;
 
   for ( ; ; ) {
     GetLine(fptr,line,&line_len,MAX_LINE_LEN);
@@ -60,13 +62,11 @@ int main(int argc,char **argv)
       running_delta = delta;
     else if (((running_delta < 0) && (delta > 0)) ||
              ((running_delta > 0) && (delta < 0))) {
-      if (!bDebug)
-        printf("%d\n",running_delta);
-
       running_delta = delta;
     }
     else {
       running_delta += delta;
+      num_collapses++;
 
       if (bDebug)
         printf("%d\n",line_no);
@@ -74,7 +74,7 @@ int main(int argc,char **argv)
   }
 
   if (!bDebug)
-    printf("%d\n",running_delta);
+    printf("%d\n",num_collapses);
 
   fclose(fptr);
 
