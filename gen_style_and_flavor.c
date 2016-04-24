@@ -13,21 +13,22 @@ static char *poker_styles[] = {
   "Cash ",
   "SNG  ",
   "MTT  ",
-  "Sp&Go"
+  "Sp&Go",
+  "KO   "
 };
 #define NUM_POKER_STYLES (sizeof poker_styles / sizeof (char *))
 
 static char *poker_flavors[] = {
-  "Pot Limit Hold'em",
-  "Pot Limit Omaha",
-  "Limit 7 Card Stud",
+  "PLHE  ",
+  "PLO   ",
+  "7Stud ",
   "NLHE  ",
-  "Limit 5 Card Draw",
-  "No Limit Triple Draw 2-7 Lowball",
-  "Pot Limit Triple Draw 2-7 Lowball",
-  "Limit Hold'em",
-  "Limit Triple Draw 2-7 Lowball",
-  "8-Game",
+  "L5draw",
+  "NL27Lo",
+  "PL27Lo",
+  "LHE   ",
+  "L27Lo ",
+  "8-game",
   "HORSE "
 };
 #define NUM_POKER_FLAVORS (sizeof poker_flavors / sizeof (char *))
