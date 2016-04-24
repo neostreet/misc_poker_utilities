@@ -10,7 +10,8 @@ static char filename[MAX_FILENAME_LEN];
 #define MAX_LINE_LEN 4096
 static char line[MAX_LINE_LEN];
 
-static char usage[] = "usage: gen_sit_and_go_summary (-delta) player_name\n";
+static char usage[] =
+"usage: gen_sit_and_go_summary (-delta) player_name poker_style poker_flavor\n";
 static char couldnt_open[] = "couldn't open %s\n";
 static char unexpected_eof[] = "unexpected eof in %s\n";
 static char finished[] = "finished the tournament in ";
@@ -28,10 +29,36 @@ static int get_buy_in_and_entry_fee(char *line,int line_len,int *buy_in,int *ent
 static int get_num_players(char *line,int line_len,int *num_players);
 static int get_place_and_winnings(char *player_name,int player_name_len,FILE *fptr,int *place,int *winnings);
 
+static char *poker_styles[] = {
+  "Cash ",
+  "SNG  ",
+  "MTT  ",
+  "Sp&Go",
+  "KO   "
+};
+#define NUM_POKER_STYLES (sizeof poker_styles / sizeof (char *))
+
+static char *poker_flavors[] = {
+  "PLHE  ",
+  "PLO   ",
+  "7Stud ",
+  "NLHE  ",
+  "L5draw",
+  "NL27Lo",
+  "PL27Lo",
+  "LHE   ",
+  "L27Lo ",
+  "8-game",
+  "HORSE "
+};
+#define NUM_POKER_FLAVORS (sizeof poker_flavors / sizeof (char *))
+
 int main(int argc,char **argv)
 {
   int curr_arg;
   bool bDelta;
+  int poker_style;
+  int poker_flavor;
   char letter;
   int n;
   FILE *fptr;
@@ -47,7 +74,7 @@ int main(int argc,char **argv)
   int delta;
   int total_delta;
 
-  if ((argc < 2) || (argc > 3)) {
+  if ((argc < 4) || (argc > 5)) {
     printf(usage);
     return 1;
   }
@@ -61,9 +88,23 @@ int main(int argc,char **argv)
       break;
   }
 
-  if (argc - curr_arg != 1) {
+  if (argc - curr_arg != 3) {
     printf(usage);
     return 2;
+  }
+
+  sscanf(argv[curr_arg+1],"%d",&poker_style);
+
+  if ((poker_style < 0) || (poker_style >= NUM_POKER_STYLES)) {
+    printf("invalid poker_style\n");
+    return 3;
+  }
+
+  sscanf(argv[curr_arg+2],"%d",&poker_flavor);
+
+  if ((poker_flavor < 0) || (poker_flavor >= NUM_POKER_FLAVORS)) {
+    printf("invalid poker_flavor\n");
+    return 4;
   }
 
   letter = 'a';
@@ -71,7 +112,7 @@ int main(int argc,char **argv)
   if (bDelta)
     total_delta = 0;
 
-  printf("buy_in entry players hands place winnings\n\n");
+  printf("style flavor buy_in entry players hands place winnings\n\n");
 
   for (n = 0; n < MAX_SIT_AND_GOS; n++) {
     sprintf(outer_filename,"%c/sng_hands.ls0",letter);
@@ -83,7 +124,7 @@ int main(int argc,char **argv)
 
     if (feof(fptr)) {
       printf(unexpected_eof,outer_filename);
-      return 3;
+      return 5;
     }
 
     fclose(fptr);
@@ -92,27 +133,13 @@ int main(int argc,char **argv)
 
     if (retval) {
       printf("get_num_hands failed: %d\n",retval);
-      return 4;
+      return 6;
     }
 
     sprintf(filename,"%c/%s",letter,line);
 
     if ((fptr = fopen(filename,"r")) == NULL) {
       printf(couldnt_open,filename);
-      return 5;
-    }
-
-    GetLine(fptr,line,&line_len,MAX_LINE_LEN);
-
-    if (feof(fptr)) {
-      printf(unexpected_eof,filename);
-      return 6;
-    }
-
-    retval = get_buy_in_and_entry_fee(line,line_len,&buy_in,&entry_fee);
-
-    if (retval) {
-      printf("get_buy_in_and_entry_fee() failed: %d\n",retval);
       return 7;
     }
 
@@ -123,11 +150,25 @@ int main(int argc,char **argv)
       return 8;
     }
 
+    retval = get_buy_in_and_entry_fee(line,line_len,&buy_in,&entry_fee);
+
+    if (retval) {
+      printf("get_buy_in_and_entry_fee() failed: %d\n",retval);
+      return 9;
+    }
+
+    GetLine(fptr,line,&line_len,MAX_LINE_LEN);
+
+    if (feof(fptr)) {
+      printf(unexpected_eof,filename);
+      return 10;
+    }
+
     retval = get_num_players(line,line_len,&num_players);
 
     if (retval) {
       printf("get_num_players() failed: %d\n",retval);
-      return 9;
+      return 11;
     }
 
     if (bDelta)
@@ -137,18 +178,20 @@ int main(int argc,char **argv)
 
     if (retval) {
       printf("get_place_and_winnings() failed: %d\n",retval);
-      return 10;
+      return 12;
     }
 
     fclose(fptr);
 
     if (!bDelta) {
-      printf("%6d %5d %7d %5d %5d %8d\n",
+      printf("%5s %6s %6d %5d %7d %5d %5d %8d\n",
+        poker_styles[poker_style],poker_flavors[poker_flavor],
         buy_in,entry_fee,num_players,num_hands,place,winnings);
     }
     else {
       delta += winnings;
-      printf("%6d %5d %7d %5d %5d %8d %8d\n",
+      printf("%5s %6s %6d %5d %7d %5d %5d %8d %8d\n",
+        poker_styles[poker_style],poker_flavors[poker_flavor],
         buy_in,entry_fee,num_players,num_hands,place,winnings,delta);
       total_delta += delta;
     }
