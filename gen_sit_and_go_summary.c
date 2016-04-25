@@ -112,7 +112,11 @@ int main(int argc,char **argv)
   if (bDelta)
     total_delta = 0;
 
-  printf("style flavor buy_in entry players hands place winnings\n\n");
+  if (((poker_style == 1) && (poker_flavor == 3)) ||
+      ((poker_style == 4) && (poker_flavor == 3)))
+    printf("style flavor buy_in entry players hands entries paid place winnings\n\n");
+  else
+    printf("style flavor buy_in entry players hands place winnings\n\n");
 
   for (n = 0; n < MAX_SIT_AND_GOS; n++) {
     sprintf(outer_filename,"%c/sng_hands.ls0",letter);
@@ -184,15 +188,41 @@ int main(int argc,char **argv)
     fclose(fptr);
 
     if (!bDelta) {
-      printf("%5s %6s %6d %5d %7d %5d %5d %8d\n",
-        poker_styles[poker_style],poker_flavors[poker_flavor],
-        buy_in,entry_fee,num_players,num_hands,place,winnings);
+      if ((poker_style == 1) && (poker_flavor == 3)) {
+        printf("%5s %6s %6d %5d %7d %5d %7d %4d %5d %8d\n",
+          poker_styles[poker_style],poker_flavors[poker_flavor],
+          buy_in,entry_fee,num_players,num_hands,6,2,place,winnings);
+      }
+      else if ((poker_style == 4) && (poker_flavor == 3)) {
+        printf("%5s %6s %6d %5d %7d %5d %7d %4d %5d %8d\n",
+          poker_styles[poker_style],poker_flavors[poker_flavor],
+          buy_in,entry_fee,num_players,num_hands,9,3,place,winnings);
+      }
+      else {
+        printf("%5s %6s %6d %5d %7d %5d %5d %8d\n",
+          poker_styles[poker_style],poker_flavors[poker_flavor],
+          buy_in,entry_fee,num_players,num_hands,place,winnings);
+      }
     }
     else {
       delta += winnings;
-      printf("%5s %6s %6d %5d %7d %5d %5d %8d %8d\n",
-        poker_styles[poker_style],poker_flavors[poker_flavor],
-        buy_in,entry_fee,num_players,num_hands,place,winnings,delta);
+
+      if ((poker_style == 1) && (poker_flavor == 3)) {
+        printf("%5s %6s %6d %5d %7d %5d %7d %4d %5d %8d %8d\n",
+          poker_styles[poker_style],poker_flavors[poker_flavor],
+          buy_in,entry_fee,num_players,num_hands,6,2,place,winnings,delta);
+      }
+      else if ((poker_style == 4) && (poker_flavor == 3)) {
+        printf("%5s %6s %6d %5d %7d %5d %7d %4d %5d %8d %8d\n",
+          poker_styles[poker_style],poker_flavors[poker_flavor],
+          buy_in,entry_fee,num_players,num_hands,9,3,place,winnings,delta);
+      }
+      else {
+        printf("%5s %6s %6d %5d %7d %5d %5d %8d %8d\n",
+          poker_styles[poker_style],poker_flavors[poker_flavor],
+          buy_in,entry_fee,num_players,num_hands,place,winnings,delta);
+      }
+
       total_delta += delta;
     }
 
