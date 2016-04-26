@@ -18,6 +18,8 @@ int main(int argc,char **argv)
   int entry_fee;
   int num_players;
   int num_hands;
+  int num_entries;
+  int places_paid;
   int place;
   int winnings;
   int bounty;
@@ -52,15 +54,17 @@ int main(int argc,char **argv)
       if (feof(fptr[1]))
         break;
 
-      sscanf(line[0],"%d %d %d %d %d %d",
+      line[0][12] = 0;
+
+      sscanf(&line[0][13],"%d %d %d %d %d %d %d %d",
         &buy_in,&entry_fee,&num_players,
-        &num_hands,&place,&winnings);
+        &num_hands,&num_entries,&places_paid,&place,&winnings);
 
       sscanf(line[1],"%d",&bounty);
 
-      printf("%6d %5d %7d %5d %5d %8d\n",
-        buy_in,entry_fee,num_players,
-        num_hands,place,winnings+bounty);
+      printf("%s %6d %5d %7d %5d %7d %4d %5d %8d\n",
+        line[0],buy_in,entry_fee,num_players,
+        num_hands,num_entries,places_paid,place,winnings+bounty);
     }
   }
 

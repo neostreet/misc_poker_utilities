@@ -48,7 +48,7 @@ static char *poker_flavors[] = {
   "PL27Lo",
   "LHE   ",
   "L27Lo ",
-  "8-game",
+  "8-Game",
   "HORSE "
 };
 #define NUM_POKER_FLAVORS (sizeof poker_flavors / sizeof (char *))

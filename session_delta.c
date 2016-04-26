@@ -17,6 +17,8 @@ int main(int argc,char **argv)
   int entry_fee;
   int num_players;
   int num_hands;
+  int num_entries;
+  int places_paid;
   int place;
   int winnings;
   int session_delta;
@@ -43,9 +45,9 @@ int main(int argc,char **argv)
     line_no++;
 
     if (line_no > 2) {
-      sscanf(line,"%d %d %d %d %d %d",
+      sscanf(&line[13],"%d %d %d %d %d %d %d %d",
         &buy_in,&entry_fee,&num_players,
-        &num_hands,&place,&winnings);
+        &num_hands,&num_entries,&places_paid,&place,&winnings);
 
       session_delta += winnings - (buy_in + entry_fee);
     }
