@@ -11,7 +11,8 @@ static char filename[MAX_FILENAME_LEN];
 static char line[MAX_LINE_LEN];
 
 static char usage[] =
-"usage: gen_sit_and_go_summary (-delta) player_name poker_style poker_flavor\n";
+"usage: gen_sit_and_go_summary (-delta) (-entries_and_paid) player_name\n"
+"  poker_style poker_flavor\n";
 static char couldnt_open[] = "couldn't open %s\n";
 static char unexpected_eof[] = "unexpected eof in %s\n";
 static char finished[] = "finished the tournament in ";
@@ -57,6 +58,7 @@ int main(int argc,char **argv)
 {
   int curr_arg;
   bool bDelta;
+  bool bEntriesAndPaid;
   int poker_style;
   int poker_flavor;
   char letter;
@@ -74,16 +76,19 @@ int main(int argc,char **argv)
   int delta;
   int total_delta;
 
-  if ((argc < 4) || (argc > 5)) {
+  if ((argc < 4) || (argc > 6)) {
     printf(usage);
     return 1;
   }
 
   bDelta = false;
+  bEntriesAndPaid = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-delta"))
       bDelta = true;
+    else if (!strcmp(argv[curr_arg],"-entries_and_paid"))
+      bEntriesAndPaid = true;
     else
       break;
   }
@@ -112,8 +117,8 @@ int main(int argc,char **argv)
   if (bDelta)
     total_delta = 0;
 
-  if (((poker_style == 1) && (poker_flavor == 3)) ||
-      ((poker_style == 4) && (poker_flavor == 3)))
+  if (bEntriesAndPaid && (((poker_style == 1) && (poker_flavor == 3)) ||
+      ((poker_style == 4) && (poker_flavor == 3))))
     printf("style flavor buy_in entry players hands entries paid place winnings\n\n");
   else
     printf("style flavor buy_in entry players hands place winnings\n\n");
@@ -188,12 +193,12 @@ int main(int argc,char **argv)
     fclose(fptr);
 
     if (!bDelta) {
-      if ((poker_style == 1) && (poker_flavor == 3)) {
+      if (bEntriesAndPaid && ((poker_style == 1) && (poker_flavor == 3))) {
         printf("%5s %6s %6d %5d %7d %5d %7d %4d %5d %8d\n",
           poker_styles[poker_style],poker_flavors[poker_flavor],
           buy_in,entry_fee,num_players,num_hands,6,2,place,winnings);
       }
-      else if ((poker_style == 4) && (poker_flavor == 3)) {
+      else if (bEntriesAndPaid && ((poker_style == 4) && (poker_flavor == 3))) {
         printf("%5s %6s %6d %5d %7d %5d %7d %4d %5d %8d\n",
           poker_styles[poker_style],poker_flavors[poker_flavor],
           buy_in,entry_fee,num_players,num_hands,9,3,place,winnings);
@@ -207,12 +212,12 @@ int main(int argc,char **argv)
     else {
       delta += winnings;
 
-      if ((poker_style == 1) && (poker_flavor == 3)) {
+      if (bEntriesAndPaid && ((poker_style == 1) && (poker_flavor == 3))) {
         printf("%5s %6s %6d %5d %7d %5d %7d %4d %5d %8d %8d\n",
           poker_styles[poker_style],poker_flavors[poker_flavor],
           buy_in,entry_fee,num_players,num_hands,6,2,place,winnings,delta);
       }
-      else if ((poker_style == 4) && (poker_flavor == 3)) {
+      else if (bEntriesAndPaid && ((poker_style == 4) && (poker_flavor == 3))) {
         printf("%5s %6s %6d %5d %7d %5d %7d %4d %5d %8d %8d\n",
           poker_styles[poker_style],poker_flavors[poker_flavor],
           buy_in,entry_fee,num_players,num_hands,9,3,place,winnings,delta);
@@ -229,8 +234,12 @@ int main(int argc,char **argv)
     letter++;
   }
 
-  if (bDelta)
-    printf("\n                                          %8d\n",total_delta);
+  if (bDelta) {
+    if (!bEntriesAndPaid)
+      printf("\n                                                       %8d\n",total_delta);
+    else
+      printf("\n                                                                    %8d\n",total_delta);
+  }
 
   return 0;
 }
