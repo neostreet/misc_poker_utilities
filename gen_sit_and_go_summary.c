@@ -11,7 +11,8 @@ static char filename[MAX_FILENAME_LEN];
 static char line[MAX_LINE_LEN];
 
 static char usage[] =
-"usage: gen_sit_and_go_summary (-delta) (-entries_and_paid) player_name\n"
+"usage: gen_sit_and_go_summary (-delta) (-entries_and_paid) (-lettera)\n"
+"  player_name\n"
 "  poker_style poker_flavor\n";
 static char couldnt_open[] = "couldn't open %s\n";
 static char unexpected_eof[] = "unexpected eof in %s\n";
@@ -76,19 +77,22 @@ int main(int argc,char **argv)
   int delta;
   int total_delta;
 
-  if ((argc < 4) || (argc > 6)) {
+  if ((argc < 4) || (argc > 7)) {
     printf(usage);
     return 1;
   }
 
   bDelta = false;
   bEntriesAndPaid = false;
+  letter = 'a';
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-delta"))
       bDelta = true;
     else if (!strcmp(argv[curr_arg],"-entries_and_paid"))
       bEntriesAndPaid = true;
+    else if (!strncmp(argv[curr_arg],"-letter",7))
+      letter = argv[curr_arg][7];
     else
       break;
   }
@@ -111,8 +115,6 @@ int main(int argc,char **argv)
     printf("invalid poker_flavor\n");
     return 4;
   }
-
-  letter = 'a';
 
   if (bDelta)
     total_delta = 0;
