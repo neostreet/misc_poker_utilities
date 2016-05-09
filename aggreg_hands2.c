@@ -1,9 +1,10 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 static char usage[] =
 "usage: aggreg_hands2 (-debug) (-verbose) (-dbg_ixix) (-totals) (-avgs)\n"
-"  (-pairs_only) (-s_or_o_between) (-denomdenom) filename\n";
+"  (-pairs_only) (-s_or_o_between) (-denomdenom) (-sort_by_freq) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 static char avg_fmt[] = " %9.2lf %9.2lf\n";
 
@@ -22,7 +23,21 @@ static char line[MAX_LINE_LEN];
 #define SUITED_NONPAIR_PERIODICITY     331.5
 #define NONSUITED_NONPAIR_PERIODICITY  110.5
 
+static double periodicities[] = {
+  (double)PAIR_PERIODICITY,
+  (double)SUITED_NONPAIR_PERIODICITY,
+  (double)NONSUITED_NONPAIR_PERIODICITY
+};
+
+enum hand_type {
+  HAND_TYPE_PAIR,
+  HAND_TYPE_SUITED_NONPAIR,
+  HAND_TYPE_NONSUITED_NONPAIR
+};
+
 struct aggreg_info {
+  hand_type handtype;
+  char card_string[4];
   int hand_count;
   int sum_delta;
   int sum_wins;
@@ -30,6 +45,7 @@ struct aggreg_info {
   int num_wins;
   int num_losses;
   int num_washes;
+  double freq_factor;
 };
 
 #define NUM_COLLAPSED_HANDS 169
@@ -43,12 +59,13 @@ char rank_chars[] = "23456789TJQKA";
 static char bad_suit_in_line[] = "bad suit in line %d: %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
-static int index_of_hand(int rank_ix1,int suit_ix1,int rank_ix2,int suit_ix2);
+static int index_of_hand(int rank_ix1,int suit_ix1,int rank_ix2,int suit_ix2,hand_type *handtype_pt);
 static void get_permutation_instance(
   int set_size,
   int *m,int *n,
   int instance_ix
 );
+int compare(const void *elem1,const void *elem2);
 
 int main(int argc,char **argv)
 {
@@ -61,6 +78,7 @@ int main(int argc,char **argv)
   bool bSorOBetween;
   bool bDenom;
   char denom;
+  bool bSortByFreq;
   int dbg_ix;
   int dbg;
   int m;
@@ -72,9 +90,9 @@ int main(int argc,char **argv)
   int suit_ix1;
   int rank_ix2;
   int suit_ix2;
+  hand_type handtype;
   int delta;
   int ix;
-  char card_string[4];
   int total_hand_count;
   int total_sum_delta;
   int total_sum_wins;
@@ -82,12 +100,12 @@ int main(int argc,char **argv)
   int total_num_wins;
   int total_num_losses;
   int total_num_washes;
-  double freq_factor;
   double win_avg;
   double loss_avg;
   int num_collapsed_hands;
+  int ixs[NUM_COLLAPSED_HANDS];
 
-  if ((argc < 2) || (argc > 10)) {
+  if ((argc < 2) || (argc > 11)) {
     printf(usage);
     return 1;
   }
@@ -99,6 +117,7 @@ int main(int argc,char **argv)
   bPairsOnly = false;
   bSorOBetween = false;
   bDenom = false;
+  bSortByFreq = false;
   dbg_ix = -1;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
@@ -120,6 +139,8 @@ int main(int argc,char **argv)
       bDenom = true;
       denom = argv[curr_arg][6];
     }
+    else if (!strcmp(argv[curr_arg],"-sort_by_freq"))
+      bSortByFreq = true;
     else
       break;
   }
@@ -206,7 +227,7 @@ int main(int argc,char **argv)
 
     sscanf(&line[0],"%d",&delta);
 
-    ix = index_of_hand(rank_ix1,suit_ix1,rank_ix2,suit_ix2);
+    ix = index_of_hand(rank_ix1,suit_ix1,rank_ix2,suit_ix2,&handtype);
 
     if (ix == dbg_ix)
       dbg = 1;
@@ -220,6 +241,7 @@ int main(int argc,char **argv)
       ix = 0;
     }
 
+    aggreg[ix].handtype = handtype;
     aggreg[ix].hand_count++;
     aggreg[ix].sum_delta += delta;
 
@@ -237,8 +259,52 @@ int main(int argc,char **argv)
 
   fclose(fptr);
 
-  card_string[2] = 0;
-  card_string[3] = 0;
+  for (o = 0; o < NUM_COLLAPSED_HANDS; o++) {
+    aggreg[o].freq_factor = (double)aggreg[o].hand_count * periodicities[aggreg[o].handtype] /
+      (double)total_hand_count;
+
+    if (o < NUM_CARDS_IN_SUIT) {
+      for (n = 0; n < 2; n++)
+        aggreg[o].card_string[n] = rank_chars[o];
+
+      aggreg[o].card_string[n++] = ' ';
+      aggreg[o].card_string[n] = 0;
+    }
+    else if (o < NUM_CARDS_IN_SUIT + NUM_SUITED_NONPAIRS) {
+      if (!bSorOBetween)
+        aggreg[o].card_string[2] = 's';
+      else
+        aggreg[o].card_string[1] = 's';
+
+      get_permutation_instance(
+        NUM_CARDS_IN_SUIT,
+        &m,&n,o - NUM_CARDS_IN_SUIT);
+
+      aggreg[o].card_string[0] = rank_chars[n];
+
+      if (!bSorOBetween)
+        aggreg[o].card_string[1] = rank_chars[m];
+      else
+        aggreg[o].card_string[2] = rank_chars[m];
+    }
+    else {
+      if (!bSorOBetween)
+        aggreg[o].card_string[2] = 'o';
+      else
+        aggreg[o].card_string[1] = 'o';
+
+      get_permutation_instance(
+        NUM_CARDS_IN_SUIT,
+        &m,&n,o - (NUM_CARDS_IN_SUIT + NUM_SUITED_NONPAIRS));
+
+      aggreg[o].card_string[0] = rank_chars[n];
+
+      if (!bSorOBetween)
+        aggreg[o].card_string[1] = rank_chars[m];
+      else
+        aggreg[o].card_string[2] = rank_chars[m];
+    }
+  }
 
   total_sum_delta = 0;
   total_sum_wins = 0;
@@ -247,234 +313,67 @@ int main(int argc,char **argv)
   total_num_losses = 0;
   total_num_washes = 0;
 
-  for (o = 0; o < NUM_CARDS_IN_SUIT; o++) {
-    for (n = 0; n < 2; n++)
-      card_string[n] = rank_chars[o];
+  for (o = 0; o < NUM_COLLAPSED_HANDS; o++)
+    ixs[o] = o;
 
-    card_string[n] = ' ';
+  if (bSortByFreq)
+    qsort(ixs,NUM_COLLAPSED_HANDS,sizeof (int),compare);
 
-    if (bDenom && (card_string[0] != denom))
+  for (o = 0; o < NUM_COLLAPSED_HANDS; o++) {
+    ix = ixs[o];
+
+    if (bDenom && (aggreg[ix].card_string[0] != denom))
       continue;
-
-    freq_factor = (double)aggreg[o].hand_count * (double)PAIR_PERIODICITY /
-      (double)total_hand_count;
 
     if (bVerbose) {
       printf("%-3s %10d %10d %10d %6d %6d %6d %6d %9.2lf %6d %9.2lf",
-        card_string,
-        aggreg[o].sum_delta,
-        aggreg[o].sum_wins,
-        aggreg[o].sum_losses,
-        aggreg[o].num_wins,
-        aggreg[o].num_losses,
-        aggreg[o].num_washes,
-        aggreg[o].hand_count,
-        (double)PAIR_PERIODICITY,
+        aggreg[ix].card_string,
+        aggreg[ix].sum_delta,
+        aggreg[ix].sum_wins,
+        aggreg[ix].sum_losses,
+        aggreg[ix].num_wins,
+        aggreg[ix].num_losses,
+        aggreg[ix].num_washes,
+        aggreg[ix].hand_count,
+        periodicities[aggreg[ix].handtype],
         total_hand_count,
-        freq_factor);
+        aggreg[ix].freq_factor);
     }
     else {
-      printf("%-3s %10d %10d %10d %6d %6d %6d %6d %9.2lf",card_string,
-        aggreg[o].sum_delta,
-        aggreg[o].sum_wins,
-        aggreg[o].sum_losses,
-        aggreg[o].num_wins,
-        aggreg[o].num_losses,
-        aggreg[o].num_washes,
-        aggreg[o].hand_count,
-        freq_factor);
+      printf("%-3s %10d %10d %10d %6d %6d %6d %6d %9.2lf",
+        aggreg[ix].card_string,
+        aggreg[ix].sum_delta,
+        aggreg[ix].sum_wins,
+        aggreg[ix].sum_losses,
+        aggreg[ix].num_wins,
+        aggreg[ix].num_losses,
+        aggreg[ix].num_washes,
+        aggreg[ix].hand_count,
+        aggreg[ix].freq_factor);
     }
 
-    total_sum_delta += aggreg[o].sum_delta;
-    total_sum_wins += aggreg[o].sum_wins;
-    total_sum_losses += aggreg[o].sum_losses;
-    total_num_wins += aggreg[o].num_wins;
-    total_num_losses += aggreg[o].num_losses;
-    total_num_washes += aggreg[o].num_washes;
+    total_sum_delta += aggreg[ix].sum_delta;
+    total_sum_wins += aggreg[ix].sum_wins;
+    total_sum_losses += aggreg[ix].sum_losses;
+    total_num_wins += aggreg[ix].num_wins;
+    total_num_losses += aggreg[ix].num_losses;
+    total_num_washes += aggreg[ix].num_washes;
 
     if (bAvgs) {
-      if (!aggreg[o].num_wins)
+      if (!aggreg[ix].num_wins)
         win_avg = (double)0;
       else
-        win_avg = (double)aggreg[o].sum_wins / (double)aggreg[o].num_wins;
+        win_avg = (double)aggreg[ix].sum_wins / (double)aggreg[ix].num_wins;
 
-      if (!aggreg[o].num_losses)
+      if (!aggreg[ix].num_losses)
         loss_avg = (double)0;
       else
-        loss_avg = (double)aggreg[o].sum_losses / (double)aggreg[o].num_losses;
+        loss_avg = (double)aggreg[ix].sum_losses / (double)aggreg[ix].num_losses;
 
       printf(avg_fmt,win_avg,loss_avg);
     }
     else
       putchar(0x0a);
-  }
-
-  if (!bPairsOnly) {
-    if (!bSorOBetween)
-      card_string[2] = 's';
-    else
-      card_string[1] = 's';
-
-    for (o = 0; o < NUM_SUITED_NONPAIRS; o++) {
-      freq_factor = (double)aggreg[NUM_CARDS_IN_SUIT+o].hand_count * (double)SUITED_NONPAIR_PERIODICITY /
-        (double)total_hand_count;
-
-      get_permutation_instance(
-        NUM_CARDS_IN_SUIT,
-        &m,&n,o);
-
-      if (m > n) {
-        card_string[0] = rank_chars[m];
-
-        if (!bSorOBetween)
-          card_string[1] = rank_chars[n];
-        else
-          card_string[2] = rank_chars[n];
-      }
-      else {
-        card_string[0] = rank_chars[n];
-
-        if (!bSorOBetween)
-          card_string[1] = rank_chars[m];
-        else
-          card_string[2] = rank_chars[m];
-      }
-
-      if (bDenom && (card_string[0] != denom))
-        continue;
-
-      if (bVerbose) {
-        printf("%-3s %10d %10d %10d %6d %6d %6d %6d %9.2lf %6d %9.2lf",
-          card_string,
-          aggreg[NUM_CARDS_IN_SUIT+o].sum_delta,
-          aggreg[NUM_CARDS_IN_SUIT+o].sum_wins,
-          aggreg[NUM_CARDS_IN_SUIT+o].sum_losses,
-          aggreg[NUM_CARDS_IN_SUIT+o].num_wins,
-          aggreg[NUM_CARDS_IN_SUIT+o].num_losses,
-          aggreg[NUM_CARDS_IN_SUIT+o].num_washes,
-          aggreg[NUM_CARDS_IN_SUIT+o].hand_count,
-          (double)SUITED_NONPAIR_PERIODICITY,
-          total_hand_count,
-          freq_factor);
-      }
-      else {
-        printf("%-3s %10d %10d %10d %6d %6d %6d %6d %9.2lf",card_string,
-          aggreg[NUM_CARDS_IN_SUIT+o].sum_delta,
-          aggreg[NUM_CARDS_IN_SUIT+o].sum_wins,
-          aggreg[NUM_CARDS_IN_SUIT+o].sum_losses,
-          aggreg[NUM_CARDS_IN_SUIT+o].num_wins,
-          aggreg[NUM_CARDS_IN_SUIT+o].num_losses,
-          aggreg[NUM_CARDS_IN_SUIT+o].num_washes,
-          aggreg[NUM_CARDS_IN_SUIT+o].hand_count,
-          freq_factor);
-      }
-
-      total_sum_delta += aggreg[NUM_CARDS_IN_SUIT+o].sum_delta;
-      total_sum_wins += aggreg[NUM_CARDS_IN_SUIT+o].sum_wins;
-      total_sum_losses += aggreg[NUM_CARDS_IN_SUIT+o].sum_losses;
-      total_num_wins += aggreg[NUM_CARDS_IN_SUIT+o].num_wins;
-      total_num_losses += aggreg[NUM_CARDS_IN_SUIT+o].num_losses;
-      total_num_washes += aggreg[NUM_CARDS_IN_SUIT+o].num_washes;
-
-      if (bAvgs) {
-        if (!aggreg[NUM_CARDS_IN_SUIT+o].num_wins)
-          win_avg = (double)0;
-        else
-          win_avg = (double)aggreg[NUM_CARDS_IN_SUIT+o].sum_wins / (double)aggreg[NUM_CARDS_IN_SUIT+o].num_wins;
-
-        if (!aggreg[NUM_CARDS_IN_SUIT+o].num_losses)
-          loss_avg = (double)0;
-        else
-          loss_avg = (double)aggreg[NUM_CARDS_IN_SUIT+o].sum_losses / (double)aggreg[NUM_CARDS_IN_SUIT+o].num_losses;
-
-        printf(avg_fmt,win_avg,loss_avg);
-      }
-      else
-        putchar(0x0a);
-    }
-
-    if (!bSorOBetween)
-      card_string[2] = 'o';
-    else
-      card_string[1] = 'o';
-
-    for (o = 0; o < NUM_NONSUITED_NONPAIRS; o++) {
-      freq_factor = (double)aggreg[NUM_CARDS_IN_SUIT+NUM_SUITED_NONPAIRS+o].hand_count * (double)NONSUITED_NONPAIR_PERIODICITY /
-        (double)total_hand_count;
-
-      get_permutation_instance(
-        NUM_CARDS_IN_SUIT,
-        &m,&n,o);
-
-      if (m > n) {
-        card_string[0] = rank_chars[m];
-
-        if (!bSorOBetween)
-          card_string[1] = rank_chars[n];
-        else
-          card_string[2] = rank_chars[n];
-      }
-      else {
-        card_string[0] = rank_chars[n];
-
-        if (!bSorOBetween)
-          card_string[1] = rank_chars[m];
-        else
-          card_string[2] = rank_chars[m];
-      }
-
-      if (bDenom && (card_string[0] != denom))
-        continue;
-
-      if (bVerbose) {
-        printf("%-3s %10d %10d %10d %6d %6d %6d %6d %9.2lf %6d %9.2lf",
-          card_string,
-          aggreg[NUM_CARDS_IN_SUIT+NUM_SUITED_NONPAIRS+o].sum_delta,
-          aggreg[NUM_CARDS_IN_SUIT+NUM_SUITED_NONPAIRS+o].sum_wins,
-          aggreg[NUM_CARDS_IN_SUIT+NUM_SUITED_NONPAIRS+o].sum_losses,
-          aggreg[NUM_CARDS_IN_SUIT+NUM_SUITED_NONPAIRS+o].num_wins,
-          aggreg[NUM_CARDS_IN_SUIT+NUM_SUITED_NONPAIRS+o].num_losses,
-          aggreg[NUM_CARDS_IN_SUIT+NUM_SUITED_NONPAIRS+o].num_washes,
-          aggreg[NUM_CARDS_IN_SUIT+NUM_SUITED_NONPAIRS+o].hand_count,
-          (double)NONSUITED_NONPAIR_PERIODICITY,
-          total_hand_count,
-          freq_factor);
-      }
-      else {
-        printf("%-3s %10d %10d %10d %6d %6d %6d %6d %9.2lf",card_string,
-          aggreg[NUM_CARDS_IN_SUIT+NUM_SUITED_NONPAIRS+o].sum_delta,
-          aggreg[NUM_CARDS_IN_SUIT+NUM_SUITED_NONPAIRS+o].sum_wins,
-          aggreg[NUM_CARDS_IN_SUIT+NUM_SUITED_NONPAIRS+o].sum_losses,
-          aggreg[NUM_CARDS_IN_SUIT+NUM_SUITED_NONPAIRS+o].num_wins,
-          aggreg[NUM_CARDS_IN_SUIT+NUM_SUITED_NONPAIRS+o].num_losses,
-          aggreg[NUM_CARDS_IN_SUIT+NUM_SUITED_NONPAIRS+o].num_washes,
-          aggreg[NUM_CARDS_IN_SUIT+NUM_SUITED_NONPAIRS+o].hand_count,
-          freq_factor);
-      }
-
-      total_sum_delta += aggreg[NUM_CARDS_IN_SUIT+NUM_SUITED_NONPAIRS+o].sum_delta;
-      total_sum_wins += aggreg[NUM_CARDS_IN_SUIT+NUM_SUITED_NONPAIRS+o].sum_wins;
-      total_sum_losses += aggreg[NUM_CARDS_IN_SUIT+NUM_SUITED_NONPAIRS+o].sum_losses;
-      total_num_wins += aggreg[NUM_CARDS_IN_SUIT+NUM_SUITED_NONPAIRS+o].num_wins;
-      total_num_losses += aggreg[NUM_CARDS_IN_SUIT+NUM_SUITED_NONPAIRS+o].num_losses;
-      total_num_washes += aggreg[NUM_CARDS_IN_SUIT+NUM_SUITED_NONPAIRS+o].num_washes;
-
-      if (bAvgs) {
-        if (!aggreg[NUM_CARDS_IN_SUIT+NUM_SUITED_NONPAIRS+o].num_wins)
-          win_avg = (double)0;
-        else
-          win_avg = (double)aggreg[NUM_CARDS_IN_SUIT+NUM_SUITED_NONPAIRS+o].sum_wins / (double)aggreg[NUM_CARDS_IN_SUIT+NUM_SUITED_NONPAIRS+o].num_wins;
-
-        if (!aggreg[NUM_CARDS_IN_SUIT+NUM_SUITED_NONPAIRS+o].num_losses)
-          loss_avg = (double)0;
-        else
-          loss_avg = (double)aggreg[NUM_CARDS_IN_SUIT+NUM_SUITED_NONPAIRS+o].sum_losses / (double)aggreg[NUM_CARDS_IN_SUIT+NUM_SUITED_NONPAIRS+o].num_losses;
-
-        printf(avg_fmt,win_avg,loss_avg);
-      }
-      else
-        putchar(0x0a);
-    }
   }
 
   if (bTotals) {
@@ -531,20 +430,26 @@ static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen)
   *line_len = local_line_len;
 }
 
-static int index_of_hand(int rank_ix1,int suit_ix1,int rank_ix2,int suit_ix2)
+static int index_of_hand(int rank_ix1,int suit_ix1,int rank_ix2,int suit_ix2,hand_type *handtype_pt)
 {
   int n;
   int work;
   int index;
   int num_other_cards;
 
-  if (rank_ix1 == rank_ix2)
+  if (rank_ix1 == rank_ix2) {
+    *handtype_pt = HAND_TYPE_PAIR;
     return rank_ix1;
+  }
 
-  if (suit_ix1 == suit_ix2)
+  if (suit_ix1 == suit_ix2) {
+    *handtype_pt = HAND_TYPE_SUITED_NONPAIR;
     index = NUM_CARDS_IN_SUIT;
-  else
+  }
+  else {
+    *handtype_pt = HAND_TYPE_NONSUITED_NONPAIR;
     index = NUM_CARDS_IN_SUIT + NUM_SUITED_NONPAIRS;
+  }
 
   if (rank_ix1 > rank_ix2) {
     work = rank_ix1;
@@ -581,4 +486,18 @@ static void get_permutation_instance(
       ;
     }
   }
+}
+
+int compare(const void *elem1,const void *elem2)
+{
+  int int1;
+  int int2;
+
+  int1 = *(int *)elem1;
+  int2 = *(int *)elem2;
+
+  if (aggreg[int2].freq_factor < aggreg[int1].freq_factor)
+    return -1;
+  else
+    return 1;
 }
