@@ -28,7 +28,7 @@ struct session_info_struct {
 static char usage[] =
 "usage: session_moving_sum (-no_sort) (-ascending) (-absolute_value)\n"
 "  (-skip_interim) (-terse) (-gesum) (-true_false) (-delta_first)\n"
-"  (-outer_sort_by_winning_sessions) (-second_delta_offsetn)"
+"  (-outer_sort_by_winning_sessions) (-second_delta)"
 "  subset_size filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
@@ -63,7 +63,7 @@ static int get_session_info(
   struct session_info_struct *session_info,
   bool bAbsoluteValue,
   bool bDeltaFirst,
-  int second_delta_offset);
+  bool bSecondDelta);
 static time_t cvt_date(char *date_str);
 int elem_compare(const void *elem1,const void *elem2);
 static char *format_date(char *cpt);
@@ -79,7 +79,7 @@ int main(int argc,char **argv)
   bool bGeSum;
   bool bTrueFalse;
   bool bDeltaFirst;
-  int second_delta_offset;
+  bool bSecondDelta;
   int ge_sum;
   int curr_arg;
   int session_ix;
@@ -92,6 +92,7 @@ int main(int argc,char **argv)
   int *sort_ixs;
   int num_sums;
   int sum;
+  int second_sum;
   int num_winning_sessions;
   int retval;
   char *cpt;
@@ -110,7 +111,7 @@ int main(int argc,char **argv)
   bTrueFalse = false;
   bDeltaFirst = false;
   bOuterSortByWinningSessions = false;
-  second_delta_offset = -1;
+  bSecondDelta = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-no_sort"))
@@ -133,8 +134,8 @@ int main(int argc,char **argv)
       bDeltaFirst = true;
     else if (!strcmp(argv[curr_arg],"-outer_sort_by_winning_sessions"))
       bOuterSortByWinningSessions = true;
-    else if (!strncmp(argv[curr_arg],"-second_delta_offset",18))
-      sscanf(&argv[curr_arg][18],"%d",&second_delta_offset);
+    else if (!strcmp(argv[curr_arg],"-second_delta"))
+      bSecondDelta = true;
     else
       break;
   }
@@ -216,7 +217,7 @@ int main(int argc,char **argv)
       continue;
 
     retval = get_session_info(line,line_len,&session_info[session_ix],
-      bAbsoluteValue,bDeltaFirst,second_delta_offset);
+      bAbsoluteValue,bDeltaFirst,bSecondDelta);
 
     if (retval) {
       printf("get_session_info() failed on line %d: %d\n",
@@ -229,11 +230,18 @@ int main(int argc,char **argv)
 
   for (n = 0; n < num_sums; n++) {
     sum = 0;
+
+    if (bSecondDelta)
+      second_sum = 0;
+
     num_winning_sessions = 0;
 
     if (!bSkipInterim) {
       for (m = 0; m < subset_size; m++) {
         sum += session_info[n+m].delta;
+
+        if (bSecondDelta)
+          second_sum += session_info[n+m].second_delta;
 
         if (session_info[n+m].delta > 0)
           num_winning_sessions++;
@@ -248,12 +256,19 @@ int main(int argc,char **argv)
       for (m = 0; m < work_subset_size; m++) {
         sum += session_info[subset_size * n + m].delta;
 
+        if (bSecondDelta)
+          second_sum += session_info[subset_size * n + m].second_delta;
+
         if (session_info[subset_size * n + m].delta > 0)
           num_winning_sessions++;
       }
     }
 
     session_info[n].sum = sum;
+
+    if (bSecondDelta)
+      session_info[n].second_sum = second_sum;
+
     session_info[n].num_winning_sessions = num_winning_sessions;
 
     if (!bSkipInterim)
@@ -287,11 +302,24 @@ int main(int argc,char **argv)
       }
     }
 
-    if (bTerse)
-      printf("%10d\n",session_info[sort_ixs[n]].sum);
+    if (!bSecondDelta) {
+      if (bTerse)
+        printf("%10d\n",session_info[sort_ixs[n]].sum);
+      else
+        printf("%10d ",session_info[sort_ixs[n]].sum);
+    }
     else {
-      printf("%10d ",session_info[sort_ixs[n]].sum);
+      if (bTerse) {
+        printf("%10d %10d\n",session_info[sort_ixs[n]].sum,
+          session_info[sort_ixs[n]].second_sum);
+      }
+      else {
+        printf("%10d %10d ",session_info[sort_ixs[n]].sum,
+          session_info[sort_ixs[n]].second_sum);
+      }
+    }
 
+    if (!bTerse) {
       cpt = ctime(&session_info[sort_ixs[n]].start_date);
       printf("%s ",format_date(cpt));
 
@@ -339,7 +367,7 @@ static int get_session_info(
   struct session_info_struct *session_info,
   bool bAbsoluteValue,
   bool bDeltaFirst,
-  int second_delta_offset)
+  bool bSecondDelta)
 {
   int n;
   int work;
@@ -367,6 +395,20 @@ static int get_session_info(
     work *= -1;
 
   session_info->delta = work;
+
+  if (bSecondDelta) {
+    for ( ; n < line_len; n++) {
+      if (line[n] == TAB)
+        break;
+    }
+
+    if (n == line_len)
+      return 2;
+
+    n++;
+    sscanf(&line[n],"%d",&work);
+    session_info->second_delta = work;
+  }
 
   return 0;
 }
