@@ -19,6 +19,8 @@ struct session_info_struct {
   int delta;
   int sum;
   int num_winning_sessions;
+  int second_delta;
+  int second_sum;
 };
 
 #define TAB 0x9
@@ -26,7 +28,8 @@ struct session_info_struct {
 static char usage[] =
 "usage: session_moving_sum (-no_sort) (-ascending) (-absolute_value)\n"
 "  (-skip_interim) (-terse) (-gesum) (-true_false) (-delta_first)\n"
-"  (-outer_sort_by_winning_sessions) subset_size filename\n";
+"  (-outer_sort_by_winning_sessions) (-second_delta_offsetn)"
+"  subset_size filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char malloc_failed1[] = "malloc of %d session info structures failed\n";
@@ -59,7 +62,8 @@ static int get_session_info(
   int line_len,
   struct session_info_struct *session_info,
   bool bAbsoluteValue,
-  bool bDeltaFirst);
+  bool bDeltaFirst,
+  int second_delta_offset);
 static time_t cvt_date(char *date_str);
 int elem_compare(const void *elem1,const void *elem2);
 static char *format_date(char *cpt);
@@ -75,6 +79,7 @@ int main(int argc,char **argv)
   bool bGeSum;
   bool bTrueFalse;
   bool bDeltaFirst;
+  int second_delta_offset;
   int ge_sum;
   int curr_arg;
   int session_ix;
@@ -91,7 +96,7 @@ int main(int argc,char **argv)
   int retval;
   char *cpt;
 
-  if ((argc < 3) || (argc > 12)) {
+  if ((argc < 3) || (argc > 13)) {
     printf(usage);
     return 1;
   }
@@ -105,6 +110,7 @@ int main(int argc,char **argv)
   bTrueFalse = false;
   bDeltaFirst = false;
   bOuterSortByWinningSessions = false;
+  second_delta_offset = -1;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-no_sort"))
@@ -127,6 +133,8 @@ int main(int argc,char **argv)
       bDeltaFirst = true;
     else if (!strcmp(argv[curr_arg],"-outer_sort_by_winning_sessions"))
       bOuterSortByWinningSessions = true;
+    else if (!strncmp(argv[curr_arg],"-second_delta_offset",18))
+      sscanf(&argv[curr_arg][18],"%d",&second_delta_offset);
     else
       break;
   }
@@ -208,7 +216,7 @@ int main(int argc,char **argv)
       continue;
 
     retval = get_session_info(line,line_len,&session_info[session_ix],
-      bAbsoluteValue,bDeltaFirst);
+      bAbsoluteValue,bDeltaFirst,second_delta_offset);
 
     if (retval) {
       printf("get_session_info() failed on line %d: %d\n",
@@ -330,7 +338,8 @@ static int get_session_info(
   int line_len,
   struct session_info_struct *session_info,
   bool bAbsoluteValue,
-  bool bDeltaFirst)
+  bool bDeltaFirst,
+  int second_delta_offset)
 {
   int n;
   int work;
