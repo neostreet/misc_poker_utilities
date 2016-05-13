@@ -185,6 +185,9 @@ int main(int argc,char **argv)
           }
         }
 
+        if (bOnlyCount && (table_count < only_count))
+          break;
+
         handed_counts[table_count - 2].count++;
 
         if (handed_counts[table_count - 2].count == 1)

@@ -326,6 +326,8 @@ int main(int argc,char **argv)
 
   fclose(fptr0);
 
+  putchar(0x0a);
+
   if (action) {
     dwork = (double)tot_action_numdecs / (double)tot_numdecs;
 

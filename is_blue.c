@@ -5,7 +5,7 @@
 static char line[MAX_LINE_LEN];
 
 static char usage[] =
-"usage: is_blue (-starting_amountstarting_amount) filename\n";
+"usage: is_blue (-starting_amountstarting_amount) (-terse) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
@@ -14,6 +14,7 @@ int main(int argc,char **argv)
 {
   int curr_arg;
   int starting_amount;
+  bool bTerse;
   int balance;
   FILE *fptr;
   int line_len;
@@ -22,16 +23,19 @@ int main(int argc,char **argv)
   int work;
   int max;
 
-  if ((argc < 2) || (argc > 3)) {
+  if ((argc < 2) || (argc > 4)) {
     printf(usage);
     return 1;
   }
 
   starting_amount = 0;
+  bTerse = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strncmp(argv[curr_arg],"-starting_amount",16))
       sscanf(&argv[curr_arg][16],"%d",&starting_amount);
+    else if (!strcmp(argv[curr_arg],"-terse"))
+      bTerse = true;
     else
       break;
   }
@@ -65,10 +69,17 @@ int main(int argc,char **argv)
       blue_count++;
       max = balance;
 
-      printf("1 %s\n",line);
+      if (!bTerse)
+        printf("1 %s\n",line);
+      else
+        printf("1\n");
     }
-    else
-      printf("0 %s\n",line);
+    else {
+      if (!bTerse)
+        printf("0 %s\n",line);
+      else
+        printf("0\n");
+    }
 
     line_no++;
   }

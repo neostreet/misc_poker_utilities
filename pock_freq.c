@@ -19,7 +19,6 @@ static char avg_fmt[] = " %9.2lf %9.2lf\n";
 static char line[MAX_LINE_LEN];
 
 #define NUM_CARDS_IN_SUIT 13
-#define NUM_SUITS 4
 
 #define PAIR_PERIODICITY               221.0
 #define ANY_PAIR_PERIODICITY            17.0
