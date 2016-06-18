@@ -9,7 +9,7 @@ static char line[MAX_LINE_LEN];
 static char usage[] =
 "usage: blue_distance2 (-terse) (-verbose) (-sum) (-initial_bal) (-no_dates)\n"
 "  (-only_blue) (-from_nonblue) (-in_sessions) (-is_blue) (-skyfall)\n"
-"  (-no_input_dates) (-only_max) filename\n";
+"  (-no_input_dates) (-only_max) (-runtot) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
@@ -28,6 +28,7 @@ int main(int argc,char **argv)
   bool bSkyfall;
   bool bNoInputDates;
   bool bOnlyMax;
+  bool bRuntot;
   bool bPrevIsBlue;
   int initial_bal;
   FILE *fptr;
@@ -41,7 +42,7 @@ int main(int argc,char **argv)
   int blue_distance;
   int max_blue_distance;
 
-  if ((argc < 2) || (argc > 14)) {
+  if ((argc < 2) || (argc > 15)) {
     printf(usage);
     return 1;
   }
@@ -57,6 +58,7 @@ int main(int argc,char **argv)
   bSkyfall = false;
   bNoInputDates = false;
   bOnlyMax = false;
+  bRuntot = false;
   initial_bal = 0;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
@@ -84,6 +86,8 @@ int main(int argc,char **argv)
       bNoInputDates = true;
     else if (!strcmp(argv[curr_arg],"-only_max"))
       bOnlyMax = true;
+    else if (!strcmp(argv[curr_arg],"-runtot"))
+      bRuntot = true;
     else
       break;
   }
@@ -162,10 +166,18 @@ int main(int argc,char **argv)
                   else {
                     if (blue_distance >= max_blue_distance) {
                       max_blue_distance = blue_distance;
-                      printf("%d\t%s *\n",blue_distance,line);
+
+                      if (!bRuntot)
+                        printf("%d\t%s *\n",blue_distance,line);
+                      else
+                        printf("%d\t%d\t%s *\n",blue_distance,balance,line);
                     }
-                    else if (!bOnlyMax)
-                      printf("%d\t%s\n",blue_distance,line);
+                    else if (!bOnlyMax) {
+                      if (!bRuntot)
+                        printf("%d\t%s\n",blue_distance,line);
+                      else
+                        printf("%d\t%d\t%s\n",blue_distance,balance,line);
+                    }
                   }
                 }
               }
