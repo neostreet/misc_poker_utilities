@@ -18,7 +18,7 @@ static char line[MAX_LINE_LEN];
 
 static char usage[] =
 "usage: fnumdecs (-debug) (-verbose) (-terse) (-action) (-zero) (-folded)\n"
-"  (-abbrev) player_name filename\n";
+"  (-abbrev) (-no_bets_or_raises) player_name filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char in_chips[] = " in chips";
@@ -55,6 +55,7 @@ int main(int argc,char **argv)
   bool bVerbose;
   bool bTerse;
   bool bAbbrev;
+  bool bNoBetsOrRaises;
   int action;
   int zero;
   int folded;
@@ -90,7 +91,7 @@ int main(int argc,char **argv)
   int zero_numdecs;
   double dwork;
 
-  if ((argc < 3) || (argc > 10)) {
+  if ((argc < 3) || (argc > 11)) {
     printf(usage);
     return 1;
   }
@@ -99,6 +100,7 @@ int main(int argc,char **argv)
   bVerbose = false;
   bTerse = false;
   bAbbrev = false;
+  bNoBetsOrRaises = false;
   action = 0;
   zero = 0;
   folded = 0;
@@ -112,6 +114,8 @@ int main(int argc,char **argv)
       bTerse = true;
     else if (!strcmp(argv[curr_arg],"-abbrev"))
       bAbbrev = true;
+    else if (!strcmp(argv[curr_arg],"-no_bets_or_raises"))
+      bNoBetsOrRaises = true;
     else if (!strcmp(argv[curr_arg],"-action"))
       action = 1;
     else if (!strcmp(argv[curr_arg],"-zero"))
@@ -293,35 +297,37 @@ int main(int argc,char **argv)
 
     fclose(fptr);
 
-    if (bVerbose) {
-      dwork = (double)numdecs / (double)num_hands;
+    if (!bNoBetsOrRaises || (numbets + numraises == 0)) {
+      if (bVerbose) {
+        dwork = (double)numdecs / (double)num_hands;
 
-      if (bAbbrev) {
-        printf("%6d %6d %5.2lf fld %4d chk %4d call %4d bet %4d rse %4d %s\n",
-           numdecs,num_hands,dwork,
-           numfolds,numchecks,numcalls,numbets,numraises,
-           filename);
+        if (bAbbrev) {
+          printf("%6d %6d %5.2lf fld %4d chk %4d call %4d bet %4d rse %4d %s\n",
+             numdecs,num_hands,dwork,
+             numfolds,numchecks,numcalls,numbets,numraises,
+             filename);
+        }
+        else {
+          printf("%6d %6d %5.2lf fold %4d check %4d call %4d bet %4d raise %4d %s\n",
+             numdecs,num_hands,dwork,
+             numfolds,numchecks,numcalls,numbets,numraises,
+             filename);
+        }
       }
-      else {
-        printf("%6d %6d %5.2lf fold %4d check %4d call %4d bet %4d raise %4d %s\n",
-           numdecs,num_hands,dwork,
-           numfolds,numchecks,numcalls,numbets,numraises,
-           filename);
-      }
+
+      tot_num_hands += num_hands;
+      tot_numdecs += numdecs;
+      tot_numfolds += numfolds;
+      tot_numchecks += numchecks;
+      tot_numcalls += numcalls;
+      tot_numbets += numbets;
+      tot_numraises += numraises;
+
+      if (action)
+        tot_action_numdecs += action_numdecs;
+      else if (zero)
+        tot_zero_numdecs += zero_numdecs;
     }
-
-    tot_num_hands += num_hands;
-    tot_numdecs += numdecs;
-    tot_numfolds += numfolds;
-    tot_numchecks += numchecks;
-    tot_numcalls += numcalls;
-    tot_numbets += numbets;
-    tot_numraises += numraises;
-
-    if (action)
-      tot_action_numdecs += action_numdecs;
-    else if (zero)
-      tot_zero_numdecs += zero_numdecs;
   }
 
   fclose(fptr0);
