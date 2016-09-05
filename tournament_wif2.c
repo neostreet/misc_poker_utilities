@@ -1,7 +1,7 @@
 #include <stdio.h>
 
 static char usage[] =
-"tournament_wif2 num_players initial_stake num_firsts num_tournamnts\n";
+"tournament_wif2 num_players initial_stake num_firsts num_tournaments\n";
 
 int main(int argc,char **argv)
 {
