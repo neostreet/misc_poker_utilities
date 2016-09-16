@@ -42,6 +42,10 @@ static char couldnt_open[] = "couldn't open %s\n";
 
 static char pokerstars[] = "PokerStars";
 #define POKERSTARS_LEN (sizeof (pokerstars) - 1)
+static char table[] = "Table ";
+#define TABLE_LEN (sizeof (table) - 1)
+static char seat[] = "Seat ";
+#define SEAT_LEN (sizeof (seat) - 1)
 static char stud[] = "7 Card Stud";
 #define STUD_LEN (sizeof (stud) - 1)
 static char razz[] = "Razz";
@@ -180,6 +184,8 @@ int main(int argc,char **argv)
   int curr_big_blind;
   int last_big_blind;
   int rake;
+  int num_players;
+  bool bHaveLine;
 
   if ((argc < 3) || (argc > 27)) {
     printf(usage);
@@ -369,14 +375,19 @@ int main(int argc,char **argv)
     collected_from_pot = 0;
     collected_from_pot_count = 0;
     bHaveAllIn = false;
+    bHaveLine = false;
 
     for ( ; ; ) {
-      GetLine(fptr,line,&line_len,MAX_LINE_LEN);
+      if (!bHaveLine) {
+        GetLine(fptr,line,&line_len,MAX_LINE_LEN);
 
-      if (feof(fptr))
-        break;
+        if (feof(fptr))
+          break;
 
-      line_no++;
+        line_no++;
+      }
+      else
+        bHaveLine = false;
 
       if (line_no == dbg_line_no)
         dbg = 1;
@@ -454,6 +465,34 @@ int main(int argc,char **argv)
           }
 
           last_big_blind = curr_big_blind;
+        }
+      }
+      else if (Contains(true,
+        line,line_len,
+        table,TABLE_LEN,
+        &ix)) {
+
+        num_players = 0;
+
+        for ( ; ; ) {
+          GetLine(fptr,line,&line_len,MAX_LINE_LEN);
+
+          if (feof(fptr))
+            break;
+
+          line_no++;
+
+          if (Contains(true,
+            line,line_len,
+            seat,SEAT_LEN,
+            &ix)) {
+
+            num_players++;
+          }
+          else {
+            bHaveLine = true;
+            break;
+          }
         }
       }
       else if (Contains(true,
@@ -782,7 +821,7 @@ int main(int argc,char **argv)
             if (!bBigBlind) {
               if (!bStud && !bRazz) {
                 if (!bNoHoleCards)
-                  printf("%s %10d %s/%s\n",hole_cards,quantum,save_dir,filename);
+                  printf("%s %10d %d %s/%s\n",hole_cards,quantum,num_players,save_dir,filename);
                 else
                   printf("%10d %s/%s\n",quantum,save_dir,filename);
               }
