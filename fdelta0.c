@@ -1,12 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#ifdef WIN32
-#include <direct.h>
-#else
-#define _MAX_PATH 4096
-#include <unistd.h>
-#endif
 
 #define MAX_FILENAME_LEN 1024
 static char filename[MAX_FILENAME_LEN];
