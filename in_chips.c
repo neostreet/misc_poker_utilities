@@ -18,7 +18,7 @@ static char game_name[MAX_GAME_NAME_LEN+1];
 
 static char usage[] =
 "usage: in_chips (-verbose) (-handed_countcount) (-first_handed_countcount)\n"
-"  (-only_8game) player_name filename\n";
+"  (-only_8game) (-sum) player_name filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char pokerstars[] = "PokerStars";
@@ -47,6 +47,7 @@ int main(int argc,char **argv)
   bool bHandedCount;
   bool bFirstHandedCount;
   bool bOnly8game;
+  bool bSum;
   int handed_count;
   FILE *fptr;
   int line_len;
@@ -57,10 +58,11 @@ int main(int argc,char **argv)
   bool bHaveGameName;
   int retval;
   int chips;
+  int total_chips;
   int hand_count;
   int table_count;
 
-  if ((argc < 3) || (argc > 7)) {
+  if ((argc < 3) || (argc > 8)) {
     printf(usage);
     return 1;
   }
@@ -69,6 +71,7 @@ int main(int argc,char **argv)
   bHandedCount = false;
   bFirstHandedCount = false;
   bOnly8game = false;
+  bSum = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-verbose")) {
@@ -85,6 +88,10 @@ int main(int argc,char **argv)
     }
     else if (!strcmp(argv[curr_arg],"-only_8game"))
       bOnly8game = true;
+    else if (!strcmp(argv[curr_arg],"-sum")) {
+      bSum = true;
+      total_chips = 0;
+    }
     else
       break;
   }
@@ -177,25 +184,32 @@ int main(int argc,char **argv)
         }
       }
 
-      if (!bOnly8game || bHaveGameName) {
-        if (!bHandedCount || (table_count == handed_count)) {
-          if (!bVerbose)
-            printf("%d\n",chips);
-          else {
-            if (!bHaveGameName)
-              printf("%d %d %s hand %d\n",chips,table_count,save_dir,hand_count);
-            else
-              printf("%d %s %d %s hand %d\n",chips,game_name,table_count,save_dir,hand_count);
-          }
+      if (bSum)
+        total_chips += chips;
+      else {
+        if (!bOnly8game || bHaveGameName) {
+          if (!bHandedCount || (table_count == handed_count)) {
+            if (!bVerbose)
+              printf("%d\n",chips);
+            else {
+              if (!bHaveGameName)
+                printf("%d %d %s hand %d\n",chips,table_count,save_dir,hand_count);
+              else
+                printf("%d %s %d %s hand %d\n",chips,game_name,table_count,save_dir,hand_count);
+            }
 
-          if (bFirstHandedCount)
-            break;
+            if (bFirstHandedCount)
+              break;
+          }
         }
       }
     }
   }
 
   fclose(fptr);
+
+  if (bSum)
+    printf("%d\n",total_chips);
 
   return 0;
 }
