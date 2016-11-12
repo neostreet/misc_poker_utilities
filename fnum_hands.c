@@ -68,11 +68,15 @@ int main(int argc,char **argv)
     if (feof(fptr0))
       break;
 
-    retval = get_date_from_path(filename,'\\',num_slashes,&date_string);
+    if (num_slashes == -1)
+      date_string = filename;
+    else {
+      retval = get_date_from_path(filename,'\\',num_slashes,&date_string);
 
-    if (retval) {
-      printf("get_date_from_path() failed: %d\n",retval);
-      return 4;
+      if (retval) {
+        printf("get_date_from_path() failed: %d\n",retval);
+        return 4;
+      }
     }
 
     if ((fptr = fopen(filename,"r")) == NULL) {
