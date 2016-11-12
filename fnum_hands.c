@@ -14,7 +14,7 @@ static char filename[MAX_FILENAME_LEN];
 static char line[MAX_LINE_LEN];
 
 static char usage[] =
-"usage: fnum_hands (-debug) filename\n";
+"usage: fnum_hands (-debug) filename num_slashes\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
@@ -24,6 +24,7 @@ int main(int argc,char **argv)
 {
   int curr_arg;
   bool bDebug;
+  int num_slashes;
   FILE *fptr0;
   int filename_len;
   int num_files;
@@ -33,7 +34,7 @@ int main(int argc,char **argv)
   int retval;
   char *date_string;
 
-  if ((argc < 2) || (argc > 3)) {
+  if ((argc < 3) || (argc > 4)) {
     printf(usage);
     return 1;
   }
@@ -47,10 +48,12 @@ int main(int argc,char **argv)
       break;
   }
 
-  if (argc - curr_arg != 1) {
+  if (argc - curr_arg != 2) {
     printf(usage);
     return 2;
   }
+
+  sscanf(argv[curr_arg+1],"%d",&num_slashes);
 
   if ((fptr0 = fopen(argv[curr_arg],"r")) == NULL) {
     printf(couldnt_open,argv[curr_arg]);
@@ -65,7 +68,7 @@ int main(int argc,char **argv)
     if (feof(fptr0))
       break;
 
-    retval = get_date_from_path(filename,'\\',3,&date_string);
+    retval = get_date_from_path(filename,'\\',num_slashes,&date_string);
 
     if (retval) {
       printf("get_date_from_path() failed: %d\n",retval);
