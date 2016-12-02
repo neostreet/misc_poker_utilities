@@ -6,13 +6,11 @@ static char line[MAX_LINE_LEN];
 
 #define BUF_LEN 20
 
-static char usage[] =
-"usage: format_balances balance_str1 balance_str2 filename\n";
+static char usage[] = "usage: format_balances balance_str1 balance_str2 filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
 static char *format_balance(int bal,char *buf,int buf_len);
-static char fmt_str[] = "%s: %s\n";
 
 int main(int argc,char **argv)
 {
@@ -49,15 +47,15 @@ int main(int argc,char **argv)
         break;
       case 5:
         sscanf(&line[0],"%d",&bal);
-        printf(fmt_str,argv[1],
+        printf("%s: %s\n",argv[1],
           format_balance(bal,buf,BUF_LEN));
         break;
       case 7:
         sscanf(&line[0],"%d",&bal);
-        printf(fmt_str,argv[2],
+        printf("%s: %s\n",argv[2],
           format_balance(bal,buf,BUF_LEN));
         break;
-      case 9:
+      case 10:
         sscanf(&line[0],"%d",&bal);
         printf("balance: %s\n",format_balance(bal,buf,BUF_LEN));
         break;
