@@ -25,6 +25,7 @@ int main(int argc,char **argv)
   int num_payouts;
   int amount;
   int prize_pool;
+  int paid_places;
   double dwork;
 
   if (argc != 2) {
@@ -69,15 +70,20 @@ int main(int argc,char **argv)
 
   num_payouts++;
   prize_pool = 0;
+  paid_places = 0;
 
-  for (n = 0; n < num_payouts; n++)
+  for (n = 0; n < num_payouts; n++) {
     prize_pool += payouts[n].amount * payouts[n].num_places;
+    paid_places += payouts[n].num_places;
+  }
 
   for (n = 0; n < num_payouts; n++) {
     dwork = (double)payouts[n].amount * (double)100 / (double)prize_pool;
 
-    printf("%7.4lf %d %d\n",dwork,payouts[n].amount,payouts[n].num_places);
+    printf("%7.4lf %7d %2d\n",dwork,payouts[n].amount,payouts[n].num_places);
   }
+
+  printf("\n        %7d %2d\n",prize_pool,paid_places);
 
   return 0;
 }
