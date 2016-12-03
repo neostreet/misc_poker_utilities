@@ -68,10 +68,10 @@ int main(int argc,char **argv)
   for (n = 0; n < num_payouts; n++) {
     dwork = (double)payouts[n].amount * (double)100 / (double)prize_pool;
 
-    printf("%7.4lf %7d %2d\n",dwork,payouts[n].amount,payouts[n].num_places);
+    printf("%7.4lf %8d %3d\n",dwork,payouts[n].amount,payouts[n].num_places);
   }
 
-  printf("\n        %7d %2d\n",prize_pool,paid_places);
+  printf("\n        %8d %3d\n",prize_pool,paid_places);
 
   return 0;
 }
