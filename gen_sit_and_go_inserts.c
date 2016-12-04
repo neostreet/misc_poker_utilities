@@ -9,7 +9,6 @@
 #endif
 
 enum args {
-  ARG_EXE,
   ARG_PLAYER_NAME,
   ARG_POKER_STYLE,
   ARG_POKER_FLAVOR,
@@ -29,7 +28,7 @@ static char filename[MAX_FILENAME_LEN];
 static char line[MAX_LINE_LEN];
 
 static char usage[] =
-"usage: gen_sit_and_go_inserts player_name poker_style poker_flavor\n"
+"usage: gen_sit_and_go_inserts (-standalone) player_name poker_style poker_flavor\n"
 "  big_blind_amount\n";
 static char couldnt_open[] = "couldn't open %s\n";
 static char unexpected_eof[] = "unexpected eof in %s\n";
@@ -52,6 +51,8 @@ static int get_place_and_winnings(char *player_name,int player_name_len,FILE *fp
 
 int main(int argc,char **argv)
 {
+  int curr_arg;
+  bool bStandalone;
   char letter;
   int n;
   FILE *fptr;
@@ -67,9 +68,23 @@ int main(int argc,char **argv)
   int place;
   int winnings;
 
-  if (argc != ARG_NUM_ARGS) {
+  if ((argc < ARG_NUM_ARGS + 1) || (argc > ARG_NUM_ARGS + 2)) {
     printf(usage);
     return 1;
+  }
+
+  bStandalone = false;
+
+  for (curr_arg = 1; curr_arg < argc; curr_arg++) {
+    if (!strcmp(argv[curr_arg],"-standalone"))
+      bStandalone = true;
+    else
+      break;
+  }
+
+  if (argc - curr_arg != ARG_NUM_ARGS) {
+    printf(usage);
+    return 2;
   }
 
   getcwd(save_dir,_MAX_PATH);
@@ -78,8 +93,11 @@ int main(int argc,char **argv)
 
   if (retval) {
     printf("get_date_from_path() failed: %d\n",retval);
-    return 2;
+    return 3;
   }
+
+  if (bStandalone)
+    printf("use poker\n\n");
 
   letter = 'a';
 
@@ -93,7 +111,7 @@ int main(int argc,char **argv)
 
     if (feof(fptr)) {
       printf(unexpected_eof,outer_filename);
-      return 3;
+      return 4;
     }
 
     fclose(fptr);
@@ -102,16 +120,16 @@ int main(int argc,char **argv)
 
     if ((fptr = fopen(filename,"r")) == NULL) {
       printf(couldnt_open,filename);
-      return 4;
+      return 5;
     }
 
     retval = get_initial_stake(
-      argv[ARG_PLAYER_NAME],strlen(argv[ARG_PLAYER_NAME]),
+      argv[curr_arg + ARG_PLAYER_NAME],strlen(argv[curr_arg + ARG_PLAYER_NAME]),
       fptr,&initial_stake);
 
     if (retval) {
       printf("get_initial_stake() failed: %d\n",retval);
-      return 5;
+      return 6;
     }
 
     fclose(fptr);
@@ -125,7 +143,7 @@ int main(int argc,char **argv)
 
     if (feof(fptr)) {
       printf(unexpected_eof,outer_filename);
-      return 6;
+      return 7;
     }
 
     fclose(fptr);
@@ -134,46 +152,46 @@ int main(int argc,char **argv)
 
     if (retval) {
       printf("get_num_hands failed: %d\n",retval);
-      return 7;
+      return 8;
     }
 
     sprintf(filename,"%c/%s",letter,line);
 
     if ((fptr = fopen(filename,"r")) == NULL) {
       printf(couldnt_open,filename);
-      return 8;
+      return 9;
     }
 
     GetLine(fptr,line,&line_len,MAX_LINE_LEN);
 
     if (feof(fptr)) {
       printf(unexpected_eof,filename);
-      return 9;
+      return 10;
     }
 
     retval = get_buy_in_and_entry_fee(line,line_len,&buy_in,&entry_fee);
 
     if (retval) {
       printf("get_buy_in_and_entry_fee() failed: %d\n",retval);
-      return 10;
+      return 11;
     }
 
     GetLine(fptr,line,&line_len,MAX_LINE_LEN);
 
     if (feof(fptr)) {
       printf(unexpected_eof,filename);
-      return 11;
+      return 12;
     }
 
     retval = get_num_players(line,line_len,&num_players);
 
     if (retval) {
       printf("get_num_players() failed: %d\n",retval);
-      return 12;
+      return 13;
     }
 
     retval = get_place_and_winnings(
-      argv[ARG_PLAYER_NAME],strlen(argv[ARG_PLAYER_NAME]),
+      argv[curr_arg + ARG_PLAYER_NAME],strlen(argv[curr_arg + ARG_PLAYER_NAME]),
       fptr,&place,&winnings);
 
     fclose(fptr);
@@ -183,13 +201,16 @@ int main(int argc,char **argv)
       "big_blind_amount,num_players,poker_flavor,num_hands,place,winnings\n");
     printf(")\n");
     printf("values (%s,'%c','%s',%d,%d,%d,%s,%d,%s,%d,%d,%d);\n",
-      argv[ARG_POKER_STYLE],letter,date_string,buy_in,entry_fee,
-      initial_stake,argv[ARG_BIG_BLIND_AMOUNT],
-      num_players,argv[ARG_POKER_FLAVOR],
+      argv[curr_arg + ARG_POKER_STYLE],letter,date_string,buy_in,entry_fee,
+      initial_stake,argv[curr_arg + ARG_BIG_BLIND_AMOUNT],
+      num_players,argv[curr_arg + ARG_POKER_FLAVOR],
       num_hands,place,winnings);
 
     letter++;
   }
+
+  if (bStandalone)
+    printf("\nquit\n");
 
   return 0;
 }
