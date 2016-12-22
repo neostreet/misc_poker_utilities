@@ -23,6 +23,8 @@ static char couldnt_open[] = "couldn't open %s\n";
 
 static char in_chips[] = " in chips";
 #define IN_CHIPS_LEN (sizeof (in_chips) - 1)
+static char street_marker[] = "*** ";
+#define STREET_MARKER_LEN (sizeof (street_marker) - 1)
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
 static int Contains(bool bCaseSens,char *line,int line_len,
@@ -106,6 +108,13 @@ int main(int argc,char **argv)
         sscanf(&line[ix+1],"%d",&work);
         table_chips += work;
       }
+      else if (Contains(true,
+        line,line_len,
+        street_marker,STREET_MARKER_LEN,
+        &ix)) {
+
+        break;
+      }
     }
 
     fclose(fptr);
@@ -117,6 +126,8 @@ int main(int argc,char **argv)
       max_table_chips = table_chips;
     }
   }
+
+  fclose(fptr0);
 
   if (!bVerbose)
     printf("%10d %s/%s\n",max_table_chips,save_dir,max_filename);
