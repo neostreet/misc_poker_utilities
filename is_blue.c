@@ -5,7 +5,7 @@
 static char line[MAX_LINE_LEN];
 
 static char usage[] =
-"usage: is_blue (-starting_amountstarting_amount) (-terse) filename\n";
+"usage: is_blue (-starting_amountstarting_amount) (-terse) (-verbose) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
@@ -15,6 +15,7 @@ int main(int argc,char **argv)
   int curr_arg;
   int starting_amount;
   bool bTerse;
+  bool bVerbose;
   int balance;
   FILE *fptr;
   int line_len;
@@ -23,19 +24,22 @@ int main(int argc,char **argv)
   int work;
   int max;
 
-  if ((argc < 2) || (argc > 4)) {
+  if ((argc < 2) || (argc > 5)) {
     printf(usage);
     return 1;
   }
 
   starting_amount = 0;
   bTerse = false;
+  bVerbose= false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strncmp(argv[curr_arg],"-starting_amount",16))
       sscanf(&argv[curr_arg][16],"%d",&starting_amount);
     else if (!strcmp(argv[curr_arg],"-terse"))
       bTerse = true;
+    else if (!strcmp(argv[curr_arg],"-verbose"))
+      bVerbose = true;
     else
       break;
   }
@@ -45,9 +49,14 @@ int main(int argc,char **argv)
     return 2;
   }
 
+  if (bTerse && bVerbose) {
+    printf("can only specify one of -terse and -verbose\n");
+    return 3;
+  }
+
   if ((fptr = fopen(argv[curr_arg],"r")) == NULL) {
     printf(couldnt_open,argv[curr_arg]);
-    return 3;
+    return 4;
   }
 
   line_no = 0;
@@ -69,16 +78,20 @@ int main(int argc,char **argv)
       blue_count++;
       max = balance;
 
-      if (!bTerse)
-        printf("1 %s\n",line);
-      else
+      if (bTerse)
         printf("1\n");
+      else if (bVerbose)
+        printf("1 %d %s\n",balance,line);
+      else
+        printf("1 %s\n",line);
     }
     else {
-      if (!bTerse)
-        printf("0 %s\n",line);
-      else
+      if (bTerse)
         printf("0\n");
+      else if (bVerbose)
+        printf("0 %d %s\n",balance,line);
+      else
+        printf("0 %s\n",line);
     }
 
     line_no++;
