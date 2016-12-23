@@ -17,7 +17,7 @@ static char filename[MAX_FILENAME_LEN];
 static char line[MAX_LINE_LEN];
 
 static char usage[] =
-"usage: ffinal_table_heads_up_hands (-verbose) initial_stake num_entries filename\n";
+"usage: ffinal_table_heads_up_hands (-pct) (-verbose) initial_stake num_entries filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char in_chips[] = " in chips";
@@ -32,6 +32,7 @@ static int Contains(bool bCaseSens,char *line,int line_len,
 int main(int argc,char **argv)
 {
   int curr_arg;
+  bool bPct;
   bool bVerbose;
   int initial_stake;
   int num_entries;
@@ -45,20 +46,24 @@ int main(int argc,char **argv)
   int table_chips;
   int players;
   int work;
-  int hand;
+  int hands;
   int final_table_heads_up_hands;
+  double pct;
 
-  if ((argc < 4) && (argc > 5)) {
+  if ((argc < 4) && (argc > 6)) {
     printf(usage);
     return 1;
   }
 
   getcwd(save_dir,_MAX_PATH);
 
+  bPct = false;
   bVerbose = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
-    if (!strcmp(argv[curr_arg],"-verbose"))
+    if (!strcmp(argv[curr_arg],"-pct"))
+      bPct = true;
+    else if (!strcmp(argv[curr_arg],"-verbose"))
       bVerbose = true;
     else
       break;
@@ -79,7 +84,7 @@ int main(int argc,char **argv)
     return 3;
   }
 
-  hand = 0;
+  hands = 0;
   final_table_heads_up_hands = 0;
 
   for ( ; ; ) {
@@ -88,7 +93,7 @@ int main(int argc,char **argv)
     if (feof(fptr0))
       break;
 
-    hand++;
+    hands++;
 
     if ((fptr = fopen(filename,"r")) == NULL) {
       printf(couldnt_open,filename);
@@ -132,15 +137,26 @@ int main(int argc,char **argv)
 
     fclose(fptr);
 
-    if ((table_chips == prize_pool) && (players == 2)) {
+    if ((table_chips == prize_pool) && (players == 2))
       final_table_heads_up_hands++;
-    }
   }
 
   fclose(fptr0);
 
-  if (final_table_heads_up_hands)
-    printf("%d %s\n",final_table_heads_up_hands,save_dir);
+  if (final_table_heads_up_hands) {
+    if (!bPct)
+      printf("%d %s\n",final_table_heads_up_hands,save_dir);
+    else {
+      pct = (double)final_table_heads_up_hands / (double)hands;
+
+      if (!bVerbose)
+        printf("%lf %s\n",pct,save_dir);
+      else {
+        printf("%lf (%d %d) %s\n",pct,
+          final_table_heads_up_hands,hands,save_dir);
+      }
+    }
+  }
 
   return 0;
 }
