@@ -34,6 +34,7 @@ int main(int argc,char **argv)
   FILE *fptr;
   int line_len;
   int line_no;
+  int last_blue_line_no;
   char str[MAX_STR_LEN];
   int delta;
   int balance;
@@ -108,6 +109,7 @@ int main(int argc,char **argv)
   }
 
   line_no = 0;
+  last_blue_line_no = -1;
   bPrevIsBlue = true;
   max_blue_distance = 0;
 
@@ -219,8 +221,11 @@ int main(int argc,char **argv)
             if (!bFromNonblue || !bPrevIsBlue) {
               if (!bVerbose)
                 printf("%10d %s\n",max_balance,line);
-              else
-                printf("%10d %s (%d)\n",max_balance,line,line_no);
+              else {
+                printf("%10d %s (%d %d)\n",max_balance,line,line_no,
+                  line_no - last_blue_line_no - 1);
+                last_blue_line_no = line_no;
+              }
             }
 
             bPrevIsBlue = true;
