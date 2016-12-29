@@ -224,9 +224,10 @@ int main(int argc,char **argv)
               else {
                 printf("%10d %s (%d %d)\n",max_balance,line,line_no,
                   line_no - last_blue_line_no - 1);
-                last_blue_line_no = line_no;
               }
             }
+
+            last_blue_line_no = line_no;
 
             bPrevIsBlue = true;
           }
