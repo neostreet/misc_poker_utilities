@@ -284,6 +284,9 @@ int main(int argc,char **argv)
     }
   }
 
+  if (bVerbose && (last_blue_line_no != line_no))
+    printf("\ncurrent non-blue streak: %d\n",line_no - last_blue_line_no);
+
   fclose(fptr);
 
   return 0;
