@@ -15,11 +15,14 @@ static char filename[MAX_FILENAME_LEN];
 static char line[MAX_LINE_LEN];
 
 static char usage[] =
-"usage: fshowdown_count (-verbose) (-not) filename\n";
+"usage: fshowdown_count (-verbose) (-not) (-show_board) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char show_down[] = "*** SHOW DOWN ***";
 #define SHOW_DOWN_LEN (sizeof (show_down) - 1)
+
+static char board[] = "Board [";
+#define BOARD_LEN (sizeof (board) - 1)
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
 static int Contains(bool bCaseSens,char *line,int line_len,
@@ -32,6 +35,7 @@ int main(int argc,char **argv)
   int curr_arg;
   bool bVerbose;
   bool bNot;
+  bool bShowBoard;
   bool bHaveShowdown;
   FILE *fptr0;
   int filename_len;
@@ -41,19 +45,24 @@ int main(int argc,char **argv)
   int file_no;
   int showdown_count;
 
-  if ((argc < 2) || (argc > 4)) {
+  if ((argc < 2) || (argc > 5)) {
     printf(usage);
     return 1;
   }
 
   bVerbose = false;
   bNot = false;
+  bShowBoard = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-verbose"))
       bVerbose = true;
     else if (!strcmp(argv[curr_arg],"-not"))
       bNot = true;
+    else if (!strcmp(argv[curr_arg],"-show_board")) {
+      bShowBoard = true;
+      bVerbose = true;
+    }
     else
       break;
   }
@@ -101,11 +110,20 @@ int main(int argc,char **argv)
         if (!bNot) {
           if (!bVerbose)
             showdown_count++;
-          else
+          else if (!bShowBoard)
             printf("%s %d\n",filename,file_no);
         }
 
-        break;
+        if (!bShowBoard)
+          break;
+      }
+      else if (bHaveShowdown && bShowBoard && !strncmp(line,board,BOARD_LEN)) {
+        if (!bNot) {
+          if (bVerbose) {
+            line[21] = 0;
+            printf("%s %s\n",filename,&line[BOARD_LEN]);
+          }
+        }
       }
     }
 
