@@ -18,7 +18,8 @@ static char save_filename[MAX_FILENAME_LEN];
 static char line[MAX_LINE_LEN];
 
 static char usage[] =
-"usage: fchip_pct (-verbose) (-max) (-min) (-last) player_name filename\n";
+"usage: fchip_pct (-verbose) (-max) (-min) (-last) (-prize_poolpool\n"
+"  player_name filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char in_chips[] = " in chips";
@@ -35,6 +36,8 @@ int main(int argc,char **argv)
   int max;
   int min;
   int last;
+  bool bHavePrizePool;
+  int prize_pool;
   int player_name_ix;
   int player_name_len;
   FILE *fptr0;
@@ -43,15 +46,13 @@ int main(int argc,char **argv)
   int line_len;
   int line_no;
   int ix;
-  int table_chips;
   int player_chips;
-  int save_table_chips;
   int save_player_chips;
   int work;
   double dwork;
   double save_dwork;
 
-  if ((argc < 3) && (argc > 7)) {
+  if ((argc < 3) && (argc > 8)) {
     printf(usage);
     return 1;
   }
@@ -62,6 +63,8 @@ int main(int argc,char **argv)
   max = 0;
   min = 0;
   last= 0;
+  bHavePrizePool = false;
+  prize_pool = -1;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-verbose"))
@@ -72,6 +75,10 @@ int main(int argc,char **argv)
       min = 1;
     else if (!strcmp(argv[curr_arg],"-last"))
       last = 1;
+    else if (!strncmp(argv[curr_arg],"-prize_pool",11)) {
+      bHavePrizePool = true;
+      sscanf(&argv[curr_arg][11],"%d",&prize_pool);
+    }
     else
       break;
   }
@@ -110,7 +117,9 @@ int main(int argc,char **argv)
 
     line_no = 0;
     player_chips = 0;
-    table_chips = 0;
+
+    if (!bHavePrizePool)
+      prize_pool = 0;
 
     for ( ; ; ) {
       GetLine(fptr,line,&line_len,MAX_LINE_LEN);
@@ -131,7 +140,9 @@ int main(int argc,char **argv)
           ;
 
         sscanf(&line[ix+1],"%d",&work);
-        table_chips += work;
+
+        if (!bHavePrizePool)
+          prize_pool += work;
 
         if (Contains(true,
           line,line_len,
@@ -144,17 +155,15 @@ int main(int argc,char **argv)
 
     fclose(fptr);
 
-    dwork = (double)player_chips / (double)table_chips;
+    dwork = (double)player_chips / (double)prize_pool;
 
     if (max) {
       if (dwork > save_dwork) {
         save_dwork = dwork;
         strcpy(save_filename,filename);
 
-        if (bVerbose) {
+        if (bVerbose)
           save_player_chips = player_chips;
-          save_table_chips = table_chips;
-        }
       }
     }
     else if (min) {
@@ -162,27 +171,23 @@ int main(int argc,char **argv)
         save_dwork = dwork;
         strcpy(save_filename,filename);
 
-        if (bVerbose) {
+        if (bVerbose)
           save_player_chips = player_chips;
-          save_table_chips = table_chips;
-        }
       }
     }
     else if (last) {
       save_dwork = dwork;
       strcpy(save_filename,filename);
 
-      if (bVerbose) {
+      if (bVerbose)
         save_player_chips = player_chips;
-        save_table_chips = table_chips;
-      }
     }
     else {
       if (!bVerbose)
         printf("%7.4lf %s/%s\n",dwork,save_dir,filename);
       else {
         printf("%7.4lf (%10d %10d) %s/%s\n",dwork,
-          player_chips,table_chips,save_dir,filename);
+          player_chips,prize_pool,save_dir,filename);
       }
     }
   }
@@ -192,7 +197,7 @@ int main(int argc,char **argv)
       printf("%7.4lf %s/%s\n",save_dwork,save_dir,save_filename);
     else {
       printf("%7.4lf (%10d %10d) %s/%s\n",save_dwork,
-        save_player_chips,save_table_chips,save_dir,save_filename);
+        save_player_chips,prize_pool,save_dir,save_filename);
     }
   }
 
