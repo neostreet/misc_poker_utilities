@@ -18,7 +18,7 @@ static char save_filename[MAX_FILENAME_LEN];
 static char line[MAX_LINE_LEN];
 
 static char usage[] =
-"usage: fchip_pct (-verbose) (-max) (-min) (-last) (-prize_poolpool\n"
+"usage: fchip_pct (-verbose) (-max) (-min) (-last) (-total_chipschips\n"
 "  player_name filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
@@ -36,8 +36,8 @@ int main(int argc,char **argv)
   int max;
   int min;
   int last;
-  bool bHavePrizePool;
-  int prize_pool;
+  bool bHaveTotalChips;
+  int total_chips;
   int player_name_ix;
   int player_name_len;
   FILE *fptr0;
@@ -63,8 +63,8 @@ int main(int argc,char **argv)
   max = 0;
   min = 0;
   last= 0;
-  bHavePrizePool = false;
-  prize_pool = -1;
+  bHaveTotalChips = false;
+  total_chips = -1;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-verbose"))
@@ -75,9 +75,9 @@ int main(int argc,char **argv)
       min = 1;
     else if (!strcmp(argv[curr_arg],"-last"))
       last = 1;
-    else if (!strncmp(argv[curr_arg],"-prize_pool",11)) {
-      bHavePrizePool = true;
-      sscanf(&argv[curr_arg][11],"%d",&prize_pool);
+    else if (!strncmp(argv[curr_arg],"-total_chips",11)) {
+      bHaveTotalChips = true;
+      sscanf(&argv[curr_arg][11],"%d",&total_chips);
     }
     else
       break;
@@ -118,8 +118,8 @@ int main(int argc,char **argv)
     line_no = 0;
     player_chips = 0;
 
-    if (!bHavePrizePool)
-      prize_pool = 0;
+    if (!bHaveTotalChips)
+      total_chips = 0;
 
     for ( ; ; ) {
       GetLine(fptr,line,&line_len,MAX_LINE_LEN);
@@ -141,8 +141,8 @@ int main(int argc,char **argv)
 
         sscanf(&line[ix+1],"%d",&work);
 
-        if (!bHavePrizePool)
-          prize_pool += work;
+        if (!bHaveTotalChips)
+          total_chips += work;
 
         if (Contains(true,
           line,line_len,
@@ -155,7 +155,7 @@ int main(int argc,char **argv)
 
     fclose(fptr);
 
-    dwork = (double)player_chips / (double)prize_pool;
+    dwork = (double)player_chips / (double)total_chips;
 
     if (max) {
       if (dwork > save_dwork) {
@@ -187,7 +187,7 @@ int main(int argc,char **argv)
         printf("%7.4lf %s/%s\n",dwork,save_dir,filename);
       else {
         printf("%7.4lf (%10d %10d) %s/%s\n",dwork,
-          player_chips,prize_pool,save_dir,filename);
+          player_chips,total_chips,save_dir,filename);
       }
     }
   }
@@ -197,7 +197,7 @@ int main(int argc,char **argv)
       printf("%7.4lf %s/%s\n",save_dwork,save_dir,save_filename);
     else {
       printf("%7.4lf (%10d %10d) %s/%s\n",save_dwork,
-        save_player_chips,prize_pool,save_dir,save_filename);
+        save_player_chips,total_chips,save_dir,save_filename);
     }
   }
 
