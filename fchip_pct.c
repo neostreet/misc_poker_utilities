@@ -75,9 +75,9 @@ int main(int argc,char **argv)
       min = 1;
     else if (!strcmp(argv[curr_arg],"-last"))
       last = 1;
-    else if (!strncmp(argv[curr_arg],"-total_chips",11)) {
+    else if (!strncmp(argv[curr_arg],"-total_chips",12)) {
       bHaveTotalChips = true;
-      sscanf(&argv[curr_arg][11],"%d",&total_chips);
+      sscanf(&argv[curr_arg][12],"%d",&total_chips);
     }
     else
       break;
