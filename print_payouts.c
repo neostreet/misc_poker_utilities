@@ -12,7 +12,8 @@ static struct payout payouts[MAX_PAYOUTS];
 #define MAX_LINE_LEN 1024
 static char line[MAX_LINE_LEN];
 
-static char usage[] = "usage: print_payouts (-unique) filename\n";
+static char usage[] =
+"usage: print_payouts (-unique) (-reverse) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
@@ -23,20 +24,24 @@ int main(int argc,char **argv)
   int n;
   int curr_arg;
   bool bUnique;
+  bool bReverse;
   FILE *fptr;
   int line_len;
   int num_payouts;
 
-  if ((argc < 2) || (argc > 3)) {
+  if ((argc < 2) || (argc > 4)) {
     printf(usage);
     return 1;
   }
 
   bUnique = false;
+  bReverse = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-unique"))
       bUnique = true;
+    else if (!strcmp(argv[curr_arg],"-reverse"))
+      bReverse = true;
     else
       break;
   }
@@ -72,13 +77,25 @@ int main(int argc,char **argv)
 
   fclose(fptr);
 
-  for (n = num_payouts - 1; n >= 0; n--) {
-    if (!bUnique) {
-      for (m = payouts[n].num_places - 1; m >= 0; m--)
+  if (!bReverse) {
+    for (n = num_payouts - 1; n >= 0; n--) {
+      if (!bUnique) {
+        for (m = payouts[n].num_places - 1; m >= 0; m--)
+          printf("%d\n",payouts[n].amount);
+      }
+      else
         printf("%d\n",payouts[n].amount);
     }
-    else
-      printf("%d\n",payouts[n].amount);
+  }
+  else {
+    for (n = 0; n < num_payouts; n++) {
+      if (!bUnique) {
+        for (m = 0; m < payouts[n].num_places; m++)
+          printf("%d\n",payouts[n].amount);
+      }
+      else
+        printf("%d\n",payouts[n].amount);
+    }
   }
 
   return 0;
