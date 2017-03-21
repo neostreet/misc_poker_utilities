@@ -9,7 +9,8 @@ static char *poker_styles[] = {
   "Sit & Go ",
   "MTT      ",
   "Spin & Go",
-  "KO poker "
+  "KO poker ",
+  "Power up "
 };
 
 #define NUM_POKER_STYLES (sizeof poker_styles / sizeof (char *))
