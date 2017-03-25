@@ -45,7 +45,9 @@ struct aggreg_info {
   int num_wins;
   int num_losses;
   int num_washes;
+  int total_hands;
   double freq_factor;
+  double win_pct;
 };
 
 #define NUM_COLLAPSED_HANDS 169
@@ -168,6 +170,7 @@ int main(int argc,char **argv)
     aggreg[n].num_wins = 0;
     aggreg[n].num_losses = 0;
     aggreg[n].num_washes = 0;
+    aggreg[n].total_hands = 0;
   }
 
   total_hand_count = 0;
@@ -255,6 +258,8 @@ int main(int argc,char **argv)
     }
     else
       aggreg[ix].num_washes++;
+
+    aggreg[ix].total_hands++;
   }
 
   fclose(fptr);
@@ -262,6 +267,7 @@ int main(int argc,char **argv)
   for (o = 0; o < NUM_COLLAPSED_HANDS; o++) {
     aggreg[o].freq_factor = (double)aggreg[o].hand_count * periodicities[aggreg[o].handtype] /
       (double)total_hand_count;
+    aggreg[o].win_pct = (double)aggreg[o].num_wins / (double)aggreg[o].total_hands;
 
     if (o < NUM_CARDS_IN_SUIT) {
       for (n = 0; n < 2; n++)
@@ -326,7 +332,7 @@ int main(int argc,char **argv)
       continue;
 
     if (bVerbose) {
-      printf("%-3s %10d %10d %10d %6d %6d %6d %6d %9.2lf %6d %9.2lf",
+      printf("%-3s %10d %10d %10d %6d %6d %6d %6d %9.2lf %6d %9.2lf %6.4lf",
         aggreg[ix].card_string,
         aggreg[ix].sum_delta,
         aggreg[ix].sum_wins,
@@ -337,10 +343,11 @@ int main(int argc,char **argv)
         aggreg[ix].hand_count,
         periodicities[aggreg[ix].handtype],
         total_hand_count,
-        aggreg[ix].freq_factor);
+        aggreg[ix].freq_factor,
+        aggreg[ix].win_pct);
     }
     else {
-      printf("%-3s %10d %10d %10d %6d %6d %6d %6d %9.2lf",
+      printf("%-3s %10d %10d %10d %6d %6d %6d %6d %9.2lf %6.4lf",
         aggreg[ix].card_string,
         aggreg[ix].sum_delta,
         aggreg[ix].sum_wins,
@@ -349,7 +356,8 @@ int main(int argc,char **argv)
         aggreg[ix].num_losses,
         aggreg[ix].num_washes,
         aggreg[ix].hand_count,
-        aggreg[ix].freq_factor);
+        aggreg[ix].freq_factor,
+        aggreg[ix].win_pct);
     }
 
     total_sum_delta += aggreg[ix].sum_delta;
