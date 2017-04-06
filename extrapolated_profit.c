@@ -118,7 +118,7 @@ int main(int argc,char **argv)
     dwork = ((double)days_in_year / (double)days_in_period) * (double)running_delta;
 
     cpt = ctime(&date);
-    printf("%s %10d %10d\n",format_date(cpt),delta,(int)dwork);
+    printf("%s %10d %10d %10d\n",format_date(cpt),delta,running_delta,(int)dwork);
   }
 
   fclose(fptr);
