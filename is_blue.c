@@ -5,7 +5,8 @@
 static char line[MAX_LINE_LEN];
 
 static char usage[] =
-"usage: is_blue (-starting_amountstarting_amount) (-terse) (-verbose) filename\n";
+"usage: is_blue (-starting_amountstarting_amount) (-terse) (-verbose)\n"
+"  (-not) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
@@ -16,6 +17,7 @@ int main(int argc,char **argv)
   int starting_amount;
   bool bTerse;
   bool bVerbose;
+  bool bNot;
   int balance;
   FILE *fptr;
   int line_len;
@@ -24,14 +26,15 @@ int main(int argc,char **argv)
   int work;
   int max;
 
-  if ((argc < 2) || (argc > 5)) {
+  if ((argc < 2) || (argc > 6)) {
     printf(usage);
     return 1;
   }
 
   starting_amount = 0;
   bTerse = false;
-  bVerbose= false;
+  bVerbose = false;
+  bNot = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strncmp(argv[curr_arg],"-starting_amount",16))
@@ -40,6 +43,8 @@ int main(int argc,char **argv)
       bTerse = true;
     else if (!strcmp(argv[curr_arg],"-verbose"))
       bVerbose = true;
+    else if (!strcmp(argv[curr_arg],"-not"))
+      bNot = true;
     else
       break;
   }
@@ -78,20 +83,44 @@ int main(int argc,char **argv)
       blue_count++;
       max = balance;
 
-      if (bTerse)
-        printf("1\n");
-      else if (bVerbose)
-        printf("1 %d %s\n",balance,line);
-      else
-        printf("1 %s\n",line);
+      if (bTerse) {
+        if (!bNot)
+          printf("1\n");
+        else
+          printf("0\n");
+      }
+      else if (bVerbose) {
+        if (!bNot)
+          printf("1 %d %s\n",balance,line);
+        else
+          printf("0 %d %s\n",balance,line);
+        }
+      else {
+        if (!bNot)
+          printf("1 %s\n",line);
+        else
+          printf("0 %s\n",line);
+      }
     }
     else {
-      if (bTerse)
-        printf("0\n");
-      else if (bVerbose)
-        printf("0 %d %s\n",balance,line);
-      else
-        printf("0 %s\n",line);
+      if (bTerse) {
+        if (!bNot)
+          printf("0\n");
+        else
+          printf("1\n");
+      }
+      else if (bVerbose) {
+        if (!bNot)
+          printf("0 %d %s\n",balance,line);
+        else
+          printf("1 %d %s\n",balance,line);
+      }
+      else {
+        if (!bNot)
+          printf("0 %s\n",line);
+        else
+          printf("1 %s\n",line);
+      }
     }
 
     line_no++;
