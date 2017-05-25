@@ -11,7 +11,8 @@ static char line[MAX_LINE_LEN];
 
 #define TAB 0x9
 
-static char usage[] = "usage: extrapolated_profit filename\n";
+static char usage[] =
+"usage: extrapolated_profit (-verbose) (-offsetoffset) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 static time_t cvt_date(char *date_str);
 
@@ -52,9 +53,14 @@ static char *format_date(char *cpt);
 
 int main(int argc,char **argv)
 {
+  int curr_arg;
+  bool bVerbose;
+  int offset;
   FILE *fptr;
   int line_len;
   int line_no;
+  int dbg_line_no;
+  int dbg;
   int retval;
   char *cpt;
   time_t date;
@@ -69,17 +75,36 @@ int main(int argc,char **argv)
   int days_in_year;
   int days_in_period;
 
-  if (argc != 2) {
+  if ((argc < 2) || (argc > 4)) {
     printf(usage);
     return 1;
   }
 
-  if ((fptr = fopen(argv[1],"r")) == NULL) {
-    printf(couldnt_open,argv[1]);
+  bVerbose = false;
+  offset = 0;
+
+  for (curr_arg = 1; curr_arg < argc; curr_arg++) {
+    if (!strcmp(argv[curr_arg],"-verbose"))
+      bVerbose = true;
+    else if (!strncmp(argv[curr_arg],"-offset",7)) {
+      sscanf(&argv[curr_arg][7],"%d",&offset);
+    }
+    else
+      break;
+  }
+
+  if (argc - curr_arg != 1) {
+    printf(usage);
     return 2;
   }
 
+  if ((fptr = fopen(argv[curr_arg],"r")) == NULL) {
+    printf(couldnt_open,argv[curr_arg]);
+    return 3;
+  }
+
   line_no = 0;
+  dbg_line_no = -1;
   running_delta = 0;
 
   for ( ; ; ) {
@@ -95,7 +120,7 @@ int main(int argc,char **argv)
     if (retval) {
       printf("get_date_and_delta() failed on line %d: %d\n",
         line_no,retval);
-      return 3;
+      return 4;
     }
 
     if (line_no == 1) {
@@ -114,11 +139,24 @@ int main(int argc,char **argv)
     datediff = date - start_date;
     dwork = (double)datediff / (double)SECS_PER_DAY;
     days_in_period = dwork;
+    days_in_period += offset;
 
     dwork = ((double)days_in_year / (double)days_in_period) * (double)running_delta;
 
+    if (line_no == dbg_line_no)
+      dbg = 1;
+
     cpt = ctime(&date);
-    printf("%s %10d %10d %10d\n",format_date(cpt),delta,running_delta,(int)dwork);
+
+    if (!bVerbose) {
+      printf("%s %10d %10d %10d\n",
+        format_date(cpt),delta,running_delta,(int)dwork);
+    }
+    else {
+      printf("%s %10d %10d %10d (%5d %5d %10d)\n",
+        format_date(cpt),delta,running_delta,(int)dwork,
+        days_in_year,days_in_period,running_delta);
+    }
   }
 
   fclose(fptr);
