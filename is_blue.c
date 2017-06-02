@@ -6,10 +6,12 @@ static char line[MAX_LINE_LEN];
 
 static char usage[] =
 "usage: is_blue (-starting_amountstarting_amount) (-terse) (-verbose)\n"
-"  (-not) filename\n";
+"  (-not) (-date_first) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
+
+#define DATE_LEN 11
 
 int main(int argc,char **argv)
 {
@@ -18,6 +20,7 @@ int main(int argc,char **argv)
   bool bTerse;
   bool bVerbose;
   bool bNot;
+  bool bDateFirst;
   int balance;
   FILE *fptr;
   int line_len;
@@ -25,8 +28,9 @@ int main(int argc,char **argv)
   int blue_count;
   int work;
   int max;
+  char date[DATE_LEN];
 
-  if ((argc < 2) || (argc > 6)) {
+  if ((argc < 2) || (argc > 7)) {
     printf(usage);
     return 1;
   }
@@ -35,6 +39,7 @@ int main(int argc,char **argv)
   bTerse = false;
   bVerbose = false;
   bNot = false;
+  bDateFirst = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strncmp(argv[curr_arg],"-starting_amount",16))
@@ -45,6 +50,8 @@ int main(int argc,char **argv)
       bVerbose = true;
     else if (!strcmp(argv[curr_arg],"-not"))
       bNot = true;
+    else if (!strcmp(argv[curr_arg],"-date_first"))
+      bDateFirst = true;
     else
       break;
   }
@@ -75,7 +82,7 @@ int main(int argc,char **argv)
     if (feof(fptr))
       break;
 
-    sscanf(line,"%d",&work);
+    sscanf(line,"%d %s",&work,date);
 
     balance += work;
 
@@ -96,10 +103,18 @@ int main(int argc,char **argv)
           printf("0 %d %s\n",balance,line);
         }
       else {
-        if (!bNot)
-          printf("1 %s\n",line);
-        else
-          printf("0 %s\n",line);
+        if (!bNot) {
+          if (!bDateFirst)
+            printf("1\t%s\n",date);
+          else
+            printf("%s\t1\n",date);
+        }
+        else {
+          if (!bDateFirst)
+            printf("0\t%s\n",date);
+          else
+            printf("%s\t0\n",date);
+        }
       }
     }
     else {
@@ -116,10 +131,18 @@ int main(int argc,char **argv)
           printf("1 %d %s\n",balance,line);
       }
       else {
-        if (!bNot)
-          printf("0 %s\n",line);
-        else
-          printf("1 %s\n",line);
+        if (!bNot) {
+          if (!bDateFirst)
+            printf("0\t%s\n",date);
+          else
+            printf("%s\t0\n",date);
+        }
+        else {
+          if (!bDateFirst)
+            printf("1\t%s\n",date);
+          else
+            printf("%s\t1\n",date);
+        }
       }
     }
 
