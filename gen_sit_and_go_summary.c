@@ -37,7 +37,7 @@ static char *poker_styles[] = {
   "MTT  ",
   "Sp&Go",
   "KO   ",
-  "Power",
+  "POW  ",
   "MTT-R",
   "MTT-B"
 };
