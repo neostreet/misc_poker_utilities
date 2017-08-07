@@ -9,7 +9,7 @@ static int blue_count[MAX_YEARS];
 static int year_count[MAX_YEARS];
 
 static char usage[] =
-"usage: blue_count_by_year (-offsetoffset) (-after_blue) filename\n";
+"usage: blue_count_by_year (-debug) (-offsetoffset) (-after_blue) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
@@ -19,6 +19,7 @@ int main(int argc,char **argv)
 {
   int n;
   int curr_arg;
+  bool bDebug;
   int offset;
   bool bAfterBlue;
   bool bPrevIsBlue;
@@ -28,22 +29,27 @@ int main(int argc,char **argv)
   int retval;
   int first_year;
   int year;
+  int prev_year;
+  int prev_line_no;
   int work;
   int max;
   double blue_pct;
   int tot_blue_count;
   int tot_year_count;
 
-  if ((argc < 2) || (argc > 4)) {
+  if ((argc < 2) || (argc > 5)) {
     printf(usage);
     return 1;
   }
 
+  bDebug = false;
   offset = 0;
   bAfterBlue = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
-    if (!strncmp(argv[curr_arg],"-offset",7))
+    if (!strcmp(argv[curr_arg],"-debug"))
+      bDebug = true;
+    else if (!strncmp(argv[curr_arg],"-offset",7))
       sscanf(&argv[curr_arg][7],"%d",&offset);
     else if (!strcmp(argv[curr_arg],"-after_blue"))
       bAfterBlue = true;
@@ -93,16 +99,37 @@ int main(int argc,char **argv)
       return 5;
     }
 
-    year_count[year - first_year]++;
+    if (!bAfterBlue || bPrevIsBlue) {
+      if (!bAfterBlue)
+        year_count[year - first_year]++;
+      else if (prev_line_no > 1) {
+        if (bDebug)
+          printf("line %d: %d\n",prev_line_no,prev_year);
+
+        year_count[prev_year - first_year]++;
+      }
+    }
 
     if (work > max) {
-      if ((line_no > 1) && (!bAfterBlue || bPrevIsBlue))
-        blue_count[year - first_year]++;
+      //if (bDebug)
+        //printf("line %d: work (%d) > max (%d)\n",line_no,work,max);
+
+      if (line_no > 1) {
+        if (!bAfterBlue || bPrevIsBlue) {
+          if (bDebug && !bAfterBlue)
+            printf("line %d: %d\n",line_no,year);
+
+          blue_count[year - first_year]++;
+        }
+      }
 
       max = work;
 
-      if (bAfterBlue)
+      if (bAfterBlue) {
         bPrevIsBlue = true;
+        prev_year = year;
+        prev_line_no = line_no;
+      }
     }
     else if (bAfterBlue)
       bPrevIsBlue = false;
