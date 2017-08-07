@@ -9,7 +9,7 @@ static int blue_count[MAX_YEARS];
 static int year_count[MAX_YEARS];
 
 static char usage[] =
-"usage: blue_count_by_year (-offsetoffset) filename\n";
+"usage: blue_count_by_year (-offsetoffset) (-after_blue) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
@@ -20,6 +20,8 @@ int main(int argc,char **argv)
   int n;
   int curr_arg;
   int offset;
+  bool bAfterBlue;
+  bool bPrevIsBlue;
   FILE *fptr;
   int line_len;
   int line_no;
@@ -32,16 +34,19 @@ int main(int argc,char **argv)
   int tot_blue_count;
   int tot_year_count;
 
-  if ((argc < 2) || (argc > 3)) {
+  if ((argc < 2) || (argc > 4)) {
     printf(usage);
     return 1;
   }
 
   offset = 0;
+  bAfterBlue = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strncmp(argv[curr_arg],"-offset",7))
       sscanf(&argv[curr_arg][7],"%d",&offset);
+    else if (!strcmp(argv[curr_arg],"-after_blue"))
+      bAfterBlue = true;
     else
       break;
   }
@@ -63,6 +68,7 @@ int main(int argc,char **argv)
 
   line_no = 0;
   max = -1;
+  bPrevIsBlue = false;
 
   for ( ; ; ) {
     GetLine(fptr,line,&line_len,MAX_LINE_LEN);
@@ -90,11 +96,16 @@ int main(int argc,char **argv)
     year_count[year - first_year]++;
 
     if (work > max) {
-      if (line_no > 1)
+      if ((line_no > 1) && (!bAfterBlue || bPrevIsBlue))
         blue_count[year - first_year]++;
 
       max = work;
+
+      if (bAfterBlue)
+        bPrevIsBlue = true;
     }
+    else if (bAfterBlue)
+      bPrevIsBlue = false;
   }
 
   fclose(fptr);
