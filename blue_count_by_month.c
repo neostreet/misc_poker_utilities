@@ -48,6 +48,7 @@ int main(int argc,char **argv)
 
   offset = 0;
   bAfterBlue = false;
+  bPctFirst = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strncmp(argv[curr_arg],"-offset",7))
