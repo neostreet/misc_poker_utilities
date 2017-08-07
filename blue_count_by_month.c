@@ -95,9 +95,12 @@ int main(int argc,char **argv)
       return 5;
     }
 
+    if (!month_count[mon - first_mon]) {
+      years[mon - first_mon] = year;
+      months[mon - first_mon] = month;
+    }
+
     month_count[mon - first_mon]++;
-    years[mon - first_mon] = year;
-    months[mon - first_mon] = month;
 
     if (work > max) {
       if (line_no > 1)
