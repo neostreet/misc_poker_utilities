@@ -335,7 +335,7 @@ int main(int argc,char **argv)
       continue;
 
     if (bVerbose) {
-      printf("%-3s %10d %10d %10d %6d %6d %6d %6d %9.2lf %6d %9.2lf %6.4lf",
+      printf("%-3s %10d %10d %10d %6d %6d %6d %6d %9.2lf %6d %11.4lf %6.4lf",
         aggreg[ix].card_string,
         aggreg[ix].sum_delta,
         aggreg[ix].sum_wins,
@@ -350,7 +350,7 @@ int main(int argc,char **argv)
         aggreg[ix].win_pct);
     }
     else {
-      printf("%-3s %10d %10d %10d %6d %6d %6d %6d %9.2lf %6.4lf",
+      printf("%-3s %10d %10d %10d %6d %6d %6d %6d %11.4lf %6.4lf",
         aggreg[ix].card_string,
         aggreg[ix].sum_delta,
         aggreg[ix].sum_wins,
