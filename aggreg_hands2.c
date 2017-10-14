@@ -267,7 +267,10 @@ int main(int argc,char **argv)
   for (o = 0; o < NUM_COLLAPSED_HANDS; o++) {
     aggreg[o].freq_factor = (double)aggreg[o].hand_count * periodicities[aggreg[o].handtype] /
       (double)total_hand_count;
-    aggreg[o].win_pct = (double)aggreg[o].num_wins / (double)aggreg[o].total_hands;
+    if (aggreg[o].total_hands)
+      aggreg[o].win_pct = (double)aggreg[o].num_wins / (double)aggreg[o].total_hands;
+    else
+      aggreg[o].win_pct = (double)0;
 
     if (o < NUM_CARDS_IN_SUIT) {
       for (n = 0; n < 2; n++)
