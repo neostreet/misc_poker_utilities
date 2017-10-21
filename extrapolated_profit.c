@@ -12,7 +12,7 @@ static char line[MAX_LINE_LEN];
 #define TAB 0x9
 
 static char usage[] =
-"usage: extrapolated_profit (-verbose) (-offsetoffset) filename\n";
+"usage: extrapolated_profit (-terse) (-verbose) (-offsetoffset) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 static time_t cvt_date(char *date_str);
 
@@ -54,6 +54,7 @@ static char *format_date(char *cpt);
 int main(int argc,char **argv)
 {
   int curr_arg;
+  bool bTerse;
   bool bVerbose;
   int offset;
   FILE *fptr;
@@ -75,16 +76,19 @@ int main(int argc,char **argv)
   int days_in_year;
   int days_in_period;
 
-  if ((argc < 2) || (argc > 4)) {
+  if ((argc < 2) || (argc > 5)) {
     printf(usage);
     return 1;
   }
 
+  bTerse = false;
   bVerbose = false;
   offset = 0;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
-    if (!strcmp(argv[curr_arg],"-verbose"))
+    if (!strcmp(argv[curr_arg],"-terse"))
+      bTerse = true;
+    else if (!strcmp(argv[curr_arg],"-verbose"))
       bVerbose = true;
     else if (!strncmp(argv[curr_arg],"-offset",7)) {
       sscanf(&argv[curr_arg][7],"%d",&offset);
@@ -98,9 +102,14 @@ int main(int argc,char **argv)
     return 2;
   }
 
+  if (bTerse && bVerbose) {
+    printf("can't specify both -terse and -verbose\n");
+    return 3;
+  }
+
   if ((fptr = fopen(argv[curr_arg],"r")) == NULL) {
     printf(couldnt_open,argv[curr_arg]);
-    return 3;
+    return 4;
   }
 
   line_no = 0;
@@ -120,7 +129,7 @@ int main(int argc,char **argv)
     if (retval) {
       printf("get_date_and_delta() failed on line %d: %d\n",
         line_no,retval);
-      return 4;
+      return 5;
     }
 
     if (line_no == 1) {
@@ -149,8 +158,13 @@ int main(int argc,char **argv)
     cpt = ctime(&date);
 
     if (!bVerbose) {
-      printf("%s %10d %10d %10d\n",
-        format_date(cpt),delta,running_delta,(int)dwork);
+      if (bTerse) {
+        printf("%d\n",(int)dwork);
+      }
+      else {
+        printf("%s %10d %10d %10d\n",
+          format_date(cpt),delta,running_delta,(int)dwork);
+      }
     }
     else {
       printf("%s %10d %10d %10d (%5d %5d %10d)\n",
