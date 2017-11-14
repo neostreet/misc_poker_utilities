@@ -19,7 +19,7 @@ static char line[MAX_LINE_LEN];
 
 static char usage[] =
 "usage: fchip_pct (-verbose) (-max) (-min) (-last) (-total_chipschips\n"
-"  player_name filename\n";
+"  (-first_handhand) player_name filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char in_chips[] = " in chips";
@@ -38,11 +38,14 @@ int main(int argc,char **argv)
   int last;
   bool bHaveTotalChips;
   int total_chips;
+  int num_players;
+  int first_hand;
   int player_name_ix;
   int player_name_len;
   FILE *fptr0;
   int filenamelen;
   FILE *fptr;
+  int file_no;
   int line_len;
   int line_no;
   int ix;
@@ -52,7 +55,7 @@ int main(int argc,char **argv)
   double dwork;
   double save_dwork;
 
-  if ((argc < 3) && (argc > 8)) {
+  if ((argc < 3) && (argc > 9)) {
     printf(usage);
     return 1;
   }
@@ -65,6 +68,7 @@ int main(int argc,char **argv)
   last= 0;
   bHaveTotalChips = false;
   total_chips = -1;
+  first_hand = 1;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-verbose"))
@@ -79,6 +83,8 @@ int main(int argc,char **argv)
       bHaveTotalChips = true;
       sscanf(&argv[curr_arg][12],"%d",&total_chips);
     }
+    else if (!strncmp(argv[curr_arg],"-first_hand",11))
+      sscanf(&argv[curr_arg][11],"%d",&first_hand);
     else
       break;
   }
@@ -104,11 +110,18 @@ int main(int argc,char **argv)
     return 4;
   }
 
+  file_no = 0;
+
   for ( ; ; ) {
     GetLine(fptr0,filename,&filenamelen,MAX_FILENAME_LEN);
 
     if (feof(fptr0))
       break;
+
+    file_no++;
+
+    if (file_no < first_hand)
+      continue;
 
     if ((fptr = fopen(filename,"r")) == NULL) {
       printf(couldnt_open,filename);
@@ -118,8 +131,10 @@ int main(int argc,char **argv)
     line_no = 0;
     player_chips = 0;
 
-    if (!bHaveTotalChips)
+    if (!bHaveTotalChips) {
       total_chips = 0;
+      num_players = 0;
+    }
 
     for ( ; ; ) {
       GetLine(fptr,line,&line_len,MAX_LINE_LEN);
@@ -141,8 +156,10 @@ int main(int argc,char **argv)
 
         sscanf(&line[ix+1],"%d",&work);
 
-        if (!bHaveTotalChips)
+        if (!bHaveTotalChips) {
           total_chips += work;
+          num_players++;
+        }
 
         if (Contains(true,
           line,line_len,
@@ -186,8 +203,8 @@ int main(int argc,char **argv)
       if (!bVerbose)
         printf("%7.4lf %s/%s\n",dwork,save_dir,filename);
       else {
-        printf("%7.4lf (%10d %10d) %s/%s\n",dwork,
-          player_chips,total_chips,save_dir,filename);
+        printf("%7.4lf (%d %10d %10d) %s/%s\n",dwork,
+          num_players,player_chips,total_chips,save_dir,filename);
       }
     }
   }
