@@ -20,7 +20,7 @@ static char line[MAX_LINE_LEN];
 
 static char usage[] =
 "usage: fhanded_counts (-terse) (-verbose) (-debug) (-only_countcount)\n"
-"  (-silent) player_name filename\n";
+"  (-silent) (-first_handhand) player_name filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char in_chips[] = " in chips";
@@ -47,6 +47,7 @@ int main(int argc,char **argv)
   bool bOnlyCount;
   int only_count;
   bool bSilent;
+  int first_hand;
   int player_name_ix;
   int player_name_len;
   int ix;
@@ -56,6 +57,7 @@ int main(int argc,char **argv)
   int dbg_num_files;
   int dbg;
   FILE *fptr;
+  int file_no;
   int line_no;
   int line_len;
   int table_count;
@@ -65,7 +67,7 @@ int main(int argc,char **argv)
   double handed_count_pct;
   int curr_file_num_hands;
 
-  if ((argc < 2) || (argc > 8)) {
+  if ((argc < 2) || (argc > 9)) {
     printf(usage);
     return 1;
   }
@@ -75,6 +77,7 @@ int main(int argc,char **argv)
   bDebug = false;
   bOnlyCount = false;
   bSilent = false;
+  first_hand = 1;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-terse"))
@@ -91,6 +94,8 @@ int main(int argc,char **argv)
     }
     else if (!strcmp(argv[curr_arg],"-silent"))
       bSilent = true;
+    else if (!strncmp(argv[curr_arg],"-first_hand",11))
+      sscanf(&argv[curr_arg][11],"%d",&first_hand);
     else
       break;
   }
@@ -119,11 +124,18 @@ int main(int argc,char **argv)
   for (n = 0; n < (MAX_PLAYERS - 1); n++)
     handed_counts[n].count = 0;
 
+  file_no = 0;
+
   for ( ; ; ) {
     GetLine(fptr0,filename,&filename_len,MAX_FILENAME_LEN);
 
     if (feof(fptr0))
       break;
+
+    file_no++;
+
+    if (file_no < first_hand)
+      continue;
 
     if ((fptr = fopen(filename,"r")) == NULL) {
       printf(couldnt_open,filename);
