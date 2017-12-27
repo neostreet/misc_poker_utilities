@@ -19,8 +19,9 @@ static char line[MAX_LINE_LEN];
 #define MAX_PLAYERS 9
 
 static char usage[] =
-"usage: fhanded_counts (-terse) (-verbose) (-debug) (-only_countcount)\n"
-"  (-silent) (-first_handhand) (-early_exit) player_name filename\n";
+"usage: fhanded_counts (-terse) (-verbose) (-debug) (-starting_balance)\n"
+"  (-only_countcount) (-silent) (-first_handhand) (-early_exit)\n"
+"  player_name filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char in_chips[] = " in chips";
@@ -44,6 +45,7 @@ int main(int argc,char **argv)
   bool bTerse;
   bool bVerbose;
   bool bDebug;
+  bool bStartingBalance;
   bool bOnlyCount;
   int only_count;
   bool bSilent;
@@ -71,7 +73,7 @@ int main(int argc,char **argv)
   double handed_count_pct;
   int curr_file_num_hands;
 
-  if ((argc < 2) || (argc > 10)) {
+  if ((argc < 2) || (argc > 11)) {
     printf(usage);
     return 1;
   }
@@ -79,6 +81,7 @@ int main(int argc,char **argv)
   bTerse = false;
   bVerbose = false;
   bDebug = false;
+  bStartingBalance = false;
   bOnlyCount = false;
   bSilent = false;
   first_hand = 1;
@@ -93,6 +96,8 @@ int main(int argc,char **argv)
       bDebug = true;
       getcwd(save_dir,_MAX_PATH);
     }
+    else if (!strcmp(argv[curr_arg],"-starting_balance"))
+      bStartingBalance = true;
     else if (!strncmp(argv[curr_arg],"-only_count",11)) {
       bOnlyCount = true;
       sscanf(&argv[curr_arg][11],"%d",&only_count);
@@ -250,7 +255,7 @@ int main(int argc,char **argv)
     if (bTerse)
       printf("%d %lf\n",n+2,handed_count_pct);
     else if (!bDebug) {
-      if (!bVerbose) {
+      if (!bStartingBalance) {
         printf("%d %lf (%d of %d)\n",n+2,
           handed_count_pct,handed_counts[n].count,num_hands);
       }
@@ -261,7 +266,7 @@ int main(int argc,char **argv)
       }
     }
     else {
-      if (!bVerbose) {
+      if (!bStartingBalance) {
         printf("%d %lf (%d of %d) %s\n",n+2,
           handed_count_pct,handed_counts[n].count,num_hands,save_dir);
       }
