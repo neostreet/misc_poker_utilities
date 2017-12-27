@@ -221,10 +221,10 @@ int main(int argc,char **argv)
         if (bEarlyExit && (prev_table_chips != -1) && (table_chips != prev_table_chips))
           break;
 
+        curr_file_num_hands++;
+
         if (bOnlyCount && (table_count < only_count))
           break;
-
-        curr_file_num_hands++;
 
         handed_counts[table_count - 2].count++;
 
