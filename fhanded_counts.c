@@ -20,7 +20,7 @@ static char line[MAX_LINE_LEN];
 
 static char usage[] =
 "usage: fhanded_counts (-terse) (-verbose) (-debug) (-only_countcount)\n"
-"  (-silent) (-first_handhand) player_name filename\n";
+"  (-silent) (-first_handhand) (-early_exit) player_name filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char in_chips[] = " in chips";
@@ -47,6 +47,7 @@ int main(int argc,char **argv)
   bool bOnlyCount;
   int only_count;
   bool bSilent;
+  bool bEarlyExit;
   int first_hand;
   int player_name_ix;
   int player_name_len;
@@ -61,13 +62,16 @@ int main(int argc,char **argv)
   int line_no;
   int line_len;
   int table_count;
+  int table_chips;
+  int prev_table_chips;
+  int work;
   int curr_stack;
   int num_hands;
   struct count_info handed_counts[(MAX_PLAYERS - 1)];
   double handed_count_pct;
   int curr_file_num_hands;
 
-  if ((argc < 2) || (argc > 9)) {
+  if ((argc < 2) || (argc > 10)) {
     printf(usage);
     return 1;
   }
@@ -78,6 +82,7 @@ int main(int argc,char **argv)
   bOnlyCount = false;
   bSilent = false;
   first_hand = 1;
+  bEarlyExit = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-terse"))
@@ -96,6 +101,8 @@ int main(int argc,char **argv)
       bSilent = true;
     else if (!strncmp(argv[curr_arg],"-first_hand",11))
       sscanf(&argv[curr_arg][11],"%d",&first_hand);
+    else if (!strcmp(argv[curr_arg],"-early_exit"))
+      bEarlyExit = true;
     else
       break;
   }
@@ -125,6 +132,8 @@ int main(int argc,char **argv)
     handed_counts[n].count = 0;
 
   file_no = 0;
+  table_chips = 0;
+  prev_table_chips = -1;
 
   for ( ; ; ) {
     GetLine(fptr0,filename,&filename_len,MAX_FILENAME_LEN);
@@ -160,7 +169,11 @@ int main(int argc,char **argv)
 
       if (!strncmp(line,"Table '",7)) {
         table_count = 0;
-        curr_file_num_hands++;
+
+        if (table_chips) {
+          prev_table_chips = table_chips;
+          table_chips = 0;
+        }
 
         for ( ; ; ) {
           GetLine(fptr,line,&line_len,MAX_LINE_LEN);
@@ -178,27 +191,35 @@ int main(int argc,char **argv)
 
             if (Contains(true,
               line,line_len,
-              argv[player_name_ix],player_name_len,
+              in_chips,IN_CHIPS_LEN,
               &ix)) {
+
+              line[ix] = 0;
+
+              for (ix--; (ix >= 0) && (line[ix] != '('); ix--)
+                ;
+
+              sscanf(&line[ix+1],"%d",&work);
+              table_chips += work;
 
               if (Contains(true,
                 line,line_len,
-                in_chips,IN_CHIPS_LEN,
+                argv[player_name_ix],player_name_len,
                 &ix)) {
 
-                line[ix] = 0;
-
-                for (ix--; (ix >= 0) && (line[ix] != '('); ix--)
-                  ;
-
-                sscanf(&line[ix+1],"%d",&curr_stack);
+                curr_stack = work;
               }
             }
           }
         }
 
+        if (bEarlyExit && (prev_table_chips != -1) && (table_chips != prev_table_chips))
+          break;
+
         if (bOnlyCount && (table_count < only_count))
           break;
+
+        curr_file_num_hands++;
 
         handed_counts[table_count - 2].count++;
 
@@ -210,6 +231,9 @@ int main(int argc,char **argv)
     fclose(fptr);
 
     num_hands += curr_file_num_hands;
+
+    if (bEarlyExit && (prev_table_chips != -1) && (table_chips != prev_table_chips))
+      break;
   }
 
   fclose(fptr0);
