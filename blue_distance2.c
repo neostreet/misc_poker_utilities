@@ -9,7 +9,7 @@ static char line[MAX_LINE_LEN];
 static char usage[] =
 "usage: blue_distance2 (-terse) (-verbose) (-sum) (-initial_bal) (-no_dates)\n"
 "  (-only_blue) (-from_nonblue) (-in_sessions) (-is_blue) (-skyfall)\n"
-"  (-no_input_dates) (-only_max) (-runtot) filename\n";
+"  (-no_input_dates) (-only_max) (-runtot) (-truncate) (-insert) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
@@ -29,6 +29,8 @@ int main(int argc,char **argv)
   bool bNoInputDates;
   bool bOnlyMax;
   bool bRuntot;
+  bool bTruncate;
+  bool bInsert;
   bool bPrevIsBlue;
   int initial_bal;
   FILE *fptr;
@@ -43,7 +45,7 @@ int main(int argc,char **argv)
   int blue_distance;
   int max_blue_distance;
 
-  if ((argc < 2) || (argc > 15)) {
+  if ((argc < 2) || (argc > 17)) {
     printf(usage);
     return 1;
   }
@@ -60,6 +62,8 @@ int main(int argc,char **argv)
   bNoInputDates = false;
   bOnlyMax = false;
   bRuntot = false;
+  bTruncate = false;
+  bInsert = false;
   initial_bal = 0;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
@@ -89,6 +93,10 @@ int main(int argc,char **argv)
       bOnlyMax = true;
     else if (!strcmp(argv[curr_arg],"-runtot"))
       bRuntot = true;
+    else if (!strcmp(argv[curr_arg],"-truncate"))
+      bTruncate = true;
+    else if (!strcmp(argv[curr_arg],"-insert"))
+      bInsert = true;
     else
       break;
   }
@@ -112,6 +120,9 @@ int main(int argc,char **argv)
   last_blue_line_no = -1;
   bPrevIsBlue = true;
   max_blue_distance = 0;
+
+  if (bInsert)
+    printf("use poker\n\n");
 
   for ( ; ; ) {
     GetLine(fptr,line,&line_len,MAX_LINE_LEN);
@@ -169,14 +180,30 @@ int main(int argc,char **argv)
                     if (blue_distance >= max_blue_distance) {
                       max_blue_distance = blue_distance;
 
-                      if (!bRuntot)
-                        printf("%d\t%s *\n",blue_distance,line);
+                      if (!bRuntot) {
+                        if (bTruncate)
+                          printf("%d\t%s *\n",blue_distance,str);
+                        else if (bInsert)
+                          printf("insert into poker_sessions_blue_distance("
+                            "poker_session_date,blue_distance) values ("
+                            "'%s',%d);\n",str,blue_distance);
+                        else
+                          printf("%d\t%s *\n",blue_distance,line);
+                      }
                       else
                         printf("%d\t%d\t%s *\n",blue_distance,balance,line);
                     }
                     else if (!bOnlyMax) {
-                      if (!bRuntot)
+                      if (!bRuntot) {
+                        if (bTruncate)
+                          printf("%d\t%s\n",blue_distance,str);
+                        else if (bInsert)
+                          printf("insert into poker_sessions_blue_distance("
+                            "poker_session_date,blue_distance) values ("
+                            "'%s',%d);\n",str,blue_distance);
+                        else
                         printf("%d\t%s\n",blue_distance,line);
+                      }
                       else
                         printf("%d\t%d\t%s\n",blue_distance,balance,line);
                     }
@@ -258,6 +285,9 @@ int main(int argc,char **argv)
 
     line_no++;
   }
+
+  if (bInsert)
+    printf("\nquit\n");
 
   if (bSum) {
     if (!bNoDates) {
