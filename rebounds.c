@@ -26,7 +26,7 @@ struct rebound_struct {
 #define TAB 0x9
 
 static char usage[] =
-"usage: rebounds (-debug) (-no_sort) (-date_last) (-full) filename\n";
+"usage: rebounds (-debug) (-no_sort) (-date_last) (-full) (-reverse) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char malloc_failed1[] = "malloc of %d session info structures failed\n";
@@ -70,6 +70,7 @@ int main(int argc,char **argv)
   bool bNoSort;
   bool bDateLast;
   bool bFull;
+  bool bReverse;
   int session_ix;
   FILE *fptr;
   int line_len;
@@ -83,7 +84,7 @@ int main(int argc,char **argv)
   int rebound_ix;
   int curr_rebound;
 
-  if ((argc < 2) || (argc > 6)) {
+  if ((argc < 2) || (argc > 7)) {
     printf(usage);
     return 1;
   }
@@ -92,6 +93,7 @@ int main(int argc,char **argv)
   bNoSort = false;
   bDateLast = false;
   bFull = false;
+  bReverse = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-debug"))
@@ -102,6 +104,8 @@ int main(int argc,char **argv)
       bDateLast = true;
     else if (!strcmp(argv[curr_arg],"-full"))
       bFull = true;
+    else if (!strcmp(argv[curr_arg],"-reverse"))
+      bReverse = true;
     else
       break;
   }
@@ -178,11 +182,21 @@ int main(int argc,char **argv)
   num_rebounds = 0;
 
   for (n = 1; n < set_size; n++) {
-    if ((session_info[n-1].delta < 0) && (session_info[n].delta > 0)) {
-      if (!bFull)
-        num_rebounds++;
-      else if (session_info[n-1].delta * -1 >= session_info[n].delta)
-        num_rebounds++;
+    if (!bReverse) {
+      if ((session_info[n-1].delta < 0) && (session_info[n].delta > 0)) {
+        if (!bFull)
+          num_rebounds++;
+        else if (session_info[n-1].delta * -1 >= session_info[n].delta)
+          num_rebounds++;
+      }
+    }
+    else {
+      if ((session_info[n-1].delta > 0) && (session_info[n].delta < 0)) {
+        if (!bFull)
+          num_rebounds++;
+        else if (session_info[n].delta * -1 >= session_info[n-1].delta)
+          num_rebounds++;
+      }
     }
   }
 
@@ -206,22 +220,44 @@ int main(int argc,char **argv)
   rebound_ix = 0;
 
   for (n = 1; n < set_size; n++) {
-    if ((session_info[n-1].delta < 0) && (session_info[n].delta > 0)) {
-      is_rebound = 0;
+    if (!bReverse) {
+      if ((session_info[n-1].delta < 0) && (session_info[n].delta > 0)) {
+        is_rebound = 0;
 
-      if (!bFull)
-        is_rebound = 1;
-      else if (session_info[n-1].delta * -1 >= session_info[n].delta)
-        is_rebound = 1;
+        if (!bFull)
+          is_rebound = 1;
+        else if (session_info[n-1].delta * -1 >= session_info[n].delta)
+          is_rebound = 1;
 
-      if (is_rebound) {
-        curr_rebound = session_info[n-1].delta * -1;
+        if (is_rebound) {
+          curr_rebound = session_info[n-1].delta * -1;
 
-        if (curr_rebound > session_info[n].delta)
-          curr_rebound = session_info[n].delta;
+          if (curr_rebound > session_info[n].delta)
+            curr_rebound = session_info[n].delta;
 
-        rebound[rebound_ix].poker_session_date = session_info[n].poker_session_date;
-        rebound[rebound_ix++].rebound = curr_rebound;
+          rebound[rebound_ix].poker_session_date = session_info[n].poker_session_date;
+          rebound[rebound_ix++].rebound = curr_rebound;
+        }
+      }
+    }
+    else {
+      if ((session_info[n-1].delta > 0) && (session_info[n].delta < 0)) {
+        is_rebound = 0;
+
+        if (!bFull)
+          is_rebound = 1;
+        else if (session_info[n].delta * -1 >= session_info[n-1].delta)
+          is_rebound = 1;
+
+        if (is_rebound) {
+          curr_rebound = session_info[n].delta * -1;
+
+          if (curr_rebound > session_info[n-1].delta)
+            curr_rebound = session_info[n-1].delta;
+
+          rebound[rebound_ix].poker_session_date = session_info[n].poker_session_date;
+          rebound[rebound_ix++].rebound = curr_rebound;
+        }
       }
     }
   }
