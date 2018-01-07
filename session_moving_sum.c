@@ -304,7 +304,7 @@ int main(int argc,char **argv)
 
     if (!bSecondDelta) {
       if (bTerse)
-        printf("%10d\n",session_info[sort_ixs[n]].sum);
+        printf("%d\n",session_info[sort_ixs[n]].sum);
       else
         printf("%10d ",session_info[sort_ixs[n]].sum);
     }
