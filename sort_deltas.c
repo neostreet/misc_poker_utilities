@@ -11,11 +11,12 @@
 
 static char usage[] =
 "usage: sort_deltas (-no_sort) (-reverse) (-offsetoffset) (-float)\n"
-"  (-line_numbers) filename\n";
+"  (-line_numbers) (-abs_value) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static bool bReverse;
 static bool bFloat;
+static bool bAbsValue;
 
 static char **cppt;
 
@@ -49,7 +50,7 @@ int main(int argc,char **argv)
   int chara;
   char delta_buf[MAX_DELTA_STR_LEN+1];
 
-  if ((argc < 2) || (argc > 7)) {
+  if ((argc < 2) || (argc > 8)) {
     printf(usage);
     return 1;
   }
@@ -59,6 +60,7 @@ int main(int argc,char **argv)
   bFloat = false;
   offset = 0;
   bLineNumbers = false;
+  bAbsValue = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-no_sort"))
@@ -71,6 +73,8 @@ int main(int argc,char **argv)
       sscanf(&argv[curr_arg][7],"%d",&offset);
     else if (!strcmp(argv[curr_arg],"-line_numbers"))
       bLineNumbers = true;
+    else if (!strcmp(argv[curr_arg],"-abs_value"))
+      bAbsValue = true;
     else
       break;
   }
@@ -217,31 +221,57 @@ int compare(const void *elem1,const void *elem2)
 {
   int int1;
   int int2;
+  int work1;
+  int work2;
+  double dwork1;
+  double dwork2;
 
   int1 = *(int *)elem1;
   int2 = *(int *)elem2;
 
   if (!bFloat) {
-    if (delta[int1] == delta[int2])
+    work1 = delta[int1];
+    work2 = delta[int2];
+
+    if (bAbsValue) {
+      if (work1 < 0)
+        work1 *= -1;
+
+      if (work2 < 0)
+        work2 *= -1;
+    }
+
+    if (work1 == work2)
       return strcmp(cppt[int2],cppt[int1]);
 
     if (!bReverse)
-      return delta[int1] - delta[int2];
+      return work1 - work2;
     else
-      return delta[int2] - delta[int1];
+      return work2 - work1;
   }
   else {
-    if (doubles[int1] == doubles[int2])
+    dwork1 = doubles[int1];
+    dwork2 = doubles[int2];
+
+    if (bAbsValue) {
+      if (dwork1 < (double)0)
+        dwork1 *= (double)-1;
+
+      if (dwork2 < (double)0)
+        dwork2 *= (double)-1;
+    }
+
+    if (dwork1 == dwork2)
       return strcmp(cppt[int2],cppt[int1]);
 
     if (!bReverse) {
-      if (doubles[int1] < doubles[int2])
+      if (dwork1 < dwork2)
         return -1;
       else
         return 1;
     }
     else {
-      if (doubles[int2] < doubles[int1])
+      if (dwork2 < dwork1)
         return -1;
       else
         return 1;
