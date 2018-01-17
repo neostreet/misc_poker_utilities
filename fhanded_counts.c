@@ -218,6 +218,9 @@ int main(int argc,char **argv)
           }
         }
 
+        if (bVerbose)
+          printf("%d\n",table_count);
+
         if (bEarlyExit && (prev_table_chips != -1) && (table_chips != prev_table_chips))
           break;
 
@@ -242,6 +245,9 @@ int main(int argc,char **argv)
   }
 
   fclose(fptr0);
+
+  if (bVerbose)
+    putchar(0x0a);
 
   for (n = 7; (n >= 0); n--) {
     if (!handed_counts[n].count)
