@@ -20,7 +20,7 @@ static char line[MAX_LINE_LEN];
 
 static char usage[] =
 "usage: fhanded_counts (-terse) (-verbose) (-debug) (-starting_balance)\n"
-"  (-only_countcount) (-silent) (-first_handhand) (-early_exit)\n"
+"  (-only_countcount) (-silent) (-first_handhand) (-early_exit) (-early_exit2)\n"
 "  player_name filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
@@ -49,6 +49,7 @@ int main(int argc,char **argv)
   bool bOnlyCount;
   int only_count;
   bool bSilent;
+  bool bEarlyExit2;
   bool bEarlyExit;
   int first_hand;
   int player_name_ix;
@@ -64,6 +65,7 @@ int main(int argc,char **argv)
   int line_no;
   int line_len;
   int table_count;
+  int prev_table_count;
   int table_chips;
   int prev_table_chips;
   int work;
@@ -73,7 +75,7 @@ int main(int argc,char **argv)
   double handed_count_pct;
   int curr_file_num_hands;
 
-  if ((argc < 2) || (argc > 11)) {
+  if ((argc < 2) || (argc > 12)) {
     printf(usage);
     return 1;
   }
@@ -85,6 +87,7 @@ int main(int argc,char **argv)
   bOnlyCount = false;
   bSilent = false;
   first_hand = 1;
+  bEarlyExit2 = false;
   bEarlyExit = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
@@ -106,6 +109,8 @@ int main(int argc,char **argv)
       bSilent = true;
     else if (!strncmp(argv[curr_arg],"-first_hand",11))
       sscanf(&argv[curr_arg][11],"%d",&first_hand);
+    else if (!strcmp(argv[curr_arg],"-early_exit2"))
+      bEarlyExit2 = true;
     else if (!strcmp(argv[curr_arg],"-early_exit"))
       bEarlyExit = true;
     else
@@ -137,7 +142,9 @@ int main(int argc,char **argv)
     handed_counts[n].count = 0;
 
   file_no = 0;
+  table_count = 0;
   table_chips = 0;
+  prev_table_count = -1;
   prev_table_chips = -1;
 
   for ( ; ; ) {
@@ -173,7 +180,10 @@ int main(int argc,char **argv)
       line_no++;
 
       if (!strncmp(line,"Table '",7)) {
-        table_count = 0;
+        if (table_count) {
+          prev_table_count = table_count;
+          table_count = 0;
+        }
 
         if (table_chips) {
           prev_table_chips = table_chips;
@@ -221,6 +231,9 @@ int main(int argc,char **argv)
         if (bVerbose)
           printf("%d\n",table_count);
 
+        if (bEarlyExit2 && (prev_table_count != -1) && (table_count != prev_table_count))
+          break;
+
         if (bEarlyExit && (prev_table_chips != -1) && (table_chips != prev_table_chips))
           break;
 
@@ -239,6 +252,9 @@ int main(int argc,char **argv)
     fclose(fptr);
 
     num_hands += curr_file_num_hands;
+
+    if (bEarlyExit2 && (prev_table_count != -1) && (table_count != prev_table_count))
+      break;
 
     if (bEarlyExit && (prev_table_chips != -1) && (table_chips != prev_table_chips))
       break;
