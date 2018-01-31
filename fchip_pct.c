@@ -168,6 +168,8 @@ int main(int argc,char **argv)
           player_chips = work;
         }
       }
+      else if (num_players)
+        break;
     }
 
     fclose(fptr);
