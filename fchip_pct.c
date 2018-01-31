@@ -18,7 +18,7 @@ static char save_filename[MAX_FILENAME_LEN];
 static char line[MAX_LINE_LEN];
 
 static char usage[] =
-"usage: fchip_pct (-verbose) (-max) (-min) (-last) (-total_chipschips\n"
+"usage: fchip_pct (-verbose) (-max) (-min) (-last) (-total_chipschips)\n"
 "  (-first_handhand) player_name filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
