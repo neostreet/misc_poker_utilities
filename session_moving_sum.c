@@ -28,7 +28,7 @@ struct session_info_struct {
 static char usage[] =
 "usage: session_moving_sum (-no_sort) (-ascending) (-absolute_value)\n"
 "  (-skip_interim) (-terse) (-gesum) (-true_false) (-delta_first)\n"
-"  (-outer_sort_by_winning_sessions) (-second_delta)"
+"  (-outer_sort_by_winning_sessions) (-second_delta) (-homogenous)"
 "  subset_size filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
@@ -80,6 +80,7 @@ int main(int argc,char **argv)
   bool bTrueFalse;
   bool bDeltaFirst;
   bool bSecondDelta;
+  bool bHomogenous;
   int ge_sum;
   int curr_arg;
   int session_ix;
@@ -97,7 +98,7 @@ int main(int argc,char **argv)
   int retval;
   char *cpt;
 
-  if ((argc < 3) || (argc > 13)) {
+  if ((argc < 3) || (argc > 14)) {
     printf(usage);
     return 1;
   }
@@ -112,6 +113,7 @@ int main(int argc,char **argv)
   bDeltaFirst = false;
   bOuterSortByWinningSessions = false;
   bSecondDelta = false;
+  bHomogenous = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-no_sort"))
@@ -136,6 +138,8 @@ int main(int argc,char **argv)
       bOuterSortByWinningSessions = true;
     else if (!strcmp(argv[curr_arg],"-second_delta"))
       bSecondDelta = true;
+    else if (!strcmp(argv[curr_arg],"-homogenous"))
+      bHomogenous = true;
     else
       break;
   }
@@ -287,6 +291,14 @@ int main(int argc,char **argv)
     qsort(sort_ixs,num_sums,sizeof (int),elem_compare);
 
   for (n = 0; n < num_sums; n++) {
+    if (bHomogenous) {
+      if (!session_info[sort_ixs[n]].num_winning_sessions ||
+          (session_info[sort_ixs[n]].num_winning_sessions == subset_size))
+        ;
+      else
+        continue;
+    }
+
     if (bGeSum) {
       if (bTrueFalse) {
         if (session_info[sort_ixs[n]].sum < ge_sum)
