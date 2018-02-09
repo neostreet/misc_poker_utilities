@@ -14,7 +14,7 @@ struct chip_counts {
 };
 
 #define MAX_TABLE_PLAYERS 9
-static struct chip_counts table_chip_counts[MAX_TABLE_PLAYERS];
+static struct chip_counts table_chip_counts[MAX_TABLE_PLAYERS+1];
 
 static char save_dir[_MAX_PATH];
 
@@ -110,7 +110,7 @@ int main(int argc,char **argv)
     line_no = 0;
     num_players = 0;
 
-    for (n = 0; n < MAX_TABLE_PLAYERS; n++) {
+    for (n = 0; n < MAX_TABLE_PLAYERS+1; n++) {
       table_chip_counts[n].count = 0;
       table_chip_counts[n].me = 0;
     }
@@ -135,6 +135,7 @@ int main(int argc,char **argv)
 
         sscanf(&line[ix+1],"%d",&work);
         table_chip_counts[num_players].count = work;
+        table_chip_counts[MAX_TABLE_PLAYERS].count += work;
 
         if (Contains(true,
           line,line_len,
@@ -160,8 +161,12 @@ int main(int argc,char **argv)
       if (table_chip_counts[ixs[n]].me) {
         if (!bVerbose)
           printf("%d\n",n+1);
-        else
-          printf("%d (%d) %s/%s\n",n+1,table_chip_counts[ixs[n]].count,save_dir,filename);
+        else {
+          printf("%d (%d %d) %s/%s\n",n+1,
+            table_chip_counts[ixs[n]].count,
+            table_chip_counts[MAX_TABLE_PLAYERS].count,
+            save_dir,filename);
+        }
 
         break;
       }
