@@ -161,7 +161,7 @@ int main(int argc,char **argv)
         if (!bVerbose)
           printf("%d\n",n+1);
         else
-          printf("%d %s/%s\n",n+1,save_dir,filename);
+          printf("%d (%d) %s/%s\n",n+1,table_chip_counts[ixs[n]].count,save_dir,filename);
 
         break;
       }
