@@ -19,7 +19,7 @@ static char line[MAX_LINE_LEN];
 
 static char usage[] =
 "usage: fchip_pct (-verbose) (-max) (-min) (-last) (-total_chipschips)\n"
-"  (-first_handhand) player_name filename\n";
+"  (-first_handhand) (-new_rung) player_name filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char in_chips[] = " in chips";
@@ -33,12 +33,15 @@ int main(int argc,char **argv)
 {
   int curr_arg;
   bool bVerbose;
+  bool bNewRung;
   int max;
   int min;
   int last;
   bool bHaveTotalChips;
+  int compare_total_chips;
   int total_chips;
   int num_players;
+  int prev_num_players;
   int first_hand;
   int player_name_ix;
   int player_name_len;
@@ -55,7 +58,7 @@ int main(int argc,char **argv)
   double dwork;
   double save_dwork;
 
-  if ((argc < 3) && (argc > 9)) {
+  if ((argc < 3) && (argc > 10)) {
     printf(usage);
     return 1;
   }
@@ -67,8 +70,8 @@ int main(int argc,char **argv)
   min = 0;
   last= 0;
   bHaveTotalChips = false;
-  total_chips = -1;
   first_hand = 1;
+  bNewRung = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-verbose"))
@@ -81,10 +84,12 @@ int main(int argc,char **argv)
       last = 1;
     else if (!strncmp(argv[curr_arg],"-total_chips",12)) {
       bHaveTotalChips = true;
-      sscanf(&argv[curr_arg][12],"%d",&total_chips);
+      sscanf(&argv[curr_arg][12],"%d",&compare_total_chips);
     }
     else if (!strncmp(argv[curr_arg],"-first_hand",11))
       sscanf(&argv[curr_arg][11],"%d",&first_hand);
+    else if (!strcmp(argv[curr_arg],"-new_rung"))
+      bNewRung = true;
     else
       break;
   }
@@ -131,10 +136,8 @@ int main(int argc,char **argv)
     line_no = 0;
     player_chips = 0;
 
-    if (!bHaveTotalChips) {
-      total_chips = 0;
-      num_players = 0;
-    }
+    total_chips = 0;
+    num_players = 0;
 
     for ( ; ; ) {
       GetLine(fptr,line,&line_len,MAX_LINE_LEN);
@@ -156,10 +159,8 @@ int main(int argc,char **argv)
 
         sscanf(&line[ix+1],"%d",&work);
 
-        if (!bHaveTotalChips) {
-          total_chips += work;
-          num_players++;
-        }
+        total_chips += work;
+        num_players++;
 
         if (Contains(true,
           line,line_len,
@@ -174,6 +175,15 @@ int main(int argc,char **argv)
 
     fclose(fptr);
 
+    if (bHaveTotalChips) {
+      if (total_chips != compare_total_chips)
+        continue;
+
+      if (bNewRung && (file_no > 1) && (num_players == prev_num_players))
+        continue;
+    }
+
+    prev_num_players = num_players;
     dwork = (double)player_chips / (double)total_chips;
 
     if (max) {
