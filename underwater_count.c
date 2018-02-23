@@ -16,11 +16,12 @@ static char usage[] =
 "usage: underwater_count (-debug) (-verbose) (-terse) (-diffval) (-reverse)\n"
 "  (-only_none) (-only_all) (-only_winning) (-only_losing) (-exact_countn)\n"
 "  (-le_countn) (-ge_countn) (-last_one_counts) (-get_date_from_path)\n"
-"  (-avg_loss) filename\n";
+"  (-avg_loss) (-consecutive) (-count_first) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 static char fmt_str1[] = "%s\n";
 static char fmt_str2[] = "%lf %3d %3d %s\n";
 static char fmt_str3[] = "%7.2lf %d %d %s\n";
+static char fmt_str4[] = "%d %d %lf %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
 static int get_date_from_path(char *path,char slash_char,int num_slashes,char **date_string_ptr);
@@ -43,6 +44,8 @@ int main(int argc,char **argv)
   bool bLastOneCounts;
   bool bGetDateFromPath;
   bool bAvgLoss;
+  bool bConsecutive;
+  bool bCountFirst;
   int exact_count;
   int le_count;
   int ge_count;
@@ -54,11 +57,12 @@ int main(int argc,char **argv)
   int retval;
   char *date_string;
   int count;
+  int max_consecutive_count;
   int work;
   double pct;
   double avg_loss;
 
-  if ((argc < 2) || (argc > 17)) {
+  if ((argc < 2) || (argc > 19)) {
     printf(usage);
     return 1;
   }
@@ -78,6 +82,8 @@ int main(int argc,char **argv)
   bLastOneCounts = false;
   bGetDateFromPath = false;
   bAvgLoss = false;
+  bConsecutive = false;
+  bCountFirst = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-debug"))
@@ -118,6 +124,10 @@ int main(int argc,char **argv)
       bGetDateFromPath = true;
     else if (!strcmp(argv[curr_arg],"-avg_loss"))
       bAvgLoss = true;
+    else if (!strcmp(argv[curr_arg],"-consecutive"))
+      bConsecutive = true;
+    else if (!strcmp(argv[curr_arg],"-count_first"))
+      bCountFirst = true;
     else
       break;
   }
@@ -185,6 +195,9 @@ int main(int argc,char **argv)
   line_no = 0;
   count = 0;
 
+  if (bConsecutive)
+    max_consecutive_count = 0;
+
   for ( ; ; ) {
     GetLine(fptr,line,&line_len,MAX_LINE_LEN);
 
@@ -204,6 +217,13 @@ int main(int argc,char **argv)
         count++;
         bCurrentOneCounts = true;
       }
+      else if (bConsecutive) {
+        if (count > max_consecutive_count)
+          max_consecutive_count = count;
+
+        if (count)
+          count = 0;
+      }
     }
     else {
       if (work > 0) {
@@ -213,10 +233,20 @@ int main(int argc,char **argv)
         count++;
         bCurrentOneCounts = true;
       }
+      else if (bConsecutive) {
+        if (count > max_consecutive_count)
+          max_consecutive_count = count;
+
+        if (count)
+          count = 0;
+      }
     }
   }
 
   fclose(fptr);
+
+  if (bConsecutive)
+    count = max_consecutive_count;
 
   pct = (double)count / (double)line_no;
 
@@ -242,8 +272,12 @@ int main(int argc,char **argv)
                       printf("%lf %3d %3d\n",pct,count,line_no);
                     else {
                       if (!bGetDateFromPath) {
-                        if (!bAvgLoss)
-                          printf(fmt_str2,pct,count,line_no,save_dir);
+                        if (!bAvgLoss) {
+                          if (!bCountFirst)
+                            printf(fmt_str2,pct,count,line_no,save_dir);
+                          else
+                            printf(fmt_str4,count,line_no,pct,save_dir);
+                        }
                         else
                           printf(fmt_str3,avg_loss,work,line_no,save_dir);
                       }
