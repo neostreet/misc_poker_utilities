@@ -9,7 +9,8 @@ static char line[MAX_LINE_LEN];
 static char usage[] =
 "usage: blue_distance2 (-terse) (-verbose) (-sum) (-initial_bal) (-no_dates)\n"
 "  (-only_blue) (-from_nonblue) (-in_sessions) (-is_blue) (-skyfall)\n"
-"  (-no_input_dates) (-only_max) (-runtot) (-truncate) (-insert) filename\n";
+"  (-no_input_dates) (-only_max) (-runtot) (-truncate) (-insert)\n"
+"  (-geval) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
@@ -31,6 +32,7 @@ int main(int argc,char **argv)
   bool bRuntot;
   bool bTruncate;
   bool bInsert;
+  int ge_val;
   bool bPrevIsBlue;
   int initial_bal;
   FILE *fptr;
@@ -45,7 +47,7 @@ int main(int argc,char **argv)
   int blue_distance;
   int max_blue_distance;
 
-  if ((argc < 2) || (argc > 17)) {
+  if ((argc < 2) || (argc > 18)) {
     printf(usage);
     return 1;
   }
@@ -64,6 +66,7 @@ int main(int argc,char **argv)
   bRuntot = false;
   bTruncate = false;
   bInsert = false;
+  ge_val = -1;
   initial_bal = 0;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
@@ -97,6 +100,8 @@ int main(int argc,char **argv)
       bTruncate = true;
     else if (!strcmp(argv[curr_arg],"-insert"))
       bInsert = true;
+    else if (!strncmp(argv[curr_arg],"-ge",3))
+      sscanf(&argv[curr_arg][3],"%d",&ge_val);
     else
       break;
   }
@@ -174,38 +179,40 @@ int main(int argc,char **argv)
                   else
                     blue_distance = max_balance * -1;
 
-                  if (bTerse)
-                    printf("%d\n",blue_distance);
-                  else {
-                    if (blue_distance >= max_blue_distance) {
-                      max_blue_distance = blue_distance;
+                  if ((ge_val == -1) || (blue_distance >= ge_val)) {
+                    if (bTerse)
+                      printf("%d\n",blue_distance);
+                    else {
+                      if (blue_distance >= max_blue_distance) {
+                        max_blue_distance = blue_distance;
 
-                      if (!bRuntot) {
-                        if (bTruncate)
-                          printf("%d\t%s *\n",blue_distance,str);
-                        else if (bInsert)
-                          printf("insert into poker_sessions_blue_distance("
-                            "poker_session_date,blue_distance) values ("
-                            "'%s',%d);\n",str,blue_distance);
+                        if (!bRuntot) {
+                          if (bTruncate)
+                            printf("%d\t%s *\n",blue_distance,str);
+                          else if (bInsert)
+                            printf("insert into poker_sessions_blue_distance("
+                              "poker_session_date,blue_distance) values ("
+                              "'%s',%d);\n",str,blue_distance);
+                          else
+                            printf("%d\t%s *\n",blue_distance,line);
+                        }
                         else
-                          printf("%d\t%s *\n",blue_distance,line);
+                          printf("%d\t%d\t%s *\n",blue_distance,balance,line);
                       }
-                      else
-                        printf("%d\t%d\t%s *\n",blue_distance,balance,line);
-                    }
-                    else if (!bOnlyMax) {
-                      if (!bRuntot) {
-                        if (bTruncate)
-                          printf("%d\t%s\n",blue_distance,str);
-                        else if (bInsert)
-                          printf("insert into poker_sessions_blue_distance("
-                            "poker_session_date,blue_distance) values ("
-                            "'%s',%d);\n",str,blue_distance);
+                      else if (!bOnlyMax) {
+                        if (!bRuntot) {
+                          if (bTruncate)
+                            printf("%d\t%s\n",blue_distance,str);
+                          else if (bInsert)
+                            printf("insert into poker_sessions_blue_distance("
+                              "poker_session_date,blue_distance) values ("
+                              "'%s',%d);\n",str,blue_distance);
+                          else
+                          printf("%d\t%s\n",blue_distance,line);
+                        }
                         else
-                        printf("%d\t%s\n",blue_distance,line);
+                          printf("%d\t%d\t%s\n",blue_distance,balance,line);
                       }
-                      else
-                        printf("%d\t%d\t%s\n",blue_distance,balance,line);
                     }
                   }
                 }
