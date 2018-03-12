@@ -1,28 +1,48 @@
 #include <stdio.h>
+#include <string.h>
 
-#define NUM_UNIQUE_HANDS 1326
+static char usage[] =
+"usage: calc_freq (-verbose) instances hands periodicity\n";
 
 int main(int argc,char **argv)
 {
+  int curr_arg;
+  bool bVerbose;
   int instances;
   int hands;
-  int instances_per_1326;
+  double periodicity;
   double work;
 
-  if (argc != 4) {
-    printf("usage: calc_freq instances hands instances_per_1326\n");
+  if ((argc < 4) || (argc > 5)) {
+    printf(usage);
     return 1;
   }
 
-  sscanf(argv[1],"%d",&instances);
-  sscanf(argv[2],"%d",&hands);
-  sscanf(argv[3],"%d",&instances_per_1326);
+  bVerbose = false;
 
-  work = (double)instances * (double)NUM_UNIQUE_HANDS;
+  for (curr_arg = 1; curr_arg < argc; curr_arg++) {
+    if (!strcmp(argv[curr_arg],"-verbose"))
+      bVerbose = true;
+    else
+      break;
+  }
+
+  if (argc - curr_arg != 3) {
+    printf(usage);
+    return 2;
+  }
+
+  sscanf(argv[curr_arg],"%d",&instances);
+  sscanf(argv[curr_arg+1],"%d",&hands);
+  sscanf(argv[curr_arg+2],"%lf",&periodicity);
+
+  work = (double)instances * periodicity;
   work /= (double)hands;
-  work /= (double)instances_per_1326;
 
-  printf("%lf\n",work);
+  if (!bVerbose)
+    printf("%lf\n",work);
+  else
+    printf("%lf (%d %d %lf)\n",work,instances,hands,periodicity);
 
   return 0;
 }
