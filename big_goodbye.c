@@ -13,7 +13,8 @@ static char save_dir[_MAX_PATH];
 static char line[MAX_LINE_LEN];
 
 static char usage[] =
-"usage: big_goodbye (-debug) (-verbose) (-neg) (-either) (-highbye) filename\n";
+"usage: big_goodbye (-debug) (-verbose) (-neg) (-either) (-highbye)\n"
+"  (-is_big_goodbye) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
@@ -26,6 +27,7 @@ int main(int argc,char **argv)
   bool bNeg;
   bool bEither;
   bool bHighBye;
+  bool bIsBigGoodbye;
   bool bHit;
   FILE *fptr;
   int line_len;
@@ -39,7 +41,7 @@ int main(int argc,char **argv)
   int max_runtot;
   int max_runtot_line_no;
 
-  if ((argc < 2) || (argc > 6)) {
+  if ((argc < 2) || (argc > 8)) {
     printf(usage);
     return 1;
   }
@@ -49,6 +51,7 @@ int main(int argc,char **argv)
   bNeg = false;
   bEither = false;
   bHighBye = false;
+  bIsBigGoodbye = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-debug"))
@@ -63,6 +66,8 @@ int main(int argc,char **argv)
       bEither = true;
     else if (!strcmp(argv[curr_arg],"-highbye"))
       bHighBye = true;
+    else if (!strcmp(argv[curr_arg],"-is_big_goodbye"))
+      bIsBigGoodbye = true;
     else
       break;
   }
@@ -121,7 +126,13 @@ int main(int argc,char **argv)
 
   fclose(fptr);
 
-  if (max_abs_line_no == line_no) {
+  if (bIsBigGoodbye) {
+    if (!bVerbose)
+      printf("%d %d\n",((max_abs_line_no == line_no) ? 1 : 0),max_abs * max_abs_sign);
+    else
+      printf("%d %d %d %s\n",((max_abs_line_no == line_no) ? 1 : 0),max_abs * max_abs_sign,max_abs_line_no,save_dir);
+  }
+  else if (max_abs_line_no == line_no) {
     bHit = false;
 
     if (bHighBye) {
