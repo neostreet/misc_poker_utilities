@@ -10,7 +10,7 @@ static char usage[] =
 "usage: blue_distance2 (-terse) (-verbose) (-sum) (-initial_bal) (-no_dates)\n"
 "  (-only_blue) (-from_nonblue) (-in_sessions) (-is_blue) (-skyfall)\n"
 "  (-no_input_dates) (-only_max) (-runtot) (-truncate) (-insert)\n"
-"  (-geval) filename\n";
+"  (-geval) (-no_distance) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
@@ -33,6 +33,7 @@ int main(int argc,char **argv)
   bool bTruncate;
   bool bInsert;
   int ge_val;
+  bool bNoDistance;
   bool bPrevIsBlue;
   int initial_bal;
   FILE *fptr;
@@ -47,7 +48,7 @@ int main(int argc,char **argv)
   int blue_distance;
   int max_blue_distance;
 
-  if ((argc < 2) || (argc > 18)) {
+  if ((argc < 2) || (argc > 19)) {
     printf(usage);
     return 1;
   }
@@ -68,6 +69,7 @@ int main(int argc,char **argv)
   bInsert = false;
   ge_val = -1;
   initial_bal = 0;
+  bNoDistance = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-terse"))
@@ -102,6 +104,8 @@ int main(int argc,char **argv)
       bInsert = true;
     else if (!strncmp(argv[curr_arg],"-ge",3))
       sscanf(&argv[curr_arg][3],"%d",&ge_val);
+    else if (!strcmp(argv[curr_arg],"-no_distance"))
+      bNoDistance = true;
     else
       break;
   }
@@ -169,104 +173,111 @@ int main(int argc,char **argv)
 
     if (!bSum) {
       if (!bNoDates) {
-        if (!bOnlyBlue) {
-          if (!bInSessions) {
-            if (!bVerbose) {
-              if (!bIsBlue) {
-                if (!bSkyfall || ((delta < 0) && (line_no == max_balance_ix + 1))) {
-                  if (max_balance > 0)
-                    blue_distance = max_balance - balance;
-                  else
-                    blue_distance = max_balance * -1;
+        if (!bInSessions) {
+          if (!bVerbose) {
+            if (!bIsBlue) {
+              if (!bSkyfall || ((delta < 0) && (line_no == max_balance_ix + 1))) {
+                if (max_balance > 0)
+                  blue_distance = max_balance - balance;
+                else
+                  blue_distance = max_balance * -1;
 
-                  if ((ge_val == -1) || (blue_distance >= ge_val)) {
-                    if (bTerse)
-                      printf("%d\n",blue_distance);
-                    else {
-                      if (blue_distance >= max_blue_distance) {
-                        max_blue_distance = blue_distance;
+                if (bOnlyBlue && blue_distance)
+                  continue;
 
-                        if (!bRuntot) {
-                          if (bTruncate)
+                if ((ge_val == -1) || (blue_distance >= ge_val)) {
+                  if (bTerse)
+                    printf("%d\n",blue_distance);
+                  else {
+                    if (blue_distance >= max_blue_distance) {
+                      max_blue_distance = blue_distance;
+
+                      if (!bRuntot) {
+                        if (bTruncate) {
+                          if (!bNoDistance)
                             printf("%d\t%s *\n",blue_distance,str);
-                          else if (bInsert)
-                            printf("insert into poker_sessions_blue_distance("
-                              "poker_session_date,blue_distance) values ("
-                              "'%s',%d);\n",str,blue_distance);
                           else
+                            printf("%s *\n",str);
+                        }
+                        else if (bInsert)
+                          printf("insert into poker_sessions_blue_distance("
+                            "poker_session_date,blue_distance) values ("
+                            "'%s',%d);\n",str,blue_distance);
+                        else {
+                          if (!bNoDistance)
                             printf("%d\t%s *\n",blue_distance,line);
-                        }
-                        else
-                          printf("%d\t%d\t%s *\n",blue_distance,balance,line);
-                      }
-                      else if (!bOnlyMax) {
-                        if (!bRuntot) {
-                          if (bTruncate)
-                            printf("%d\t%s\n",blue_distance,str);
-                          else if (bInsert)
-                            printf("insert into poker_sessions_blue_distance("
-                              "poker_session_date,blue_distance) values ("
-                              "'%s',%d);\n",str,blue_distance);
                           else
-                          printf("%d\t%s\n",blue_distance,line);
+                            printf("%s *\n",line);
                         }
+                      }
+                      else {
+                        if (!bNoDistance)
+                          printf("%d\t%d\t%s *\n",blue_distance,balance,line);
                         else
+                          printf("%d\t%s *\n",balance,line);
+                      }
+                    }
+                    else if (!bOnlyMax) {
+                      if (!bRuntot) {
+                        if (bTruncate) {
+                          if (!bNoDistance)
+                            printf("%d\t%s\n",blue_distance,str);
+                          else
+                            printf("%s\n",str);
+                        }
+                        else if (bInsert)
+                          printf("insert into poker_sessions_blue_distance("
+                            "poker_session_date,blue_distance) values ("
+                            "'%s',%d);\n",str,blue_distance);
+                        else {
+                          if (!bNoDistance)
+                            printf("%d\t%s\n",blue_distance,line);
+                          else
+                            printf("%s\n",line);
+                        }
+                      }
+                      else {
+                        if (!bNoDistance)
                           printf("%d\t%d\t%s\n",blue_distance,balance,line);
+                        else
+                          printf("%d\t%s\n",balance,line);
                       }
                     }
                   }
                 }
               }
-              else {
-                printf("%d %d %d\t\%s\n",
-                  ((max_balance > 0) ? max_balance - balance : max_balance * -1),
-                  delta,
-                  ((max_balance == balance) ? 1 : 0),line);
-              }
             }
             else {
-              if (!bIsBlue) {
-                printf("%d (%d %d %d)\t%s\n",
-                  ((max_balance > 0) ? max_balance - balance : max_balance * -1),
-                  ((max_balance > 0) ? max_balance : 0),
-                  balance,
-                  ((max_balance > 0) ? line_no - max_balance_ix : line_no + 1),
-                  line);
-              }
-              else {
-                printf("%d (%d %d %d) %d %d\t%s\n",
-                  ((max_balance > 0) ? max_balance - balance : max_balance * -1),
-                  ((max_balance > 0) ? max_balance : 0),
-                  balance,
-                  ((max_balance > 0) ? line_no - max_balance_ix : line_no + 1),
-                  delta,
-                  ((max_balance == balance) ? 1 : 0),line);
-              }
+              printf("%d %d %d\t\%s\n",
+                ((max_balance > 0) ? max_balance - balance : max_balance * -1),
+                delta,
+                ((max_balance == balance) ? 1 : 0),line);
             }
           }
           else {
-            printf("%d\t%s\n",
-              ((max_balance > 0) ? line_no - max_balance_ix : line_no + 1),
-              line);
+            if (!bIsBlue) {
+              printf("%d (%d %d %d)\t%s\n",
+                ((max_balance > 0) ? max_balance - balance : max_balance * -1),
+                ((max_balance > 0) ? max_balance : 0),
+                balance,
+                ((max_balance > 0) ? line_no - max_balance_ix : line_no + 1),
+                line);
+            }
+            else {
+              printf("%d (%d %d %d) %d %d\t%s\n",
+                ((max_balance > 0) ? max_balance - balance : max_balance * -1),
+                ((max_balance > 0) ? max_balance : 0),
+                balance,
+                ((max_balance > 0) ? line_no - max_balance_ix : line_no + 1),
+                delta,
+                ((max_balance == balance) ? 1 : 0),line);
+            }
           }
         }
         else {
-          if ((max_balance > 0) && (line_no == max_balance_ix)) {
-            if (!bFromNonblue || !bPrevIsBlue) {
-              if (!bVerbose)
-                printf("%10d %s\n",max_balance,line);
-              else {
-                printf("%10d %s (%d %d)\n",max_balance,line,line_no,
-                  line_no - last_blue_line_no - 1);
-              }
-            }
-
-            last_blue_line_no = line_no;
-
-            bPrevIsBlue = true;
-          }
-          else
-            bPrevIsBlue = false;
+          printf("%d\t%s\n",
+            ((max_balance > 0) ? line_no - max_balance_ix : line_no + 1),
+            line);
         }
       }
       else {
