@@ -4,7 +4,7 @@
 #define MAX_LINE_LEN 1024
 static char line[MAX_LINE_LEN];
 
-#define MAX_MILLION_BOUNDARIES 50
+#define MAX_MILLION_BOUNDARIES 100
 static int crossings[MAX_MILLION_BOUNDARIES];
 
 static char usage[] =
