@@ -10,7 +10,7 @@ static char usage[] =
 "usage: blue_distance2 (-terse) (-verbose) (-sum) (-initial_bal) (-no_dates)\n"
 "  (-only_blue) (-from_nonblue) (-in_sessions) (-is_blue) (-skyfall)\n"
 "  (-no_input_dates) (-only_max) (-runtot) (-truncate) (-insert)\n"
-"  (-geval) (-no_distance) filename\n";
+"  (-geval) (-no_distance) (-blue_leap) (-debug) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
@@ -34,6 +34,8 @@ int main(int argc,char **argv)
   bool bInsert;
   int ge_val;
   bool bNoDistance;
+  bool bBlueLeap;
+  bool bDebug;
   bool bPrevIsBlue;
   int initial_bal;
   FILE *fptr;
@@ -47,8 +49,11 @@ int main(int argc,char **argv)
   int max_balance_ix;
   int blue_distance;
   int max_blue_distance;
+  int blue_leap;
+  int new_max_count;
+  int same_max_count;
 
-  if ((argc < 2) || (argc > 19)) {
+  if ((argc < 2) || (argc > 21)) {
     printf(usage);
     return 1;
   }
@@ -70,6 +75,8 @@ int main(int argc,char **argv)
   ge_val = -1;
   initial_bal = 0;
   bNoDistance = false;
+  bBlueLeap = false;
+  bDebug = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-terse"))
@@ -106,6 +113,10 @@ int main(int argc,char **argv)
       sscanf(&argv[curr_arg][3],"%d",&ge_val);
     else if (!strcmp(argv[curr_arg],"-no_distance"))
       bNoDistance = true;
+    else if (!strcmp(argv[curr_arg],"-blue_leap"))
+      bBlueLeap = true;
+    else if (!strcmp(argv[curr_arg],"-debug"))
+      bDebug = true;
     else
       break;
   }
@@ -120,6 +131,9 @@ int main(int argc,char **argv)
     return 3;
   }
 
+  if (bBlueLeap)
+    bOnlyBlue = true;
+
   if ((fptr = fopen(argv[curr_arg],"r")) == NULL) {
     printf(couldnt_open,argv[curr_arg]);
     return 4;
@@ -129,6 +143,12 @@ int main(int argc,char **argv)
   last_blue_line_no = -1;
   bPrevIsBlue = true;
   max_blue_distance = 0;
+  blue_leap = 0;
+
+  if (bDebug) {
+    new_max_count = 0;
+    same_max_count = 0;
+  }
 
   if (bInsert)
     printf("use poker\n\n");
@@ -166,9 +186,14 @@ int main(int argc,char **argv)
       balance += delta;
 
       if (balance > max_balance) {
+        if (bBlueLeap)
+          blue_leap = balance - max_balance;
+
         max_balance = balance;
         max_balance_ix = line_no;
       }
+      else if (bBlueLeap)
+        blue_leap = 0;
     }
 
     if (!bSum) {
@@ -190,12 +215,18 @@ int main(int argc,char **argv)
                     printf("%d\n",blue_distance);
                   else {
                     if (blue_distance >= max_blue_distance) {
+                      if (bDebug && (blue_distance == max_blue_distance))
+                        same_max_count++;
+
                       max_blue_distance = blue_distance;
+
+                      if (bDebug)
+                        new_max_count++;
 
                       if (!bRuntot) {
                         if (bTruncate) {
                           if (!bNoDistance)
-                            printf("%d\t%s *\n",blue_distance,str);
+                            printf("%d\t%s *\n",(bBlueLeap ? blue_leap : blue_distance),str);
                           else
                             printf("%s *\n",str);
                         }
@@ -205,14 +236,14 @@ int main(int argc,char **argv)
                             "'%s',%d);\n",str,blue_distance);
                         else {
                           if (!bNoDistance)
-                            printf("%d\t%s *\n",blue_distance,line);
+                            printf("%d\t%s *\n",(bBlueLeap ? blue_leap : blue_distance),line);
                           else
                             printf("%s *\n",line);
                         }
                       }
                       else {
                         if (!bNoDistance)
-                          printf("%d\t%d\t%s *\n",blue_distance,balance,line);
+                          printf("%d\t%d\t%s *\n",(bBlueLeap ? blue_leap : blue_distance),balance,line);
                         else
                           printf("%d\t%s *\n",balance,line);
                       }
@@ -221,7 +252,7 @@ int main(int argc,char **argv)
                       if (!bRuntot) {
                         if (bTruncate) {
                           if (!bNoDistance)
-                            printf("%d\t%s\n",blue_distance,str);
+                            printf("%d\t%s\n",(bBlueLeap ? blue_leap : blue_distance),str);
                           else
                             printf("%s\n",str);
                         }
@@ -231,14 +262,14 @@ int main(int argc,char **argv)
                             "'%s',%d);\n",str,blue_distance);
                         else {
                           if (!bNoDistance)
-                            printf("%d\t%s\n",blue_distance,line);
+                            printf("%d\t%s\n",(bBlueLeap ? blue_leap : blue_distance),line);
                           else
                             printf("%s\n",line);
                         }
                       }
                       else {
                         if (!bNoDistance)
-                          printf("%d\t%d\t%s\n",blue_distance,balance,line);
+                          printf("%d\t%d\t%s\n",(bBlueLeap ? blue_leap : blue_distance),balance,line);
                         else
                           printf("%d\t%s\n",balance,line);
                       }
@@ -336,6 +367,11 @@ int main(int argc,char **argv)
     printf("\ncurrent non-blue streak: %d\n",line_no - last_blue_line_no);
 
   fclose(fptr);
+
+  if (bDebug) {
+    printf("new_max_count = %d\n",new_max_count);
+    printf("same_max_count = %d\n",same_max_count);
+  }
 
   return 0;
 }
