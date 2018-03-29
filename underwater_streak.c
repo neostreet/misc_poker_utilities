@@ -13,7 +13,8 @@ static char save_dir[_MAX_PATH];
 static char line[MAX_LINE_LEN];
 
 static char usage[] =
-"usage: underwater_streak (-debug) (-only_winning) (-only_losing) filename\n";
+"usage: underwater_streak (-debug) (-only_winning) (-only_losing)\n"
+"  (-reverse) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
@@ -24,6 +25,7 @@ int main(int argc,char **argv)
   bool bDebug;
   bool bOnlyWinning;
   bool bOnlyLosing;
+  bool bReverse;
   int val;
   FILE *fptr;
   int line_len;
@@ -34,7 +36,7 @@ int main(int argc,char **argv)
   int max_streak;
   int max_streak_start_ix;
 
-  if ((argc < 2) || (argc > 5)) {
+  if ((argc < 2) || (argc > 6)) {
     printf(usage);
     return 1;
   }
@@ -42,6 +44,7 @@ int main(int argc,char **argv)
   bDebug = false;
   bOnlyWinning = false;
   bOnlyLosing = false;
+  bReverse = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-debug")) {
@@ -52,6 +55,8 @@ int main(int argc,char **argv)
       bOnlyWinning = true;
     else if (!strcmp(argv[curr_arg],"-only_losing"))
       bOnlyLosing = true;
+    else if (!strcmp(argv[curr_arg],"-reverse"))
+      bReverse = true;
     else
       break;
   }
@@ -85,6 +90,9 @@ int main(int argc,char **argv)
 
     sscanf(line,"%d",&work);
 
+    if (bReverse)
+      work *= -1;
+
     if (work < 0) {
       count++;
 
@@ -102,6 +110,11 @@ int main(int argc,char **argv)
   }
 
   fclose(fptr);
+
+  if (count > max_streak) {
+    max_streak = count;
+    max_streak_start_ix = streak_start_ix;
+  }
 
   if (!bOnlyWinning || (work > 0)) {
     if (!bOnlyLosing || (work < 0)) {
