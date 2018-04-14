@@ -9,8 +9,8 @@ struct tournament_info {
 };
 
 static char usage[] =
-"usage: tournament_wif (-verbose) (-right_justify) tournament_info_file\n"
-"  num_first_places num_second_places num_tournaments\n";
+"usage: tournament_wif (-verbose) (-right_justify) (-until_profit)\n"
+"  tournament_info_file num_first_places num_second_places num_tournaments\n";
 
 int tournament_wif(
   struct tournament_info *tournament_ptr,
@@ -24,6 +24,7 @@ int main(int argc,char **argv)
   int curr_arg;
   bool bVerbose;
   bool bRightJustify;
+  bool bUntilProfit;
   FILE *fptr;
   struct tournament_info tournament;
   int num_first_places;
@@ -32,19 +33,22 @@ int main(int argc,char **argv)
   int delta;
   int retval;
 
-  if ((argc < 5) || (argc > 7)) {
+  if ((argc < 5) || (argc > 8)) {
     printf(usage);
     return 1;
   }
 
   bVerbose = false;
   bRightJustify = false;
+  bUntilProfit = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-verbose"))
       bVerbose = true;
     else if (!strcmp(argv[curr_arg],"-right_justify"))
       bRightJustify = true;
+    else if (!strcmp(argv[curr_arg],"-until_profit"))
+      bUntilProfit = true;
     else
       break;
   }
@@ -70,22 +74,30 @@ int main(int argc,char **argv)
   sscanf(argv[curr_arg+2],"%d",&num_second_places);
   sscanf(argv[curr_arg+3],"%d",&num_tournaments);
 
-  retval = tournament_wif(&tournament,
-    num_first_places,num_second_places,num_tournaments,&delta);
+  for ( ; ; ) {
+    retval = tournament_wif(&tournament,
+      num_first_places,num_second_places,num_tournaments,&delta);
 
-  if (retval) {
-    printf("tournament_wif failed: %d\n",retval);
-    return 4;
-  }
+    if (retval) {
+      printf("tournament_wif failed: %d\n",retval);
+      return 4;
+    }
 
-  if (!bVerbose) {
-    if (!bRightJustify)
-      printf("%d\n",delta);
+    if (!bVerbose) {
+      if (!bRightJustify)
+        printf("%d\n",delta);
+      else
+        printf("%7d\n",delta);
+    }
     else
-      printf("%7d\n",delta);
+      printf("%7d %2d %2d %2d\n",delta,num_first_places,num_second_places,num_tournaments);
+
+    if (!bUntilProfit || (delta > 0))
+      break;
+
+    num_first_places++;
+    num_second_places++;
   }
-  else
-    printf("%7d %2d %2d %2d\n",delta,num_first_places,num_second_places,num_tournaments);
 
   return 0;
 }

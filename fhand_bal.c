@@ -20,7 +20,7 @@ static char line[MAX_LINE_LEN];
 
 static char usage[] =
 "usage: fhand_bal (-debug) (-consistency) (-delta) (-starting_balance) (-terse)\n"
-"  (-double_zero) player_name filename\n";
+"  (-double_zero) (-no_balances) player_name filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char pokerstars[] = "PokerStars";
@@ -72,6 +72,7 @@ int main(int argc,char **argv)
   bool bStartingBalance;
   bool bTerse;
   bool bDoubleZero;
+  bool bNoBalances;
   bool bStud;
   bool bRazz;
   int player_name_ix;
@@ -110,7 +111,7 @@ int main(int argc,char **argv)
   double dwork;
   int prev_ending_balance;
 
-  if ((argc < 3) || (argc > 9)) {
+  if ((argc < 3) || (argc > 10)) {
     printf(usage);
     return 1;
   }
@@ -121,6 +122,7 @@ int main(int argc,char **argv)
   bStartingBalance = false;
   bTerse = false;
   bDoubleZero = false;
+  bNoBalances = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-debug")) {
@@ -137,6 +139,8 @@ int main(int argc,char **argv)
       bTerse = true;
     else if (!strcmp(argv[curr_arg],"-double_zero"))
       bDoubleZero = true;
+    else if (!strcmp(argv[curr_arg],"-no_balances"))
+      bNoBalances = true;
     else
       break;
   }
@@ -261,8 +265,9 @@ int main(int argc,char **argv)
           if (bConsistency) {
             if ((ending_balance != -1) &&
                 (ending_balance != starting_balance))
-              printf("discrepancy: %s: starting balance of %d != "
-                "last ending balance of %d\n",filename,
+              printf("discrepancy: %d %s: starting balance of %d != "
+                "last ending balance of %d\n",
+                starting_balance - ending_balance,filename,
                 starting_balance,ending_balance);
           }
 
@@ -416,6 +421,9 @@ int main(int argc,char **argv)
 
     prev_ending_balance = ending_balance;
 
+    if (bNoBalances)
+      continue;
+
     if (!bDebug) {
       if (bTerse) {
         if (bDelta)
@@ -465,6 +473,9 @@ int main(int argc,char **argv)
   fclose(fptr0);
 
   if (bDoubleZero || bTerse)
+    return 0;
+
+  if (bNoBalances)
     return 0;
 
   if (bDelta) {

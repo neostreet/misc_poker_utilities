@@ -28,7 +28,8 @@ static char filename[MAX_FILENAME_LEN];
 static char line[MAX_LINE_LEN];
 
 static char usage[] =
-"usage: gen_sit_and_go_inserts (-standalone) player_name poker_style poker_flavor\n"
+"usage: gen_sit_and_go_inserts (-standalone) (-lettera)\n"
+"  player_name poker_style poker_flavor\n"
 "  big_blind_amount\n";
 static char couldnt_open[] = "couldn't open %s\n";
 static char unexpected_eof[] = "unexpected eof in %s\n";
@@ -68,16 +69,19 @@ int main(int argc,char **argv)
   int place;
   int winnings;
 
-  if ((argc < ARG_NUM_ARGS + 1) || (argc > ARG_NUM_ARGS + 2)) {
+  if ((argc < ARG_NUM_ARGS + 1) || (argc > ARG_NUM_ARGS + 3)) {
     printf(usage);
     return 1;
   }
 
   bStandalone = false;
+  letter = 'a';
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-standalone"))
       bStandalone = true;
+    else if (!strncmp(argv[curr_arg],"-letter",7))
+      letter = argv[curr_arg][7];
     else
       break;
   }
@@ -98,8 +102,6 @@ int main(int argc,char **argv)
 
   if (bStandalone)
     printf("use poker\n\n");
-
-  letter = 'a';
 
   for (n = 0; n < MAX_SIT_AND_GOS; n++) {
     sprintf(outer_filename,"%c/sng_hands.lst",letter);

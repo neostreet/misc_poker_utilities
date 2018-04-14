@@ -15,7 +15,7 @@ static char filename[MAX_FILENAME_LEN];
 static char line[MAX_LINE_LEN];
 
 static char usage[] =
-"usage: fshowdown_count (-verbose) (-not) (-show_board) filename\n";
+"usage: fshowdown_count (-verbose) (-not) (-show_board) (-show_best_hand) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char show_down[] = "*** SHOW DOWN ***";
@@ -23,6 +23,9 @@ static char show_down[] = "*** SHOW DOWN ***";
 
 static char board[] = "Board [";
 #define BOARD_LEN (sizeof (board) - 1)
+
+static char and_won[] = " and won ";
+#define AND_WON_LEN (sizeof (and_won) - 1)
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
 static int Contains(bool bCaseSens,char *line,int line_len,
@@ -36,6 +39,7 @@ int main(int argc,char **argv)
   bool bVerbose;
   bool bNot;
   bool bShowBoard;
+  bool bShowBestHand;
   bool bHaveShowdown;
   FILE *fptr0;
   int filename_len;
@@ -44,8 +48,9 @@ int main(int argc,char **argv)
   int line_no;
   int file_no;
   int showdown_count;
+  int ix;
 
-  if ((argc < 2) || (argc > 5)) {
+  if ((argc < 2) || (argc > 6)) {
     printf(usage);
     return 1;
   }
@@ -53,6 +58,7 @@ int main(int argc,char **argv)
   bVerbose = false;
   bNot = false;
   bShowBoard = false;
+  bShowBestHand = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-verbose"))
@@ -61,6 +67,10 @@ int main(int argc,char **argv)
       bNot = true;
     else if (!strcmp(argv[curr_arg],"-show_board")) {
       bShowBoard = true;
+      bVerbose = true;
+    }
+    else if (!strcmp(argv[curr_arg],"-show_best_hand")) {
+      bShowBestHand = true;
       bVerbose = true;
     }
     else
@@ -114,15 +124,19 @@ int main(int argc,char **argv)
             printf("%s %d\n",filename,file_no);
         }
 
-        if (!bShowBoard)
+        if (!bShowBoard && !bShowBestHand)
           break;
       }
       else if (bHaveShowdown && bShowBoard && !strncmp(line,board,BOARD_LEN)) {
         if (!bNot) {
-          if (bVerbose) {
-            line[21] = 0;
-            printf("%s %s\n",filename,&line[BOARD_LEN]);
-          }
+          line[21] = 0;
+          printf("%s %s\n",filename,&line[BOARD_LEN]);
+        }
+      }
+      else if (bHaveShowdown && bShowBestHand && Contains(true,line,line_len,and_won,AND_WON_LEN,&ix)) {
+        if (!bNot) {
+          line[ix-1] = 0;
+          printf("%s %s\n",filename,&line[ix-6]);
         }
       }
     }

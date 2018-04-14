@@ -5,7 +5,8 @@
 static char line[MAX_LINE_LEN];
 
 static char usage[] =
-"usage: blue_points (-verbose) (-starting_amountstarting_amount) filename\n";
+"usage: blue_points (-verbose) (-starting_amountstarting_amount)\n"
+"  (-after_blue) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
@@ -15,6 +16,7 @@ int main(int argc,char **argv)
   int curr_arg;
   bool bVerbose;
   int starting_amount;
+  bool bAfterBlue;
   int balance;
   int winning_sessions;
   int losing_sessions;
@@ -30,19 +32,22 @@ int main(int argc,char **argv)
   int prev_blue;
   int blue_gap;
 
-  if ((argc < 2) || (argc > 4)) {
+  if ((argc < 2) || (argc > 5)) {
     printf(usage);
     return 1;
   }
 
   bVerbose = false;
   starting_amount = 0;
+  bAfterBlue = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-verbose"))
       bVerbose = true;
     else if (!strncmp(argv[curr_arg],"-starting_amount",16))
       sscanf(&argv[curr_arg][16],"%d",&starting_amount);
+    else if (!strcmp(argv[curr_arg],"-after_blue"))
+      bAfterBlue = true;
     else
       break;
   }
@@ -94,13 +99,14 @@ int main(int argc,char **argv)
       max = balance;
 
       if (prev_blue != -1) {
-        blue_gap = line_no - prev_blue;
-
-        if (!bVerbose)
-          printf("%d %s\n",balance,line);
-        else {
-          printf("%6d: %12d %6d %6d (%d) %3d\n",
-            line_no,balance,losing_sessions,winning_sessions,golden,blue_gap);
+        if (!bAfterBlue) {
+          if (!bVerbose)
+            printf("%d %s\n",balance,line);
+          else {
+            blue_gap = line_no - prev_blue;
+            printf("%6d: %12d %6d %6d (%d) %3d\n",
+              line_no,balance,losing_sessions,winning_sessions,golden,blue_gap);
+          }
         }
       }
       else {
@@ -114,6 +120,9 @@ int main(int argc,char **argv)
 
       prev_blue = line_no;
     }
+
+    if (bAfterBlue && (line_no == prev_blue + 1))
+      printf("%s\n",line);
 
     line_no++;
   }

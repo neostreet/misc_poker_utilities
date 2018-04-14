@@ -39,7 +39,7 @@ struct balance_and_count {
 struct balance_and_count bal_and_count[NUM_POKER_STYLES][NUM_POKER_FLAVORS];
 
 static char usage[] =
-"usage: pan_fail filename\n";
+"usage: pan_fail min_combos filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
@@ -48,6 +48,7 @@ int main(int argc,char **argv)
 {
   int m;
   int n;
+  int min_combos;
   FILE *fptr;
   int line_len;
   int line_no;
@@ -57,13 +58,15 @@ int main(int argc,char **argv)
   int pos_bal_count;
   int neg_bal_count;
 
-  if (argc != 2) {
+  if (argc != 3) {
     printf(usage);
     return 1;
   }
 
-  if ((fptr = fopen(argv[1],"r")) == NULL) {
-    printf(couldnt_open,argv[1]);
+  sscanf(argv[1],"%d",&min_combos);
+
+  if ((fptr = fopen(argv[2],"r")) == NULL) {
+    printf(couldnt_open,argv[2]);
     return 2;
   }
 
@@ -110,7 +113,7 @@ int main(int argc,char **argv)
       }
     }
 
-    if (!pos_bal_count && neg_bal_count) {
+    if (!pos_bal_count && neg_bal_count && (neg_bal_count >= min_combos)) {
       for (m = 0; m < NUM_POKER_STYLES; m++) {
         for (n = 0; n < NUM_POKER_FLAVORS; n++) {
           if (bal_and_count[m][n].curr_balance) {
