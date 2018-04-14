@@ -18,7 +18,7 @@ static char line[MAX_LINE_LEN];
 
 static char usage[] =
 "usage: fnumdecs (-debug) (-verbose) (-terse) (-action) (-zero) (-folded)\n"
-"  (-abbrev) (-no_bets_or_raises) player_name filename\n";
+"  (-abbrev) (-no_bets_or_raises) (-get_date_from_path) player_name filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char in_chips[] = " in chips";
@@ -57,6 +57,7 @@ int main(int argc,char **argv)
   bool bTerse;
   bool bAbbrev;
   bool bNoBetsOrRaises;
+  bool bGetDateFromPath;
   int action;
   int zero;
   int folded;
@@ -94,7 +95,7 @@ int main(int argc,char **argv)
   int zero_numdecs;
   double dwork;
 
-  if ((argc < 3) || (argc > 11)) {
+  if ((argc < 3) || (argc > 12)) {
     printf(usage);
     return 1;
   }
@@ -104,6 +105,7 @@ int main(int argc,char **argv)
   bTerse = false;
   bAbbrev = false;
   bNoBetsOrRaises = false;
+  bGetDateFromPath = false;
   action = 0;
   zero = 0;
   folded = 0;
@@ -119,6 +121,8 @@ int main(int argc,char **argv)
       bAbbrev = true;
     else if (!strcmp(argv[curr_arg],"-no_bets_or_raises"))
       bNoBetsOrRaises = true;
+    else if (!strcmp(argv[curr_arg],"-get_date_from_path"))
+      bGetDateFromPath = true;
     else if (!strcmp(argv[curr_arg],"-action"))
       action = 1;
     else if (!strcmp(argv[curr_arg],"-zero"))
@@ -146,12 +150,16 @@ int main(int argc,char **argv)
 
   getcwd(save_dir,_MAX_PATH);
 
-  retval = get_date_from_path(save_dir,'/',3,&date_string);
+  if (bGetDateFromPath) {
+    retval = get_date_from_path(save_dir,'/',3,&date_string);
 
-  if (retval) {
-    printf("get_date_from_path() failed: %d\n",retval);
-    return 5;
+    if (retval) {
+      printf("get_date_from_path() failed: %d\n",retval);
+      return 5;
+    }
   }
+  else
+    date_string = save_dir;
 
   player_name_ix = curr_arg++;
   player_name_len = strlen(argv[player_name_ix]);
