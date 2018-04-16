@@ -186,7 +186,7 @@ int main(int argc,char **argv)
   if (!bVerbose)
     printf("%d\n",place - final_place);
   else
-    printf("%d %s/%s\n",place - final_place,save_dir,filename);
+    printf("%d (%d %d) %s/%s\n",place - final_place,place,final_place,save_dir,filename);
 
   return 0;
 }
