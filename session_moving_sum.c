@@ -19,6 +19,7 @@ struct session_info_struct {
   int delta;
   int sum;
   int num_winning_sessions;
+  int num_nonlosing_sessions;
   int second_delta;
   int second_sum;
 };
@@ -29,7 +30,7 @@ static char usage[] =
 "usage: session_moving_sum (-no_sort) (-ascending) (-absolute_value)\n"
 "  (-skip_interim) (-terse) (-gesum) (-true_false) (-delta_first)\n"
 "  (-outer_sort_by_winning_sessions) (-second_delta) (-homogenous)"
-"  subset_size filename\n";
+"  (-count_nonlosing) subset_size filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char malloc_failed1[] = "malloc of %d session info structures failed\n";
@@ -81,6 +82,7 @@ int main(int argc,char **argv)
   bool bDeltaFirst;
   bool bSecondDelta;
   bool bHomogenous;
+  bool bCountNonlosing;
   int ge_sum;
   int curr_arg;
   int session_ix;
@@ -95,10 +97,11 @@ int main(int argc,char **argv)
   int sum;
   int second_sum;
   int num_winning_sessions;
+  int num_nonlosing_sessions;
   int retval;
   char *cpt;
 
-  if ((argc < 3) || (argc > 14)) {
+  if ((argc < 3) || (argc > 15)) {
     printf(usage);
     return 1;
   }
@@ -114,6 +117,7 @@ int main(int argc,char **argv)
   bOuterSortByWinningSessions = false;
   bSecondDelta = false;
   bHomogenous = false;
+  bCountNonlosing = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-no_sort"))
@@ -140,6 +144,8 @@ int main(int argc,char **argv)
       bSecondDelta = true;
     else if (!strcmp(argv[curr_arg],"-homogenous"))
       bHomogenous = true;
+    else if (!strcmp(argv[curr_arg],"-count_nonlosing"))
+      bCountNonlosing = true;
     else
       break;
   }
@@ -238,7 +244,10 @@ int main(int argc,char **argv)
     if (bSecondDelta)
       second_sum = 0;
 
-    num_winning_sessions = 0;
+    if (!bCountNonlosing)
+      num_winning_sessions = 0;
+    else
+      num_nonlosing_sessions = 0;
 
     if (!bSkipInterim) {
       for (m = 0; m < subset_size; m++) {
@@ -247,8 +256,14 @@ int main(int argc,char **argv)
         if (bSecondDelta)
           second_sum += session_info[n+m].second_delta;
 
-        if (session_info[n+m].delta > 0)
-          num_winning_sessions++;
+        if (!bCountNonlosing) {
+          if (session_info[n+m].delta > 0)
+            num_winning_sessions++;
+        }
+        else {
+          if (session_info[n+m].delta >= 0)
+            num_nonlosing_sessions++;
+        }
       }
     }
     else {
@@ -273,7 +288,10 @@ int main(int argc,char **argv)
     if (bSecondDelta)
       session_info[n].second_sum = second_sum;
 
-    session_info[n].num_winning_sessions = num_winning_sessions;
+    if (!bCountNonlosing)
+      session_info[n].num_winning_sessions = num_winning_sessions;
+    else
+      session_info[n].num_nonlosing_sessions = num_nonlosing_sessions;
 
     if (!bSkipInterim)
       session_info[n].end_date = session_info[n + subset_size - 1].start_date;
@@ -338,7 +356,10 @@ int main(int argc,char **argv)
       cpt = ctime(&session_info[sort_ixs[n]].end_date);
       printf("%s ",format_date(cpt));
 
-      printf("(%d)\n",session_info[sort_ixs[n]].num_winning_sessions);
+      if (!bCountNonlosing)
+        printf("(%d)\n",session_info[sort_ixs[n]].num_winning_sessions);
+      else
+        printf("(%d)\n",session_info[sort_ixs[n]].num_nonlosing_sessions);
     }
   }
 
