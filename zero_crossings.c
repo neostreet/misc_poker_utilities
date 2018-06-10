@@ -137,11 +137,18 @@ int main(int argc,char **argv)
   for (line_no = 1; line_no < nobs; line_no++) {
     if (zero_crossing(vals[line_no-1],vals[line_no],bDebug)) {
       zero_crossings++;
+
+      if (bAbsTraveled) {
+        if (vals[line_no-1] < 0)
+          abs_traveled += vals[line_no] - vals[line_no-1];
+        else
+          abs_traveled += vals[line_no-1] - vals[line_no];
+      }
     }
   }
 
   if (bPct) {
-    dwork = (double)zero_crossings / (double)line_no;
+    dwork = (double)zero_crossings / (double)nobs;
   }
 
   if (!bVerbose) {
@@ -152,8 +159,12 @@ int main(int argc,char **argv)
   }
   else {
     if (!bDateString) {
-      if (!bPct)
-        printf("%3d %s/%s\n",zero_crossings,save_dir,argv[curr_arg]);
+      if (!bPct) {
+        if (!bAbsTraveled)
+          printf("%3d %s/%s\n",zero_crossings,save_dir,argv[curr_arg]);
+        else
+          printf("%d (%d) %s/%s\n",abs_traveled,zero_crossings,save_dir,argv[curr_arg]);
+      }
       else {
         printf("%lf (%d %d) %s/%s\n",dwork,zero_crossings,line_no,
           save_dir,argv[curr_arg]);
