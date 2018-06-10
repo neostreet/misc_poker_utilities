@@ -14,45 +14,56 @@ static char save_dir[_MAX_PATH];
 static char line[MAX_LINE_LEN];
 
 static char usage[] =
-"usage: zero_crossings (-verbose) (-date_string) (-pct) filename\n";
+"usage: zero_crossings (-verbose) (-debug) (-date_string) (-pct) (-abs_traveled) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
 static int get_date_from_path(char *path,char slash_char,int num_slashes,char **date_string_ptr);
-static bool zero_crossing(int prev_val,int val);
+static bool zero_crossing(int prev_val,int val,bool bDebug);
 
 int main(int argc,char **argv)
 {
   int curr_arg;
   bool bVerbose;
+  bool bDebug;
   bool bDateString;
   bool bPct;
+  bool bAbsTraveled;
   FILE *fptr;
   int line_len;
   int line_no;
   int retval;
+  int nobs;
+  int *vals;
   char *date_string;
-  int val;
-  int prev_val;
   int zero_crossings;
   double dwork;
+  int curr_min;
+  int curr_max;
+  int abs_traveled;
 
-  if ((argc < 2) || (argc > 5)) {
+  if ((argc < 2) || (argc > 7)) {
     printf(usage);
     return 1;
   }
 
   bVerbose = false;
+  bDebug = false;
   bDateString = false;
   bPct = false;
+  bAbsTraveled = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-verbose"))
       bVerbose = true;
+    else if (!strcmp(argv[curr_arg],"-debug"))
+      bDebug = true;
     else if (!strcmp(argv[curr_arg],"-date_string"))
       bDateString = true;
     else if (!strcmp(argv[curr_arg],"-pct"))
       bPct = true;
+    else if (!strcmp(argv[curr_arg],"-abs_traveled"))
+      bAbsTraveled = true;
     else
       break;
   }
@@ -80,8 +91,7 @@ int main(int argc,char **argv)
     bVerbose = true;
   }
 
-  line_no = 0;
-  zero_crossings = 0;
+  nobs = 0;
 
   for ( ; ; ) {
     GetLine(fptr,line,&line_len,MAX_LINE_LEN);
@@ -89,17 +99,46 @@ int main(int argc,char **argv)
     if (feof(fptr))
       break;
 
+    nobs++;
+  }
+
+  vals = (int *)malloc(sizeof(int) * nobs);
+
+  if (vals == NULL) {
+    printf("malloc of %d ints failed\n",nobs);
+    return 5;
+  }
+
+  fseek(fptr,0L,SEEK_SET);
+
+  line_no = 0;
+
+  for ( ; ; ) {
+    GetLine(fptr,line,&line_len,MAX_LINE_LEN);
+
+    if (feof(fptr))
+      break;
+
+    sscanf(line,"%d",&vals[line_no]);
+
     line_no++;
-
-    sscanf(line,"%d",&val);
-
-    if ((line_no > 1) && zero_crossing(prev_val,val))
-      zero_crossings++;
-
-    prev_val = val;
   }
 
   fclose(fptr);
+
+  zero_crossings = 0;
+
+  if (bAbsTraveled) {
+    curr_min = 0;
+    curr_max = 0;
+    abs_traveled = 0;
+  }
+
+  for (line_no = 1; line_no < nobs; line_no++) {
+    if (zero_crossing(vals[line_no-1],vals[line_no],bDebug)) {
+      zero_crossings++;
+    }
+  }
 
   if (bPct) {
     dwork = (double)zero_crossings / (double)line_no;
@@ -127,6 +166,8 @@ int main(int argc,char **argv)
         printf("%lf (%d %d) %s\n",dwork,zero_crossings,line_no,date_string);
     }
   }
+
+  free(vals);
 
   return 0;
 }
@@ -193,13 +234,19 @@ static int get_date_from_path(char *path,char slash_char,int num_slashes,char **
   return 0;
 }
 
-static bool zero_crossing(int prev_val,int val)
+static bool zero_crossing(int prev_val,int val,bool bDebug)
 {
+  bool retval;
+
   if ((prev_val > 0) && (val < 0))
-    return true;
+    retval = true;
+  else if ((val > 0) && (prev_val < 0))
+    retval = true;
+  else
+    retval = false;
 
-  if ((val > 0) && (prev_val < 0))
-    return true;
+  if (bDebug)
+    printf("prev_val = %d, val = %d, retval = %d\n",prev_val,val,retval);
 
-  return false;
+  return retval;
 }
