@@ -140,8 +140,7 @@ int main(int argc,char **argv)
   if (bAvgLoss)
     bOnlyAll = true;
 
-  if (bDebug || bGetDateFromPath)
-    getcwd(save_dir,_MAX_PATH);
+  getcwd(save_dir,_MAX_PATH);
 
   if (bGetDateFromPath) {
     retval = get_date_from_path(save_dir,'/',2,&date_string);
