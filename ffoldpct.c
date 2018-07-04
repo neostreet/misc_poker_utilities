@@ -28,14 +28,14 @@ static char dealt_to[] = "Dealt to ";
 #define DEALT_TO_LEN (sizeof (dealt_to) - 1)
 static char folds[] = " folds ";
 #define FOLDS_LEN (sizeof (folds) - 1)
-static char bets[] = " bets ";
-#define BETS_LEN (sizeof (bets) - 1)
-static char calls[] = " calls ";
-#define CALLS_LEN (sizeof (calls) - 1)
-static char raises[] = " raises ";
-#define RAISES_LEN (sizeof (raises) - 1)
 static char checks[] = " checks ";
 #define CHECKS_LEN (sizeof (checks) - 1)
+static char calls[] = " calls ";
+#define CALLS_LEN (sizeof (calls) - 1)
+static char bets[] = " bets ";
+#define BETS_LEN (sizeof (bets) - 1)
+static char raises[] = " raises ";
+#define RAISES_LEN (sizeof (raises) - 1)
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
 static int Contains(bool bCaseSens,char *line,int line_len,
@@ -58,6 +58,7 @@ int main(int argc,char **argv)
   int dbg;
   char hole_cards[6];
   int tot_numfolds;
+  int tot_numdecs;
   double dwork;
 
   if (argc != 3) {
@@ -80,6 +81,7 @@ int main(int argc,char **argv)
   hole_cards[5] = 0;
 
   tot_numfolds = 0;
+  tot_numdecs = 0;
 
   for ( ; ; ) {
     GetLine(fptr0,filename,&filename_len,MAX_FILENAME_LEN);
@@ -137,8 +139,31 @@ int main(int argc,char **argv)
           folds,FOLDS_LEN,
           &ix)) {
           tot_numfolds++;
-
-          break;
+          tot_numdecs++;
+        }
+        else if (Contains(true,
+          line,line_len,
+          checks,CHECKS_LEN,
+          &ix)) {
+          tot_numdecs++;
+        }
+        else if (Contains(true,
+          line,line_len,
+          calls,CALLS_LEN,
+          &ix)) {
+          tot_numdecs++;
+        }
+        else if (Contains(true,
+          line,line_len,
+          bets,BETS_LEN,
+          &ix)) {
+          tot_numdecs++;
+        }
+        else if (Contains(true,
+          line,line_len,
+          raises,RAISES_LEN,
+          &ix)) {
+          tot_numdecs++;
         }
       }
       else {
@@ -152,9 +177,9 @@ int main(int argc,char **argv)
 
   fclose(fptr0);
 
-  dwork = (double)tot_numfolds / (double)file_no;
+  dwork = (double)tot_numfolds / (double)tot_numdecs;
 
-  printf("%6.4lf (%3d %3d) %s\n",dwork,tot_numfolds,file_no,save_dir);
+  printf("%6.4lf (%3d %3d) %s\n",dwork,tot_numfolds,tot_numdecs,save_dir);
 
   return 0;
 }
