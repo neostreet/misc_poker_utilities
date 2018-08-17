@@ -10,7 +10,8 @@ static char usage[] =
 "usage: blue_distance2 (-terse) (-verbose) (-sum) (-initial_bal) (-no_dates)\n"
 "  (-only_blue) (-from_nonblue) (-in_sessions) (-is_blue) (-skyfall)\n"
 "  (-no_input_dates) (-only_max) (-runtot) (-truncate) (-insert)\n"
-"  (-geval) (-no_distance) (-blue_leap) (-debug) filename\n";
+"  (-geval) (-no_distance) (-blue_leap) (-debug)\n"
+"  (-is_max_blue_distance) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
@@ -37,6 +38,7 @@ int main(int argc,char **argv)
   bool bBlueLeap;
   bool bDebug;
   bool bPrevIsBlue;
+  bool bIsMaxBlueDistance;
   int initial_bal;
   FILE *fptr;
   int line_len;
@@ -53,7 +55,7 @@ int main(int argc,char **argv)
   int new_max_count;
   int same_max_count;
 
-  if ((argc < 2) || (argc > 21)) {
+  if ((argc < 2) || (argc > 22)) {
     printf(usage);
     return 1;
   }
@@ -77,6 +79,7 @@ int main(int argc,char **argv)
   bNoDistance = false;
   bBlueLeap = false;
   bDebug = false;
+  bIsMaxBlueDistance = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-terse"))
@@ -117,6 +120,8 @@ int main(int argc,char **argv)
       bBlueLeap = true;
     else if (!strcmp(argv[curr_arg],"-debug"))
       bDebug = true;
+    else if (!strcmp(argv[curr_arg],"-is_max_blue_distance"))
+      bIsMaxBlueDistance = true;
     else
       break;
   }
@@ -235,7 +240,9 @@ int main(int argc,char **argv)
                             "poker_session_date,blue_distance) values ("
                             "'%s',%d);\n",str,blue_distance);
                         else {
-                          if (!bNoDistance)
+                          if (bIsMaxBlueDistance)
+                            printf("1 %s\n",line);
+                          else if (!bNoDistance)
                             printf("%d\t%s *\n",(bBlueLeap ? blue_leap : blue_distance),line);
                           else
                             printf("%s *\n",line);
@@ -261,7 +268,9 @@ int main(int argc,char **argv)
                             "poker_session_date,blue_distance) values ("
                             "'%s',%d);\n",str,blue_distance);
                         else {
-                          if (!bNoDistance)
+                          if (bIsMaxBlueDistance)
+                            printf("0 %s\n",line);
+                          else if (!bNoDistance)
                             printf("%d\t%s\n",(bBlueLeap ? blue_leap : blue_distance),line);
                           else
                             printf("%s\n",line);
