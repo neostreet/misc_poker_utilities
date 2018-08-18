@@ -14,7 +14,7 @@ static char save_dir[_MAX_PATH];
 static char line[MAX_LINE_LEN];
 
 static char usage[] =
-"usage: first_hand_win (-not) (-terse) filename\n";
+"usage: first_hand_win (-not) (-terse) (-no_others) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
@@ -25,26 +25,32 @@ int main(int argc,char **argv)
   int curr_arg;
   bool bNot;
   bool bTerse;
+  bool bNoOthers;
+  bool bMetCriteria;
   FILE *fptr;
+  int line_no;
   int line_len;
   int retval;
   char *date_string;
   int val;
-  bool bHaveVal;
+  int first_hand_win_val;
 
-  if ((argc < 2) || (argc > 4)) {
+  if ((argc < 2) || (argc > 5)) {
     printf(usage);
     return 1;
   }
 
   bNot = false;
   bTerse = false;
+  bNoOthers = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-not"))
       bNot = true;
     else if (!strcmp(argv[curr_arg],"-terse"))
       bTerse = true;
+    else if (!strcmp(argv[curr_arg],"-no_others"))
+      bNoOthers = true;
     else
       break;
   }
@@ -68,20 +74,39 @@ int main(int argc,char **argv)
     return 4;
   }
 
-  GetLine(fptr,line,&line_len,MAX_LINE_LEN);
+  line_no = 0;
+  bMetCriteria = false;
 
-  if (feof(fptr)) {
-    printf("no lines in file %s\n",argv[curr_arg]);
-    return 5;
+  for ( ; ; ) {
+    GetLine(fptr,line,&line_len,MAX_LINE_LEN);
+
+    if (feof(fptr))
+      break;
+
+    line_no++;
+
+    sscanf(line,"%d",&val);
+
+    if (line_no == 1) {
+      if ((!bNot && (val > 0)) || (bNot && (val < 0))) {
+        first_hand_win_val = val;
+        bMetCriteria = true;
+      }
+    }
+    else {
+      if ((!bNot && (val > 0)) || (bNot && (val < 0)))
+        bMetCriteria = false;
+    }
+
+    if (!bNoOthers)
+      break;
   }
-
-  sscanf(line,"%d",&val);
 
   fclose(fptr);
 
-  if ((!bNot && (val > 0)) || (bNot && (val < 0))) {
+  if (bMetCriteria) {
     if (!bTerse)
-      printf("%10d %s\n",val,date_string);
+      printf("%10d %s\n",first_hand_win_val,date_string);
     else
       printf("%s\n",date_string);
   }
