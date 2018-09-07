@@ -27,7 +27,7 @@ struct rebound_struct {
 
 static char usage[] =
 "usage: rebounds (-debug) (-no_sort) (-date_last) (-full) (-reverse)\n"
-"  (-no_date) filename\n";
+"  (-no_date) (-max) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char malloc_failed1[] = "malloc of %d session info structures failed\n";
@@ -74,6 +74,7 @@ int main(int argc,char **argv)
   bool bFull;
   bool bReverse;
   bool bNoDate;
+  bool bMax;
   int session_ix;
   FILE *fptr;
   int line_len;
@@ -87,7 +88,7 @@ int main(int argc,char **argv)
   int rebound_ix;
   int curr_rebound;
 
-  if ((argc < 2) || (argc > 8)) {
+  if ((argc < 2) || (argc > 9)) {
     printf(usage);
     return 1;
   }
@@ -98,6 +99,7 @@ int main(int argc,char **argv)
   bFull = false;
   bReverse = false;
   bNoDate = false;
+  bMax = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-debug"))
@@ -112,6 +114,8 @@ int main(int argc,char **argv)
       bReverse = true;
     else if (!strcmp(argv[curr_arg],"-no_date"))
       bNoDate = true;
+    else if (!strcmp(argv[curr_arg],"-max"))
+      bMax = true;
     else
       break;
   }
@@ -125,6 +129,9 @@ int main(int argc,char **argv)
     printf("can't specify both -date_last and -no_date\n");
     return 3;
   }
+
+  if (bMax)
+    bNoSort = false;
 
   if ((fptr = fopen(argv[curr_arg],"r")) == NULL) {
     printf(couldnt_open,argv[curr_arg]);
@@ -300,6 +307,9 @@ int main(int argc,char **argv)
           rebound[sort_ixs[n]].rebound,format_date(cpt));
       }
     }
+
+    if (bMax)
+      break;
   }
 
   free(session_info);
