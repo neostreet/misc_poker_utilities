@@ -26,7 +26,8 @@ struct rebound_struct {
 #define TAB 0x9
 
 static char usage[] =
-"usage: rebounds (-debug) (-no_sort) (-date_last) (-full) (-reverse) filename\n";
+"usage: rebounds (-debug) (-no_sort) (-date_last) (-full) (-reverse)\n"
+"  (-no_date) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char malloc_failed1[] = "malloc of %d session info structures failed\n";
@@ -57,7 +58,8 @@ static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
 static int get_session_info(
   char *line,
   int line_len,
-  struct session_info_struct *session_info);
+  struct session_info_struct *session_info,
+  bool bNoDate);
 static time_t cvt_date(char *date_str);
 int elem_compare(const void *elem1,const void *elem2);
 static char *format_date(char *cpt);
@@ -71,6 +73,7 @@ int main(int argc,char **argv)
   bool bDateLast;
   bool bFull;
   bool bReverse;
+  bool bNoDate;
   int session_ix;
   FILE *fptr;
   int line_len;
@@ -84,7 +87,7 @@ int main(int argc,char **argv)
   int rebound_ix;
   int curr_rebound;
 
-  if ((argc < 2) || (argc > 7)) {
+  if ((argc < 2) || (argc > 8)) {
     printf(usage);
     return 1;
   }
@@ -94,6 +97,7 @@ int main(int argc,char **argv)
   bDateLast = false;
   bFull = false;
   bReverse = false;
+  bNoDate = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-debug"))
@@ -106,6 +110,8 @@ int main(int argc,char **argv)
       bFull = true;
     else if (!strcmp(argv[curr_arg],"-reverse"))
       bReverse = true;
+    else if (!strcmp(argv[curr_arg],"-no_date"))
+      bNoDate = true;
     else
       break;
   }
@@ -115,9 +121,14 @@ int main(int argc,char **argv)
     return 2;
   }
 
+  if (bDateLast && bNoDate) {
+    printf("can't specify both -date_last and -no_date\n");
+    return 3;
+  }
+
   if ((fptr = fopen(argv[curr_arg],"r")) == NULL) {
     printf(couldnt_open,argv[curr_arg]);
-    return 3;
+    return 4;
   }
 
   set_size = 0;
@@ -144,7 +155,7 @@ int main(int argc,char **argv)
     set_size * sizeof (struct session_info_struct))) == NULL) {
     printf(malloc_failed1,set_size);
     fclose(fptr);
-    return 4;
+    return 5;
   }
 
   fseek(fptr,0L,SEEK_SET);
@@ -166,12 +177,12 @@ int main(int argc,char **argv)
         ((chara >= 'A') && (chara <= 'Z')))
       continue;
 
-    retval = get_session_info(line,line_len,&session_info[session_ix]);
+    retval = get_session_info(line,line_len,&session_info[session_ix],bNoDate);
 
     if (retval) {
       printf("get_session_info() failed on line %d: %d\n",
         session_ix+1,retval);
-      return 5;
+      return 6;
     }
 
     session_ix++;
@@ -207,14 +218,14 @@ int main(int argc,char **argv)
     num_rebounds * sizeof (struct rebound_struct))) == NULL) {
     printf(malloc_failed2,num_rebounds);
     fclose(fptr);
-    return 6;
+    return 7;
   }
 
   if ((sort_ixs = (int *)malloc(
     num_rebounds * sizeof (int))) == NULL) {
     printf(malloc_failed3,num_rebounds);
     fclose(fptr);
-    return 7;
+    return 8;
   }
 
   rebound_ix = 0;
@@ -235,7 +246,9 @@ int main(int argc,char **argv)
           if (curr_rebound > session_info[n].delta)
             curr_rebound = session_info[n].delta;
 
-          rebound[rebound_ix].poker_session_date = session_info[n].poker_session_date;
+          if (!bNoDate)
+            rebound[rebound_ix].poker_session_date = session_info[n].poker_session_date;
+
           rebound[rebound_ix++].rebound = curr_rebound;
         }
       }
@@ -255,7 +268,9 @@ int main(int argc,char **argv)
           if (curr_rebound > session_info[n-1].delta)
             curr_rebound = session_info[n-1].delta;
 
-          rebound[rebound_ix].poker_session_date = session_info[n].poker_session_date;
+          if (!bNoDate)
+            rebound[rebound_ix].poker_session_date = session_info[n].poker_session_date;
+
           rebound[rebound_ix++].rebound = curr_rebound;
         }
       }
@@ -269,15 +284,21 @@ int main(int argc,char **argv)
     qsort(sort_ixs,num_rebounds,sizeof (int),elem_compare);
 
   for (n = 0; n < num_rebounds; n++) {
-    cpt = ctime(&rebound[sort_ixs[n]].poker_session_date);
-
-    if (!bDateLast) {
-      printf("%s %10d\n",
-        format_date(cpt),rebound[sort_ixs[n]].rebound);
+    if (bNoDate) {
+      printf("%d\n",
+        rebound[sort_ixs[n]].rebound);
     }
     else {
-      printf("%10d %s\n",
-        rebound[sort_ixs[n]].rebound,format_date(cpt));
+      cpt = ctime(&rebound[sort_ixs[n]].poker_session_date);
+
+      if (!bDateLast) {
+        printf("%s %10d\n",
+          format_date(cpt),rebound[sort_ixs[n]].rebound);
+      }
+      else {
+        printf("%10d %s\n",
+          rebound[sort_ixs[n]].rebound,format_date(cpt));
+      }
     }
   }
 
@@ -314,22 +335,27 @@ static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen)
 static int get_session_info(
   char *line,
   int line_len,
-  struct session_info_struct *session_info)
+  struct session_info_struct *session_info,
+  bool bNoDate)
 {
   int m;
   int n;
 
-  for (n = 0; n < line_len; n++) {
-    if (line[n] == TAB)
-      break;
+  if (bNoDate)
+    n = 0;
+  else {
+    for (n = 0; n < line_len; n++) {
+      if (line[n] == TAB)
+        break;
+    }
+
+    if (n == line_len)
+      return 1;
+
+    line[n++] = 0;
+
+    session_info->poker_session_date = cvt_date(line);
   }
-
-  if (n == line_len)
-    return 1;
-
-  line[n++] = 0;
-
-  session_info->poker_session_date = cvt_date(line);
 
   sscanf(&line[n],"%d",&session_info->delta);
 
