@@ -6,13 +6,18 @@
 #define MAX_LINE_LEN 1024
 static char line[MAX_LINE_LEN];
 
-static char usage[] = "usage: blue_distance2_simple filename\n";
+static char usage[] =
+"usage: blue_distance2_simple (-pct) (-verbose) initial_bal filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
 
 int main(int argc,char **argv)
 {
+  int curr_arg;
+  bool bPct;
+  bool bVerbose;
+  int initial_bal;
   FILE *fptr;
   int line_len;
   int line_no;
@@ -21,20 +26,40 @@ int main(int argc,char **argv)
   int balance;
   int max_balance;
   int blue_distance;
-  int prev_blue_distance;
+  double dwork;
 
-  if (argc != 2) {
+  if ((argc < 3) || (argc > 5)) {
     printf(usage);
     return 1;
   }
 
-  if ((fptr = fopen(argv[1],"r")) == NULL) {
-    printf(couldnt_open,argv[1]);
+  bPct = false;
+  bVerbose = false;
+
+  for (curr_arg = 1; curr_arg < argc; curr_arg++) {
+    if (!strcmp(argv[curr_arg],"-pct"))
+      bPct = true;
+    else if (!strcmp(argv[curr_arg],"-verbose"))
+      bVerbose = true;
+    else
+      break;
+  }
+
+  if (argc - curr_arg != 2) {
+    printf(usage);
+    return 2;
+  }
+
+  sscanf(argv[curr_arg],"%d",&initial_bal);
+
+  if ((fptr = fopen(argv[curr_arg+1],"r")) == NULL) {
+    printf(couldnt_open,argv[curr_arg+1]);
     return 2;
   }
 
   line_no = 0;
-  balance = 0;
+  balance = initial_bal;
+  max_balance = initial_bal;
 
   for ( ; ; ) {
     GetLine(fptr,line,&line_len,MAX_LINE_LEN);
@@ -44,13 +69,7 @@ int main(int argc,char **argv)
 
     sscanf(line,"%s\t%d",str,&delta);
 
-    if (!line_no) {
-      max_balance = delta;
-      balance = max_balance;
-      prev_blue_distance = 0;
-    }
-    else
-      balance += delta;
+    balance += delta;
 
     if (balance > max_balance)
       max_balance = balance;
@@ -60,9 +79,20 @@ int main(int argc,char **argv)
     else
       blue_distance = max_balance * -1;
 
-    printf("%d\t%s\t%d\n",blue_distance,line,prev_blue_distance);
+    if (!bPct)
+      printf("%d\t%s\n",blue_distance,line);
+    else {
+      if (blue_distance) {
+        dwork = (double)blue_distance / (double)max_balance;
+
+        if (!bVerbose)
+          printf("%lf\t%s\n",dwork,line);
+        else
+          printf("%lf (%d %d)\t%s\n",dwork,blue_distance,max_balance,line);
+      }
+    }
+
     line_no++;
-    prev_blue_distance = blue_distance;
   }
 
   fclose(fptr);
