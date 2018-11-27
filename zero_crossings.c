@@ -14,7 +14,8 @@ static char save_dir[_MAX_PATH];
 static char line[MAX_LINE_LEN];
 
 static char usage[] =
-"usage: zero_crossings (-verbose) (-debug) (-date_string) (-pct) (-abs_traveled) filename\n";
+"usage: zero_crossings (-verbose) (-debug) (-date_string) (-pct)\n"
+"  (-abs_traveled) (-exact_countn) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
@@ -29,6 +30,8 @@ int main(int argc,char **argv)
   bool bDateString;
   bool bPct;
   bool bAbsTraveled;
+  bool bExactCount;
+  int exact_count;
   FILE *fptr;
   int line_len;
   int line_no;
@@ -42,7 +45,7 @@ int main(int argc,char **argv)
   int curr_max;
   int abs_traveled;
 
-  if ((argc < 2) || (argc > 7)) {
+  if ((argc < 2) || (argc > 8)) {
     printf(usage);
     return 1;
   }
@@ -52,6 +55,7 @@ int main(int argc,char **argv)
   bDateString = false;
   bPct = false;
   bAbsTraveled = false;
+  bExactCount = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-verbose"))
@@ -64,6 +68,10 @@ int main(int argc,char **argv)
       bPct = true;
     else if (!strcmp(argv[curr_arg],"-abs_traveled"))
       bAbsTraveled = true;
+    else if (!strncmp(argv[curr_arg],"-exact_count",12)) {
+      bExactCount = true;
+      sscanf(&argv[curr_arg][12],"%d",&exact_count);
+    }
     else
       break;
   }
@@ -147,6 +155,13 @@ int main(int argc,char **argv)
     }
   }
 
+  if (bExactCount) {
+    if (zero_crossings != exact_count) {
+      free(vals);
+      return 0;
+    }
+  }
+
   if (bPct) {
     dwork = (double)zero_crossings / (double)nobs;
   }
@@ -161,7 +176,7 @@ int main(int argc,char **argv)
     if (!bDateString) {
       if (!bPct) {
         if (!bAbsTraveled)
-          printf("%3d %s/%s\n",zero_crossings,save_dir,argv[curr_arg]);
+          printf("%3d (%3d) %s/%s\n",zero_crossings,nobs,save_dir,argv[curr_arg]);
         else
           printf("%d (%d) %s/%s\n",abs_traveled,zero_crossings,save_dir,argv[curr_arg]);
       }
