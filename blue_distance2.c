@@ -11,7 +11,7 @@ static char usage[] =
 "  (-only_blue) (-from_nonblue) (-in_sessions) (-is_blue) (-skyfall)\n"
 "  (-no_input_dates) (-only_max) (-runtot) (-truncate) (-insert)\n"
 "  (-geval) (-no_distance) (-blue_leap) (-debug)\n"
-"  (-is_max_blue_distance) filename\n";
+"  (-is_max_blue_distance) (-pct) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
@@ -39,6 +39,7 @@ int main(int argc,char **argv)
   bool bDebug;
   bool bPrevIsBlue;
   bool bIsMaxBlueDistance;
+  bool bPct;
   int initial_bal;
   FILE *fptr;
   int line_len;
@@ -55,7 +56,7 @@ int main(int argc,char **argv)
   int new_max_count;
   int same_max_count;
 
-  if ((argc < 2) || (argc > 22)) {
+  if ((argc < 2) || (argc > 23)) {
     printf(usage);
     return 1;
   }
@@ -80,6 +81,7 @@ int main(int argc,char **argv)
   bBlueLeap = false;
   bDebug = false;
   bIsMaxBlueDistance = false;
+  bPct = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-terse"))
@@ -122,6 +124,8 @@ int main(int argc,char **argv)
       bDebug = true;
     else if (!strcmp(argv[curr_arg],"-is_max_blue_distance"))
       bIsMaxBlueDistance = true;
+    else if (!strcmp(argv[curr_arg],"-pct"))
+      bPct = true;
     else
       break;
   }
