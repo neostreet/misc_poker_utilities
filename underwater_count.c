@@ -16,7 +16,7 @@ static char usage[] =
 "usage: underwater_count (-debug) (-verbose) (-terse) (-diffval) (-reverse)\n"
 "  (-only_none) (-only_all) (-only_winning) (-only_losing) (-exact_countn)\n"
 "  (-le_countn) (-ge_countn) (-last_one_counts) (-get_date_from_path)\n"
-"  (-avg_loss) (-consecutive) (-count_first) filename\n";
+"  (-avg_loss) (-consecutive) (-count_first) (-no_pct) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 static char fmt_str1[] = "%s\n";
 static char fmt_str2[] = "%lf %3d %3d %s\n";
@@ -46,6 +46,7 @@ int main(int argc,char **argv)
   bool bAvgLoss;
   bool bConsecutive;
   bool bCountFirst;
+  bool bNoPct;
   int exact_count;
   int le_count;
   int ge_count;
@@ -62,7 +63,7 @@ int main(int argc,char **argv)
   double pct;
   double avg_loss;
 
-  if ((argc < 2) || (argc > 19)) {
+  if ((argc < 2) || (argc > 20)) {
     printf(usage);
     return 1;
   }
@@ -84,6 +85,7 @@ int main(int argc,char **argv)
   bAvgLoss = false;
   bConsecutive = false;
   bCountFirst = false;
+  bNoPct = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-debug"))
@@ -128,6 +130,8 @@ int main(int argc,char **argv)
       bConsecutive = true;
     else if (!strcmp(argv[curr_arg],"-count_first"))
       bCountFirst = true;
+    else if (!strcmp(argv[curr_arg],"-no_pct"))
+      bNoPct = true;
     else
       break;
   }
@@ -267,8 +271,12 @@ int main(int argc,char **argv)
                       else
                         printf(fmt_str1,date_string);
                     }
-                    else if (!bDebug)
-                      printf("%lf %3d %3d\n",pct,count,line_no);
+                    else if (!bDebug) {
+                      if (bNoPct)
+                        printf("%3d %3d\n",count,line_no);
+                      else
+                        printf("%lf %3d %3d\n",pct,count,line_no);
+                    }
                     else {
                       if (!bGetDateFromPath) {
                         if (!bAvgLoss) {
