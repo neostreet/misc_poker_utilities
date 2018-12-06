@@ -15,7 +15,7 @@ static char line[MAX_LINE_LEN];
 
 static char usage[] =
 "usage: zero_crossings (-verbose) (-debug) (-date_string) (-pct)\n"
-"  (-abs_traveled) (-exact_countn) filename\n";
+"  (-abs_traveled) (-exact_countn) (-is_exact_countn) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
@@ -32,6 +32,7 @@ int main(int argc,char **argv)
   bool bAbsTraveled;
   bool bExactCount;
   int exact_count;
+  bool bIsExactCount;
   FILE *fptr;
   int line_len;
   int line_no;
@@ -45,7 +46,7 @@ int main(int argc,char **argv)
   int curr_max;
   int abs_traveled;
 
-  if ((argc < 2) || (argc > 8)) {
+  if ((argc < 2) || (argc > 9)) {
     printf(usage);
     return 1;
   }
@@ -56,6 +57,7 @@ int main(int argc,char **argv)
   bPct = false;
   bAbsTraveled = false;
   bExactCount = false;
+  bIsExactCount = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-verbose"))
@@ -71,6 +73,10 @@ int main(int argc,char **argv)
     else if (!strncmp(argv[curr_arg],"-exact_count",12)) {
       bExactCount = true;
       sscanf(&argv[curr_arg][12],"%d",&exact_count);
+    }
+    else if (!strncmp(argv[curr_arg],"-is_exact_count",15)) {
+      bIsExactCount = true;
+      sscanf(&argv[curr_arg][15],"%d",&exact_count);
     }
     else
       break;
@@ -167,14 +173,23 @@ int main(int argc,char **argv)
   }
 
   if (!bVerbose) {
-    if (!bPct)
+    if (bIsExactCount) {
+      printf("%d\n",(zero_crossings == exact_count));
+    }
+    else if (!bPct)
       printf("%d\n",zero_crossings);
     else
       printf("%lf\n",dwork);
   }
   else {
     if (!bDateString) {
-      if (!bPct) {
+      if (bIsExactCount) {
+        if (!bAbsTraveled)
+          printf("%3d (%3d) %s/%s\n",(zero_crossings == exact_count),nobs,save_dir,argv[curr_arg]);
+        else
+          printf("%d %d %s/%s\n",(zero_crossings == exact_count),abs_traveled,save_dir,argv[curr_arg]);
+      }
+      else if (!bPct) {
         if (!bAbsTraveled)
           printf("%3d (%3d) %s/%s\n",zero_crossings,nobs,save_dir,argv[curr_arg]);
         else
@@ -186,7 +201,9 @@ int main(int argc,char **argv)
       }
     }
     else {
-      if (!bPct)
+      if (bIsExactCount)
+        printf("%3d %s\n",(zero_crossings == exact_count),date_string);
+      else if (!bPct)
         printf("%3d %s\n",zero_crossings,date_string);
       else
         printf("%lf (%d %d) %s\n",dwork,zero_crossings,line_no,date_string);
