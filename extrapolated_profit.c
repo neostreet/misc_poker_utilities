@@ -12,7 +12,8 @@ static char line[MAX_LINE_LEN];
 #define TAB 0x9
 
 static char usage[] =
-"usage: extrapolated_profit (-terse) (-verbose) (-offsetoffset) filename\n";
+"usage: extrapolated_profit (-terse) (-verbose) (-offsetoffset)\n"
+"  (-extrap_first) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 static time_t cvt_date(char *date_str);
 
@@ -57,6 +58,7 @@ int main(int argc,char **argv)
   bool bTerse;
   bool bVerbose;
   int offset;
+  bool bExtrapFirst;
   FILE *fptr;
   int line_len;
   int line_no;
@@ -76,7 +78,7 @@ int main(int argc,char **argv)
   int days_in_year;
   int days_in_period;
 
-  if ((argc < 2) || (argc > 5)) {
+  if ((argc < 2) || (argc > 6)) {
     printf(usage);
     return 1;
   }
@@ -84,6 +86,7 @@ int main(int argc,char **argv)
   bTerse = false;
   bVerbose = false;
   offset = 0;
+  bExtrapFirst = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-terse"))
@@ -93,6 +96,8 @@ int main(int argc,char **argv)
     else if (!strncmp(argv[curr_arg],"-offset",7)) {
       sscanf(&argv[curr_arg][7],"%d",&offset);
     }
+    else if (!strcmp(argv[curr_arg],"-extrap_first"))
+      bExtrapFirst = true;
     else
       break;
   }
@@ -161,14 +166,23 @@ int main(int argc,char **argv)
       if (bTerse) {
         printf("%d\n",(int)dwork);
       }
-      else {
+      else if (!bExtrapFirst) {
         printf("%s %10d %10d %10d\n",
           format_date(cpt),delta,running_delta,(int)dwork);
       }
+      else {
+        printf("%10d %s %10d %10d\n",
+          (int)dwork,format_date(cpt),delta,running_delta);
+      }
     }
-    else {
+    else if (!bExtrapFirst) {
       printf("%s %10d %10d %10d (%5d %5d %10d)\n",
         format_date(cpt),delta,running_delta,(int)dwork,
+        days_in_year,days_in_period,running_delta);
+    }
+    else {
+      printf("%10d %s %10d %10d (%5d %5d %10d)\n",
+        (int)dwork,format_date(cpt),delta,running_delta,
         days_in_year,days_in_period,running_delta);
     }
   }
