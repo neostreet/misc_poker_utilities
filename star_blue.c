@@ -40,11 +40,11 @@ int main(int argc,char **argv)
     sscanf(line,"%d",&val);
 
     if (val > blue) {
-      printf("%d *\n",val);
+      printf("%s *\n",line);
       blue = val;
     }
     else
-      printf("%d\n",val);
+      printf("%s\n",line);
   }
 
   fclose(fptr);
