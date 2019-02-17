@@ -48,7 +48,7 @@ int main(int argc,char **argv)
     sscanf(line,"%d %d",&place,&num_bounties);
 
     if ((place < 1) || (place > 9)) {
-      printf("place must be >= 1 and <= 9\n");
+      printf("error on line %d: place must be >= 1 and <= 9\n",line_no);
       continue;
     }
 
