@@ -31,7 +31,7 @@ int main(int argc,char **argv)
   }
 
   if ((num_bounties < 0) || (num_bounties > 9)) {
-    printf("ynum_bounties must be >= 0 and <= 9\n");
+    printf("num_bounties must be >= 0 and <= 9\n");
     return 3;
   }
 
