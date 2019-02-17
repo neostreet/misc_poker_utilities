@@ -47,8 +47,8 @@ int main(int argc,char **argv)
     line_no++;
     sscanf(line,"%d %d",&place,&num_bounties);
 
-    if ((place < 0) || (place > 3)) {
-      printf("error on line %d: place must be >= 0 and <= 3\n",line_no);
+    if ((place < 1) || (place > 9)) {
+      printf("place must be >= 1 and <= 9\n");
       continue;
     }
 
@@ -59,7 +59,7 @@ int main(int argc,char **argv)
 
     delta = BUY_IN * -1;
 
-    if (place)
+    if ((place >= 1) && (place <= 3))
       delta += ko_payouts[place - 1];
 
     if (num_bounties)
