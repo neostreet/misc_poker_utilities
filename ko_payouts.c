@@ -18,6 +18,7 @@ struct ko_payout_out {
 
 #define BUY_IN 50000
 #define BOUNTY 21250
+#define BOUNTY_NO_ENTRY_FEE 25000
 
 struct ko_payout_in ko_payouts_in[] = {
   {95625, 1, 2, 9},
@@ -25,6 +26,14 @@ struct ko_payout_in ko_payouts_in[] = {
   {38250, 3, 0, 6},
   {0, 0, 0, 5}
 };
+
+struct ko_payout_in ko_payouts_no_entry_fee_in[] = {
+  {112500, 1, 2, 9},
+  {67500, 2, 0, 7},
+  {45000, 3, 0, 6},
+  {0, 0, 0, 5}
+};
+
 #define NUM_BASES (sizeof ko_payouts_in / sizeof (struct ko_payout_in))
 #define NUM_PAYOUTS 29
 
@@ -42,12 +51,14 @@ int main(int argc,char **argv)
   bool bSort;
   bool bDelta;
   bool bPlace;
+  bool bNoEntryFee;
   int vals[NUM_PAYOUTS];
   int ixs[NUM_PAYOUTS];
 
   bSort = false;
   bDelta = false;
   bPlace = false;
+  bNoEntryFee = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-sort"))
@@ -56,6 +67,8 @@ int main(int argc,char **argv)
       bDelta = true;
     else if (!strcmp(argv[curr_arg],"-place"))
       bPlace = true;
+    else if (!strcmp(argv[curr_arg],"-no_entry_fee"))
+      bNoEntryFee = true;
     else
       break;
   }
@@ -64,10 +77,12 @@ int main(int argc,char **argv)
 
   for (m = 0; m < NUM_BASES; m++) {
     for (n = ko_payouts_in[m].max_bounties; n >= ko_payouts_in[m].min_bounties; n--) {
-      ko_payouts_out[p].base_payout = ko_payouts_in[m].base_payout;
+      ko_payouts_out[p].base_payout =
+        (bNoEntryFee ? ko_payouts_no_entry_fee_in[m].base_payout : ko_payouts_in[m].base_payout);
       ko_payouts_out[p].place = ko_payouts_in[m].place;
       ko_payouts_out[p].num_bounties = n;
-      ko_payouts_out[p].total_payout = ko_payouts_in[m].base_payout + n * BOUNTY;
+      ko_payouts_out[p].total_payout = ko_payouts_in[m].base_payout +
+        n * (bNoEntryFee ? BOUNTY_NO_ENTRY_FEE : BOUNTY);
 
       if (bDelta)
         ko_payouts_out[p].total_payout -= BUY_IN;

@@ -1,10 +1,12 @@
 #include <stdio.h>
+#include <string.h>
 
 #define MAX_LINE_LEN 1024
 static char line[MAX_LINE_LEN];
 
 #define BUY_IN 50000
 #define BOUNTY 21250
+#define BOUNTY_NO_ENTRY_FEE 25000
 
 static int ko_payouts[] {
   95625,
@@ -12,13 +14,21 @@ static int ko_payouts[] {
   38250
 };
 
-static char usage[] = "usage: fko_delta filename\n";
+static int ko_payouts_no_entry_fee[] {
+  112500,
+  67500,
+  45000
+};
+
+static char usage[] = "usage: fko_delta (-no_entry_fee) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
 
 int main(int argc,char **argv)
 {
+  int curr_arg;
+  bool bNoEntryFee;
   FILE *fptr;
   int line_len;
   int line_no;
@@ -26,13 +36,27 @@ int main(int argc,char **argv)
   int num_bounties;
   int delta;
 
-  if (argc != 2) {
+  if ((argc < 2) || (argc > 3)) {
     printf(usage);
     return 1;
   }
 
-  if ((fptr = fopen(argv[1],"r")) == NULL) {
-    printf(couldnt_open,argv[1]);
+  bNoEntryFee = false;
+
+  for (curr_arg = 1; curr_arg < argc; curr_arg++) {
+    if (!strcmp(argv[curr_arg],"-no_entry_fee"))
+      bNoEntryFee = true;
+    else
+      break;
+  }
+
+  if (argc - curr_arg != 1) {
+    printf(usage);
+    return 2;
+  }
+
+  if ((fptr = fopen(argv[curr_arg],"r")) == NULL) {
+    printf(couldnt_open,argv[curr_arg]);
     return 2;
   }
 
@@ -60,10 +84,10 @@ int main(int argc,char **argv)
     delta = BUY_IN * -1;
 
     if ((place >= 1) && (place <= 3))
-      delta += ko_payouts[place - 1];
+      delta += (bNoEntryFee ? ko_payouts_no_entry_fee[place - 1] : ko_payouts[place - 1]);
 
     if (num_bounties)
-      delta += num_bounties * BOUNTY;
+      delta += num_bounties * (bNoEntryFee ? BOUNTY_NO_ENTRY_FEE : BOUNTY);
 
     printf("%d\t%d\t%d\n",place,num_bounties,delta);
   }
