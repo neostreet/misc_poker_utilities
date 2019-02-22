@@ -12,6 +12,7 @@
 #include <unistd.h>
 #endif
 
+static bool bPct;
 static char save_dir[_MAX_PATH];
 
 #define YEAR_IX  0
@@ -29,13 +30,14 @@ struct session_info_struct {
 struct rebound_struct {
   time_t poker_session_date;
   int rebound;
+  double pct;
 };
 
 #define TAB 0x9
 
 static char usage[] =
 "usage: rebounds (-debug) (-no_sort) (-date_last) (-full) (-reverse)\n"
-"  (-no_date) (-max) (-verbose) filename\n";
+"  (-no_date) (-max) (-verbose) (-pct) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char malloc_failed1[] = "malloc of %d session info structures failed\n";
@@ -96,8 +98,10 @@ int main(int argc,char **argv)
   int is_rebound;
   int rebound_ix;
   int curr_rebound;
+  int work1;
+  int work2;
 
-  if ((argc < 2) || (argc > 10)) {
+  if ((argc < 2) || (argc > 11)) {
     printf(usage);
     return 1;
   }
@@ -110,6 +114,7 @@ int main(int argc,char **argv)
   bNoDate = false;
   bMax = false;
   bVerbose = false;
+  bPct = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-debug"))
@@ -128,6 +133,8 @@ int main(int argc,char **argv)
       bMax = true;
     else if (!strcmp(argv[curr_arg],"-verbose"))
       bVerbose = true;
+    else if (!strcmp(argv[curr_arg],"-pct"))
+      bPct = true;
     else
       break;
   }
@@ -263,7 +270,9 @@ int main(int argc,char **argv)
           is_rebound = 1;
 
         if (is_rebound) {
-          curr_rebound = session_info[n-1].delta * -1;
+          work1 = session_info[n-1].delta * -1;
+          work2 = session_info[n].delta;
+          curr_rebound = work1;
 
           if (curr_rebound > session_info[n].delta)
             curr_rebound = session_info[n].delta;
@@ -271,7 +280,12 @@ int main(int argc,char **argv)
           if (!bNoDate)
             rebound[rebound_ix].poker_session_date = session_info[n].poker_session_date;
 
-          rebound[rebound_ix++].rebound = curr_rebound;
+          if (!bPct)
+            rebound[rebound_ix++].rebound = curr_rebound;
+          else {
+            rebound[rebound_ix++].pct =
+              (work1 > work2 ? ((double)work2 / (double)work1) : ((double)work1 / (double)work2));
+          }
         }
       }
     }
@@ -308,24 +322,48 @@ int main(int argc,char **argv)
   for (n = 0; n < num_rebounds; n++) {
     if (bNoDate) {
       if (!bVerbose) {
-        printf("%d\n",
-          rebound[sort_ixs[n]].rebound);
+        if (!bPct) {
+          printf("%d\n",
+            rebound[sort_ixs[n]].rebound);
+        }
+        else {
+          printf("%lf\n",
+            rebound[sort_ixs[n]].pct);
+        }
       }
       else {
-        printf("%d %s\n",
-          rebound[sort_ixs[n]].rebound,save_dir);
+        if (!bPct) {
+          printf("%d %s\n",
+            rebound[sort_ixs[n]].rebound,save_dir);
+        }
+        else {
+          printf("%lf %s\n",
+            rebound[sort_ixs[n]].pct,save_dir);
+        }
       }
     }
     else {
       cpt = ctime(&rebound[sort_ixs[n]].poker_session_date);
 
       if (!bDateLast) {
-        printf("%s %10d\n",
-          format_date(cpt),rebound[sort_ixs[n]].rebound);
+        if (!bPct) {
+          printf("%s %10d\n",
+            format_date(cpt),rebound[sort_ixs[n]].rebound);
+        }
+        else {
+          printf("%s %lf\n",
+            format_date(cpt),rebound[sort_ixs[n]].pct);
+        }
       }
       else {
-        printf("%10d %s\n",
-          rebound[sort_ixs[n]].rebound,format_date(cpt));
+        if (!bPct) {
+          printf("%10d %s\n",
+            rebound[sort_ixs[n]].rebound,format_date(cpt));
+        }
+        else {
+          printf("%lf %s\n",
+            rebound[sort_ixs[n]].pct,format_date(cpt));
+        }
       }
     }
 
@@ -466,8 +504,18 @@ int elem_compare(const void *elem1,const void *elem2)
   ix1 = *(int *)elem1;
   ix2 = *(int *)elem2;
 
-  if (rebound[ix2].rebound != rebound[ix1].rebound)
-    return rebound[ix2].rebound - rebound[ix1].rebound;
+  if (!bPct) {
+    if (rebound[ix2].rebound != rebound[ix1].rebound)
+      return rebound[ix2].rebound - rebound[ix1].rebound;
+  }
+  else {
+    if (rebound[ix2].pct != rebound[ix1].pct) {
+      if (rebound[ix2].pct > rebound[ix1].pct)
+        return 1;
+      else
+        return -1;
+    }
+  }
 
   return rebound[ix2].poker_session_date - rebound[ix1].poker_session_date;
 }
