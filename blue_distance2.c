@@ -7,8 +7,9 @@
 static char line[MAX_LINE_LEN];
 
 static char usage[] =
-"usage: blue_distance2 (-terse) (-verbose) (-sum) (-initial_bal) (-no_dates)\n"
-"  (-only_blue) (-from_nonblue) (-in_sessions) (-is_blue) (-skyfall)\n"
+"usage: blue_distance2 (-terse) (-verbose) (-sum)\n"
+"  (-initial_balbal) (-initial_max_balbal) (-initial_max_blue_distdist\n"
+"  (-no_dates) (-only_blue) (-from_nonblue) (-in_sessions) (-is_blue) (-skyfall)\n"
 "  (-no_input_dates) (-only_max) (-runtot) (-truncate) (-insert)\n"
 "  (-geval) (-no_distance) (-blue_leap) (-debug)\n"
 "  (-is_max_blue_distance) (-pct) filename\n";
@@ -41,6 +42,8 @@ int main(int argc,char **argv)
   bool bIsMaxBlueDistance;
   bool bPct;
   int initial_bal;
+  int initial_max_bal;
+  int initial_max_blue_dist;
   FILE *fptr;
   int line_len;
   int line_no;
@@ -56,7 +59,7 @@ int main(int argc,char **argv)
   int new_max_count;
   int same_max_count;
 
-  if ((argc < 2) || (argc > 23)) {
+  if ((argc < 2) || (argc > 25)) {
     printf(usage);
     return 1;
   }
@@ -77,6 +80,8 @@ int main(int argc,char **argv)
   bInsert = false;
   ge_val = -1;
   initial_bal = 0;
+  initial_max_bal = 0;
+  initial_max_blue_dist = 0;
   bNoDistance = false;
   bBlueLeap = false;
   bDebug = false;
@@ -92,6 +97,10 @@ int main(int argc,char **argv)
       bSum = true;
     else if (!strncmp(argv[curr_arg],"-initial_bal",12))
       sscanf(&argv[curr_arg][12],"%d",&initial_bal);
+    else if (!strncmp(argv[curr_arg],"-initial_max_bal",16))
+      sscanf(&argv[curr_arg][16],"%d",&initial_max_bal);
+    else if (!strncmp(argv[curr_arg],"-initial_max_blue_dist",22))
+      sscanf(&argv[curr_arg][22],"%d",&initial_max_blue_dist);
     else if (!strcmp(argv[curr_arg],"-no_dates"))
       bNoDates = true;
     else if (!strcmp(argv[curr_arg],"-only_blue"))
@@ -151,13 +160,22 @@ int main(int argc,char **argv)
   line_no = 0;
   last_blue_line_no = -1;
   bPrevIsBlue = true;
-  max_blue_distance = 0;
   blue_leap = 0;
 
   if (bDebug) {
     new_max_count = 0;
     same_max_count = 0;
   }
+
+  balance = initial_bal;
+  max_balance = initial_max_bal;
+
+  blue_distance = max_balance - balance;
+
+  if (initial_max_blue_dist)
+    max_blue_distance = initial_max_blue_dist;
+  else
+    max_blue_distance = blue_distance;
 
   if (bInsert)
     printf("use poker\n\n");
@@ -173,37 +191,17 @@ int main(int argc,char **argv)
     else
       sscanf(line,"%d",&delta);
 
-    if (!line_no) {
-      max_balance_ix = 0;
+    balance += delta;
 
-      if (initial_bal) {
-        if (delta < 0) {
-          max_balance = initial_bal;
-          balance = initial_bal + delta;
-        }
-        else {
-          max_balance = initial_bal + delta;
-          balance = max_balance;
-        }
-      }
-      else {
-        max_balance = delta;
-        balance = max_balance;
-      }
+    if (balance > max_balance) {
+      if (bBlueLeap)
+        blue_leap = balance - max_balance;
+
+      max_balance = balance;
+      max_balance_ix = line_no;
     }
-    else {
-      balance += delta;
-
-      if (balance > max_balance) {
-        if (bBlueLeap)
-          blue_leap = balance - max_balance;
-
-        max_balance = balance;
-        max_balance_ix = line_no;
-      }
-      else if (bBlueLeap)
-        blue_leap = 0;
-    }
+    else if (bBlueLeap)
+      blue_leap = 0;
 
     if (!bSum) {
       if (!bNoDates) {
@@ -211,10 +209,7 @@ int main(int argc,char **argv)
           if (!bVerbose) {
             if (!bIsBlue) {
               if (!bSkyfall || ((delta < 0) && (line_no == max_balance_ix + 1))) {
-                if (max_balance > 0)
-                  blue_distance = max_balance - balance;
-                else
-                  blue_distance = max_balance * -1;
+                blue_distance = max_balance - balance;
 
                 if (bOnlyBlue && blue_distance)
                   continue;
