@@ -203,14 +203,14 @@ int main(int argc,char **argv)
     else if (bBlueLeap)
       blue_leap = 0;
 
+    blue_distance = max_balance - balance;
+
     if (!bSum) {
       if (!bNoDates) {
         if (!bInSessions) {
           if (!bVerbose) {
             if (!bIsBlue) {
               if (!bSkyfall || ((delta < 0) && (line_no == max_balance_ix + 1))) {
-                blue_distance = max_balance - balance;
-
                 if (bOnlyBlue && blue_distance)
                   continue;
 
@@ -294,17 +294,20 @@ int main(int argc,char **argv)
             }
           }
           else {
+            if (blue_distance > max_blue_distance)
+              max_blue_distance = blue_distance;
+
             if (!bIsBlue) {
-              printf("%d (%d %d %d)\t%s\n",
-                ((max_balance > 0) ? max_balance - balance : max_balance * -1),
+              printf("%d (%d %d %d %d)\t%s\n",
+                blue_distance,max_blue_distance,
                 ((max_balance > 0) ? max_balance : 0),
                 balance,
                 ((max_balance > 0) ? line_no - max_balance_ix : line_no + 1),
                 line);
             }
             else {
-              printf("%d (%d %d %d) %d %d\t%s\n",
-                ((max_balance > 0) ? max_balance - balance : max_balance * -1),
+              printf("%d (%d %d %d %d) %d %d\t%s\n",
+                blue_distance,max_blue_distance,
                 ((max_balance > 0) ? max_balance : 0),
                 balance,
                 ((max_balance > 0) ? line_no - max_balance_ix : line_no + 1),
