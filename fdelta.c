@@ -37,7 +37,7 @@ static char usage[] =
 "  (-big_blind) (-8game) (-all_in) (-hand_number) (-ge_valval) (-no_rake)\n"
 "  (-no_hole_cards) (-only_winning_deltas) (-only_losing_deltas)\n"
 "  (-show_collected) (-show_spent) (-show_wagered) (-sum2)\n"
-"  (-print_balances) player_name filename\n";
+"  (-print_balances) (-hole_cards_last) player_name filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char pokerstars[] = "PokerStars";
@@ -138,6 +138,7 @@ int main(int argc,char **argv)
   int show_wagered;
   bool bSum2;
   bool bPrintBalances;
+  bool bHoleCardsLast;
   int player_name_ix;
   int player_name_len;
   int ge_val;
@@ -187,7 +188,7 @@ int main(int argc,char **argv)
   int num_players;
   bool bHaveLine;
 
-  if ((argc < 3) || (argc > 27)) {
+  if ((argc < 3) || (argc > 28)) {
     printf(usage);
     return 1;
   }
@@ -215,6 +216,7 @@ int main(int argc,char **argv)
   show_wagered = 0;
   bSum2 = false;
   bPrintBalances = false;
+  bHoleCardsLast = false;
   ge_val = -1;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
@@ -270,6 +272,8 @@ int main(int argc,char **argv)
       bSum2 = true;
     else if (!strcmp(argv[curr_arg],"-print_balances"))
       bPrintBalances = true;
+    else if (!strcmp(argv[curr_arg],"-hole_cards_last"))
+      bHoleCardsLast = true;
     else
       break;
   }
@@ -801,15 +805,25 @@ int main(int argc,char **argv)
           }
           else if (!bVerbose) {
             if (!bBigBlind) {
-              if (!bStud && !bRazz && !bNoHoleCards)
-                printf("%s %10d\n",hole_cards,quantum);
+              if (!bStud && !bRazz && !bNoHoleCards) {
+                if (!bHoleCardsLast)
+                  printf("%s %10d\n",hole_cards,quantum);
+                else
+                  printf("%10d %s\n",quantum,hole_cards);
+              }
               else
                 printf("%10d\n",quantum);
             }
             else {
               if (!bStud && !bRazz) {
-                printf("%s %10d %5d%s\n",hole_cards,quantum,curr_big_blind,
-                  (bAsterisk ? "*" : ""));
+                if (!bHoleCardsLast) {
+                  printf("%s %10d %5d%s\n",hole_cards,quantum,curr_big_blind,
+                    (bAsterisk ? "*" : ""));
+                }
+                else {
+                  printf("%10d %5d%s %s\n",quantum,curr_big_blind,
+                    (bAsterisk ? "*" : ""),hole_cards);
+                }
               }
               else {
                 printf("%10d %5d%s\n",quantum,curr_big_blind,
@@ -820,8 +834,12 @@ int main(int argc,char **argv)
           else {
             if (!bBigBlind) {
               if (!bStud && !bRazz) {
-                if (!bNoHoleCards)
-                  printf("%s %10d %d %s/%s\n",hole_cards,quantum,num_players,save_dir,filename);
+                if (!bNoHoleCards) {
+                  if (!bHoleCardsLast)
+                    printf("%s %10d %d %s/%s\n",hole_cards,quantum,num_players,save_dir,filename);
+                  else
+                    printf("%10d %d %s/%s %s\n",quantum,num_players,save_dir,filename,hole_cards);
+                }
                 else
                   printf("%10d %s/%s\n",quantum,save_dir,filename);
               }
@@ -831,9 +849,16 @@ int main(int argc,char **argv)
             else {
               if (!bStud && !bRazz) {
                 if (!bNoHoleCards) {
-                  printf("%s %10d %5d %s/%s\n",hole_cards,quantum,
-                    curr_big_blind,(bAsterisk ? "*" : ""),
-                    save_dir,filename);
+                  if (!bHoleCardsLast) {
+                    printf("%s %10d %5d %s/%s\n",hole_cards,quantum,
+                      curr_big_blind,(bAsterisk ? "*" : ""),
+                      save_dir,filename);
+                  }
+                  else {
+                    printf("%10d %5d %s/%s %s\n",quantum,
+                      curr_big_blind,(bAsterisk ? "*" : ""),
+                      save_dir,filename,hole_cards);
+                  }
                 }
                 else {
                   printf("%10d %5d %s/%s\n",quantum,
