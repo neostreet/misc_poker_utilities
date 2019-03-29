@@ -37,7 +37,8 @@ static char usage[] =
 "  (-big_blind) (-8game) (-all_in) (-fall_in) (-hand_number) (-ge_valval) (-no_rake)\n"
 "  (-no_hole_cards) (-only_winning_deltas) (-only_losing_deltas)\n"
 "  (-show_collected) (-show_spent) (-show_wagered) (-sum2)\n"
-"  (-print_balances) (-hole_cards_last) player_name filename\n";
+"  (-print_balances) (-hole_cards_last) (-first_hand_only)\n"
+"  player_name filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char pokerstars[] = "PokerStars";
@@ -141,6 +142,7 @@ int main(int argc,char **argv)
   bool bSum2;
   bool bPrintBalances;
   bool bHoleCardsLast;
+  bool bFirstHandOnly;
   int player_name_ix;
   int player_name_len;
   int ge_val;
@@ -190,7 +192,7 @@ int main(int argc,char **argv)
   int num_players;
   bool bHaveLine;
 
-  if ((argc < 3) || (argc > 29)) {
+  if ((argc < 3) || (argc > 30)) {
     printf(usage);
     return 1;
   }
@@ -220,6 +222,7 @@ int main(int argc,char **argv)
   bSum2 = false;
   bPrintBalances = false;
   bHoleCardsLast = false;
+  bFirstHandOnly = false;
   ge_val = -1;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
@@ -279,6 +282,8 @@ int main(int argc,char **argv)
       bPrintBalances = true;
     else if (!strcmp(argv[curr_arg],"-hole_cards_last"))
       bHoleCardsLast = true;
+    else if (!strcmp(argv[curr_arg],"-first_hand_only"))
+      bFirstHandOnly = true;
     else
       break;
   }
@@ -891,6 +896,9 @@ int main(int argc,char **argv)
         }
       }
     }
+
+    if (bFirstHandOnly)
+      break;
   }
 
   fclose(fptr0);
