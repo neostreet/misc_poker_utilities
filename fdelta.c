@@ -34,7 +34,7 @@ static char game_name[MAX_GAME_NAME_LEN+1];
 static char usage[] =
 "usage: fdelta (-terse) (-verbose) (-debug) (-sum) (-avg) (-absolute_value)\n"
 "  (-winning_only) (-losing_only) (-pocket_pairs_only) (-file_names)\n"
-"  (-big_blind) (-8game) (-all_in) (-hand_number) (-ge_valval) (-no_rake)\n"
+"  (-big_blind) (-8game) (-all_in) (-fall_in) (-hand_number) (-ge_valval) (-no_rake)\n"
 "  (-no_hole_cards) (-only_winning_deltas) (-only_losing_deltas)\n"
 "  (-show_collected) (-show_spent) (-show_wagered) (-sum2)\n"
 "  (-print_balances) (-hole_cards_last) player_name filename\n";
@@ -127,7 +127,9 @@ int main(int argc,char **argv)
   bool bAsterisk;
   bool b8game;
   bool bAllIn;
+  bool bFallIn;
   bool bHaveAllIn;
+  bool bHaveFallIn;
   bool bHandNumber;
   bool bNoRake;
   bool bNoHoleCards;
@@ -188,7 +190,7 @@ int main(int argc,char **argv)
   int num_players;
   bool bHaveLine;
 
-  if ((argc < 3) || (argc > 28)) {
+  if ((argc < 3) || (argc > 29)) {
     printf(usage);
     return 1;
   }
@@ -206,6 +208,7 @@ int main(int argc,char **argv)
   bBigBlind = false;
   b8game = false;
   bAllIn = false;
+  bFallIn = false;
   bHandNumber = false;
   bNoRake = false;
   bNoHoleCards = false;
@@ -250,6 +253,8 @@ int main(int argc,char **argv)
       b8game = true;
     else if (!strcmp(argv[curr_arg],"-all_in"))
       bAllIn = true;
+    else if (!strcmp(argv[curr_arg],"-fall_in"))
+      bFallIn = true;
     else if (!strcmp(argv[curr_arg],"-hand_number"))
       bHandNumber = true;
     else if (!strncmp(argv[curr_arg],"-ge_val",7))
@@ -379,6 +384,7 @@ int main(int argc,char **argv)
     collected_from_pot = 0;
     collected_from_pot_count = 0;
     bHaveAllIn = false;
+    bHaveFallIn = false;
     bHaveLine = false;
 
     for ( ; ; ) {
@@ -535,6 +541,10 @@ int main(int argc,char **argv)
           &ix)) {
           ante = get_work_amount(line,line_len);
           spent_this_hand = ante;
+
+          if (bHaveAllIn)
+            bHaveFallIn = true;
+
           continue;
         }
         else if ((bStud || bRazz) && Contains(true,
@@ -556,6 +566,9 @@ int main(int argc,char **argv)
             printf("line %d street %d POSTS work = %d, spent_this_street = %d\n",
               line_no,street,work,spent_this_street);
           }
+
+          if (bHaveAllIn)
+            bHaveFallIn = true;
 
           continue;
         }
@@ -756,108 +769,115 @@ int main(int argc,char **argv)
       }
     }
     else if (!bAllIn || bHaveAllIn) {
-      if ((ge_val == -1) || (delta >= ge_val)) {
-        if (show_collected)
-          quantum = collected_from_pot;
-        else if (show_spent)
-          quantum = spent_this_hand;
-        else if (show_wagered)
-          quantum = wagered_amount;
-        else
-          quantum = delta;
-
-        if (bSum2)
-          sum_quanta += quantum;
-        else if (bTerse) {
-          if (!bBigBlind) {
-            if (!b8game) {
-              if (!bHandNumber) {
-                if (!bPrintBalances)
-                  printf("%d\n",quantum);
-                else
-                  printf("%d %d %d\n",quantum,starting_balance,ending_balance);
-              }
-              else {
-                if (!bPrintBalances)
-                  printf("%d (%d)\n",quantum,num_hands);
-                else
-                  printf("%d %d %d (%d)\n",quantum,starting_balance,ending_balance,num_hands);
-              }
-            }
-            else {
-              if (!bHandNumber)
-                printf("%10d %s\n",quantum,game_name);
-              else
-                printf("%10d %6d %s\n",quantum,num_hands,game_name);
-            }
-          }
+      if (!bFallIn || bHaveFallIn) {
+        if ((ge_val == -1) || (delta >= ge_val)) {
+          if (show_collected)
+            quantum = collected_from_pot;
+          else if (show_spent)
+            quantum = spent_this_hand;
+          else if (show_wagered)
+            quantum = wagered_amount;
           else
-            printf("%d %d\n",quantum,curr_big_blind);
-        }
-        else {
-          if (bFileNames) {
-            if (!bBigBlind)
-              printf("%10d %s/%s\n",quantum,save_dir,filename);
-            else {
-              printf("%10d %5d%s %s/%s\n",quantum,curr_big_blind,
-                (bAsterisk ? "*" : ""),save_dir,filename);
-            }
-          }
-          else if (!bVerbose) {
+            quantum = delta;
+
+          if (bSum2)
+            sum_quanta += quantum;
+          else if (bTerse) {
             if (!bBigBlind) {
-              if (!bStud && !bRazz && !bNoHoleCards) {
-                if (!bHoleCardsLast)
-                  printf("%s %10d\n",hole_cards,quantum);
-                else
-                  printf("%10d %s\n",quantum,hole_cards);
-              }
-              else
-                printf("%10d\n",quantum);
-            }
-            else {
-              if (!bStud && !bRazz) {
-                if (!bHoleCardsLast) {
-                  printf("%s %10d %5d%s\n",hole_cards,quantum,curr_big_blind,
-                    (bAsterisk ? "*" : ""));
+              if (!b8game) {
+                if (!bHandNumber) {
+                  if (!bPrintBalances)
+                    printf("%d\n",quantum);
+                  else
+                    printf("%d %d %d\n",quantum,starting_balance,ending_balance);
                 }
                 else {
-                  printf("%10d %5d%s %s\n",quantum,curr_big_blind,
-                    (bAsterisk ? "*" : ""),hole_cards);
+                  if (!bPrintBalances)
+                    printf("%d (%d)\n",quantum,num_hands);
+                  else
+                    printf("%d %d %d (%d)\n",quantum,starting_balance,ending_balance,num_hands);
                 }
               }
               else {
-                printf("%10d %5d%s\n",quantum,curr_big_blind,
-                  (bAsterisk ? "*" : ""));
+                if (!bHandNumber)
+                  printf("%10d %s\n",quantum,game_name);
+                else
+                  printf("%10d %6d %s\n",quantum,num_hands,game_name);
               }
             }
+            else
+              printf("%d %d\n",quantum,curr_big_blind);
           }
           else {
-            if (!bBigBlind) {
-              if (!bStud && !bRazz) {
-                if (!bNoHoleCards) {
+            if (bFileNames) {
+              if (!bBigBlind)
+                printf("%10d %s/%s\n",quantum,save_dir,filename);
+              else {
+                printf("%10d %5d%s %s/%s\n",quantum,curr_big_blind,
+                  (bAsterisk ? "*" : ""),save_dir,filename);
+              }
+            }
+            else if (!bVerbose) {
+              if (!bBigBlind) {
+                if (!bStud && !bRazz && !bNoHoleCards) {
                   if (!bHoleCardsLast)
-                    printf("%s %10d %d %s/%s\n",hole_cards,quantum,num_players,save_dir,filename);
+                    printf("%s %10d\n",hole_cards,quantum);
                   else
-                    printf("%10d %d %s/%s %s\n",quantum,num_players,save_dir,filename,hole_cards);
+                    printf("%10d %s\n",quantum,hole_cards);
+                }
+                else
+                  printf("%10d\n",quantum);
+              }
+              else {
+                if (!bStud && !bRazz) {
+                  if (!bHoleCardsLast) {
+                    printf("%s %10d %5d%s\n",hole_cards,quantum,curr_big_blind,
+                      (bAsterisk ? "*" : ""));
+                  }
+                  else {
+                    printf("%10d %5d%s %s\n",quantum,curr_big_blind,
+                      (bAsterisk ? "*" : ""),hole_cards);
+                  }
+                }
+                else {
+                  printf("%10d %5d%s\n",quantum,curr_big_blind,
+                    (bAsterisk ? "*" : ""));
+                }
+              }
+            }
+            else {
+              if (!bBigBlind) {
+                if (!bStud && !bRazz) {
+                  if (!bNoHoleCards) {
+                    if (!bHoleCardsLast)
+                      printf("%s %10d %d %s/%s\n",hole_cards,quantum,num_players,save_dir,filename);
+                    else
+                      printf("%10d %d %s/%s %s\n",quantum,num_players,save_dir,filename,hole_cards);
+                  }
+                  else
+                    printf("%10d %s/%s\n",quantum,save_dir,filename);
                 }
                 else
                   printf("%10d %s/%s\n",quantum,save_dir,filename);
               }
-              else
-                printf("%10d %s/%s\n",quantum,save_dir,filename);
-            }
-            else {
-              if (!bStud && !bRazz) {
-                if (!bNoHoleCards) {
-                  if (!bHoleCardsLast) {
-                    printf("%s %10d %5d %s/%s\n",hole_cards,quantum,
-                      curr_big_blind,(bAsterisk ? "*" : ""),
-                      save_dir,filename);
+              else {
+                if (!bStud && !bRazz) {
+                  if (!bNoHoleCards) {
+                    if (!bHoleCardsLast) {
+                      printf("%s %10d %5d %s/%s\n",hole_cards,quantum,
+                        curr_big_blind,(bAsterisk ? "*" : ""),
+                        save_dir,filename);
+                    }
+                    else {
+                      printf("%10d %5d %s/%s %s\n",quantum,
+                        curr_big_blind,(bAsterisk ? "*" : ""),
+                        save_dir,filename,hole_cards);
+                    }
                   }
                   else {
-                    printf("%10d %5d %s/%s %s\n",quantum,
+                    printf("%10d %5d %s/%s\n",quantum,
                       curr_big_blind,(bAsterisk ? "*" : ""),
-                      save_dir,filename,hole_cards);
+                      save_dir,filename);
                   }
                 }
                 else {
@@ -865,11 +885,6 @@ int main(int argc,char **argv)
                     curr_big_blind,(bAsterisk ? "*" : ""),
                     save_dir,filename);
                 }
-              }
-              else {
-                printf("%10d %5d %s/%s\n",quantum,
-                  curr_big_blind,(bAsterisk ? "*" : ""),
-                  save_dir,filename);
               }
             }
           }
