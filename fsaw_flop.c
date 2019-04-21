@@ -1,5 +1,14 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#ifdef WIN32
+#include <direct.h>
+#else
+#define _MAX_PATH 4096
+#include <unistd.h>
+#endif
+
+static char save_dir[_MAX_PATH];
 
 #define MAX_FILENAME_LEN 1024
 static char filename[MAX_FILENAME_LEN];
@@ -7,7 +16,8 @@ static char filename[MAX_FILENAME_LEN];
 #define MAX_LINE_LEN 1024
 static char line[MAX_LINE_LEN];
 
-static char usage[] = "usage: fsaw_flop (-debug) (-not) player_name filename\n";
+static char usage[] =
+"usage: fsaw_flop (-verbose) (-not) (-only_first) player_name filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 static char dealt_to[] = "Dealt to ";
 #define DEALT_TO_LEN (sizeof (dealt_to) - 1)
@@ -25,8 +35,10 @@ int main(int argc,char **argv)
   int n;
   int p;
   int curr_arg;
-  bool bDebug;
+  bool bVerbose;
   bool bNot;
+  bool bOnlyFirst;
+  bool bPrinted;
   FILE *fptr0;
   int filename_len;
   FILE *fptr;
@@ -46,14 +58,19 @@ int main(int argc,char **argv)
     return 1;
   }
 
-  bDebug = false;
+  bVerbose = false;
   bNot = false;
+  bOnlyFirst = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
-    if (!strcmp(argv[curr_arg],"-debug"))
-      bDebug = true;
+    if (!strcmp(argv[curr_arg],"-verbose")) {
+      bVerbose = true;
+      getcwd(save_dir,_MAX_PATH);
+    }
     else if (!strcmp(argv[curr_arg],"-not"))
       bNot = true;
+    else if (!strcmp(argv[curr_arg],"-only_first"))
+      bOnlyFirst = true;
     else
       break;
   }
@@ -94,6 +111,7 @@ int main(int argc,char **argv)
     line_no = 0;
     bSawFlop = false;
     bFolded = false;
+    bPrinted = false;
 
     for ( ; ; ) {
       GetLine(fptr,line,&line_len,MAX_LINE_LEN);
@@ -131,10 +149,16 @@ int main(int argc,char **argv)
 
         if (!bNot) {
           if (!bFolded) {
-            if (!bDebug)
+            if (!bVerbose)
               printf("%s\n",hole_cards);
+            else if (!bOnlyFirst)
+              printf("%s (%d) %s\n",hole_cards,total_hands,save_dir);
             else
-              printf("%s (%d)\n",hole_cards,total_hands);
+              printf("%d %s %s\n",total_hands,hole_cards,save_dir);
+
+            bPrinted = true;
+
+            break;
           }
         }
       }
@@ -143,26 +167,41 @@ int main(int argc,char **argv)
 
         if (bNot) {
           if (!bSawFlop) {
-            if (!bDebug)
+            if (!bVerbose)
               printf("%s\n",hole_cards);
+            else if (!bOnlyFirst)
+              printf("%s (%d) %s\n",hole_cards,total_hands,save_dir);
             else
-              printf("%s (%d)\n",hole_cards,total_hands);
+              printf("%d %s %s\n",total_hands,hole_cards,save_dir);
+
+            bPrinted = true;
+
+            break;
           }
         }
       }
       else if (!strncmp(line,summary_str,SUMMARY_STR_LEN)) {
         if (bNot && !bFolded) {
           if (!bSawFlop) {
-            if (!bDebug)
+            if (!bVerbose)
               printf("%s\n",hole_cards);
+            else if (!bOnlyFirst)
+              printf("%s (%d) %s\n",hole_cards,total_hands,save_dir);
             else
-              printf("%s (%d)\n",hole_cards,total_hands);
+              printf("%d %s %s\n",total_hands,hole_cards,save_dir);
           }
+
+          bPrinted = true;
+
+          break;
         }
       }
     }
 
     fclose(fptr);
+
+    if (bOnlyFirst && bPrinted)
+      break;
   }
 
   fclose(fptr0);
