@@ -17,7 +17,7 @@ static char filename[MAX_FILENAME_LEN];
 static char line[MAX_LINE_LEN];
 
 static char usage[] =
-"usage: ffoldpct player_name filename\n";
+"usage: ffoldpct (-denom_is_hands) player_name filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char in_chips[] = " in chips";
@@ -46,6 +46,8 @@ int main(int argc,char **argv)
   int m;
   int n;
   int p;
+  int curr_arg;
+  bool bDenomIsHands;
   int player_name_len;
   FILE *fptr0;
   int filename_len;
@@ -61,17 +63,31 @@ int main(int argc,char **argv)
   int tot_numdecs;
   double dwork;
 
-  if (argc != 3) {
+  if ((argc < 3) || (argc > 4)) {
     printf(usage);
     return 1;
   }
 
+  bDenomIsHands = false;
+
+  for (curr_arg = 1; curr_arg < argc; curr_arg++) {
+    if (!strcmp(argv[curr_arg],"-denom_is_hands"))
+      bDenomIsHands = true;
+    else
+      break;
+  }
+
+  if (argc - curr_arg != 2) {
+    printf(usage);
+    return 2;
+  }
+
   getcwd(save_dir,_MAX_PATH);
 
-  player_name_len = strlen(argv[1]);
+  player_name_len = strlen(argv[curr_arg]);
 
-  if ((fptr0 = fopen(argv[2],"r")) == NULL) {
-    printf(couldnt_open,argv[2]);
+  if ((fptr0 = fopen(argv[curr_arg+1],"r")) == NULL) {
+    printf(couldnt_open,argv[curr_arg+1]);
     return 2;
   }
 
@@ -111,7 +127,7 @@ int main(int argc,char **argv)
 
       if (Contains(true,
         line,line_len,
-        argv[1],player_name_len,
+        argv[curr_arg],player_name_len,
         &ix)) {
 
         if (!strncmp(line,dealt_to,DEALT_TO_LEN)) {
@@ -140,6 +156,7 @@ int main(int argc,char **argv)
           &ix)) {
           tot_numfolds++;
           tot_numdecs++;
+          break;
         }
         else if (Contains(true,
           line,line_len,
@@ -177,9 +194,14 @@ int main(int argc,char **argv)
 
   fclose(fptr0);
 
-  dwork = (double)tot_numfolds / (double)tot_numdecs;
-
-  printf("%6.4lf (%3d %3d) %s\n",dwork,tot_numfolds,tot_numdecs,save_dir);
+  if (!bDenomIsHands) {
+    dwork = (double)tot_numfolds / (double)tot_numdecs;
+    printf("%6.4lf (%3d %3d) %s\n",dwork,tot_numfolds,tot_numdecs,save_dir);
+  }
+  else {
+    dwork = (double)tot_numfolds / (double)file_no;
+    printf("%6.4lf (%3d %3d) %s\n",dwork,tot_numfolds,file_no,save_dir);
+  }
 
   return 0;
 }
