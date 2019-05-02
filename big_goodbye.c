@@ -14,7 +14,7 @@ static char line[MAX_LINE_LEN];
 
 static char usage[] =
 "usage: big_goodbye (-debug) (-verbose) (-neg) (-either) (-highbye)\n"
-"  (-is_big_goodbye) filename\n";
+"  (-is_big_goodbye) (-skip_pos) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
@@ -28,6 +28,7 @@ int main(int argc,char **argv)
   bool bEither;
   bool bHighBye;
   bool bIsBigGoodbye;
+  bool bSkipPos;
   bool bHit;
   FILE *fptr;
   int line_len;
@@ -41,7 +42,7 @@ int main(int argc,char **argv)
   int max_runtot;
   int max_runtot_line_no;
 
-  if ((argc < 2) || (argc > 8)) {
+  if ((argc < 2) || (argc > 9)) {
     printf(usage);
     return 1;
   }
@@ -52,6 +53,7 @@ int main(int argc,char **argv)
   bEither = false;
   bHighBye = false;
   bIsBigGoodbye = false;
+  bSkipPos = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-debug"))
@@ -68,6 +70,8 @@ int main(int argc,char **argv)
       bHighBye = true;
     else if (!strcmp(argv[curr_arg],"-is_big_goodbye"))
       bIsBigGoodbye = true;
+    else if (!strcmp(argv[curr_arg],"-skip_pos"))
+      bSkipPos = true;
     else
       break;
   }
@@ -101,9 +105,12 @@ int main(int argc,char **argv)
     if (feof(fptr))
       break;
 
-    line_no++;
-
     sscanf(line,"%d",&work);
+
+    if (bSkipPos && (work > 0))
+      continue;
+
+    line_no++;
 
     runtot += work;
 
