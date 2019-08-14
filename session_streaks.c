@@ -102,9 +102,9 @@ int main(int argc,char **argv)
       bSortBySumDelta = true;
     else if (!strcmp(argv[curr_arg],"-total"))
       bTotal = true;
-    else if (!strcmp(argv[curr_arg],"-ony_winning"))
+    else if (!strcmp(argv[curr_arg],"-only_winning"))
       bOnlyWinning = true;
-    else if (!strcmp(argv[curr_arg],"-ony_losing"))
+    else if (!strcmp(argv[curr_arg],"-only_losing"))
       bOnlyLosing = true;
     else
       break;
