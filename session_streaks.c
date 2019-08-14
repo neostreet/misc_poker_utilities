@@ -24,7 +24,8 @@ struct session_info_struct {
 #define TAB 0x9
 
 static char usage[] =
-"usage: session_streaks (-ascending) (-sort_by_sum_delta) (-total) filename\n";
+"usage: session_streaks (-ascending) (-sort_by_sum_delta) (-total)\n"
+"  (-only_winning) (-only_losing) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char malloc_failed1[] = "malloc of %d session info structures failed\n";
@@ -66,6 +67,8 @@ int main(int argc,char **argv)
   int n;
   bool bTotal;
   int curr_arg;
+  bool bOnlyWinning;
+  bool bOnlyLosing;
   FILE *fptr;
   int line_len;
   int num_sessions;
@@ -80,7 +83,7 @@ int main(int argc,char **argv)
   int total_sessions;
   int total_session_deltas;
 
-  if ((argc < 2) || (argc > 5)) {
+  if ((argc < 2) || (argc > 7)) {
     printf(usage);
     return 1;
   }
@@ -89,6 +92,9 @@ int main(int argc,char **argv)
   bAscending = false;
   bSortBySumDelta = false;
 
+  bOnlyWinning = false;
+  bOnlyLosing = false;
+
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-ascending"))
       bAscending = true;
@@ -96,6 +102,10 @@ int main(int argc,char **argv)
       bSortBySumDelta = true;
     else if (!strcmp(argv[curr_arg],"-total"))
       bTotal = true;
+    else if (!strcmp(argv[curr_arg],"-ony_winning"))
+      bOnlyWinning = true;
+    else if (!strcmp(argv[curr_arg],"-ony_losing"))
+      bOnlyLosing = true;
     else
       break;
   }
@@ -105,9 +115,14 @@ int main(int argc,char **argv)
     return 2;
   }
 
+  if (bOnlyWinning && bOnlyLosing) {
+    printf("can't specify both -only_winning and -only_losing\n");
+    return 3;
+  }
+
   if ((fptr = fopen(argv[curr_arg],"r")) == NULL) {
     printf(couldnt_open,argv[curr_arg]);
-    return 3;
+    return 4;
   }
 
   num_sessions = 0;
@@ -142,7 +157,7 @@ int main(int argc,char **argv)
     num_sessions * sizeof (struct session_info_struct))) == NULL) {
     printf(malloc_failed1,num_sessions);
     fclose(fptr);
-    return 4;
+    return 5;
   }
 
   if ((streaks = (struct session_info_struct *)malloc(
@@ -150,7 +165,7 @@ int main(int argc,char **argv)
     printf(malloc_failed1,num_streaks);
     fclose(fptr);
     free(session_info);
-    return 5;
+    return 6;
   }
 
   fseek(fptr,0L,SEEK_SET);
@@ -180,7 +195,7 @@ int main(int argc,char **argv)
       fclose(fptr);
       free(session_info);
       free(streaks);
-      return 6;
+      return 7;
     }
 
     session_ix++;
@@ -214,6 +229,12 @@ int main(int argc,char **argv)
   }
 
   for (n = 0; n < num_streaks; n++) {
+    if (bOnlyWinning && streaks[n].sum < 0)
+      continue;
+
+    if (bOnlyLosing && streaks[n].sum > 0)
+      continue;
+
     printf("%3d ",streaks[n].num_sessions);
 
     cpt = ctime(&streaks[n].start_date);
