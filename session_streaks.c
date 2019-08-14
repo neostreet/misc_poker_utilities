@@ -25,7 +25,7 @@ struct session_info_struct {
 
 static char usage[] =
 "usage: session_streaks (-ascending) (-sort_by_sum_delta) (-total)\n"
-"  (-only_winning) (-only_losing) filename\n";
+"  (-only_winning) (-only_losing) (-ge_val) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char malloc_failed1[] = "malloc of %d session info structures failed\n";
@@ -69,6 +69,7 @@ int main(int argc,char **argv)
   int curr_arg;
   bool bOnlyWinning;
   bool bOnlyLosing;
+  int ge_val;
   FILE *fptr;
   int line_len;
   int num_sessions;
@@ -83,7 +84,7 @@ int main(int argc,char **argv)
   int total_sessions;
   int total_session_deltas;
 
-  if ((argc < 2) || (argc > 7)) {
+  if ((argc < 2) || (argc > 8)) {
     printf(usage);
     return 1;
   }
@@ -94,6 +95,7 @@ int main(int argc,char **argv)
 
   bOnlyWinning = false;
   bOnlyLosing = false;
+  ge_val = -1;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-ascending"))
@@ -106,6 +108,8 @@ int main(int argc,char **argv)
       bOnlyWinning = true;
     else if (!strcmp(argv[curr_arg],"-only_losing"))
       bOnlyLosing = true;
+    else if (!strncmp(argv[curr_arg],"-ge_",4))
+      sscanf(&argv[curr_arg][4],"%d",&ge_val);
     else
       break;
   }
@@ -233,6 +237,9 @@ int main(int argc,char **argv)
       continue;
 
     if (bOnlyLosing && streaks[n].sum > 0)
+      continue;
+
+    if (streaks[n].num_sessions < ge_val)
       continue;
 
     printf("%3d ",streaks[n].num_sessions);
