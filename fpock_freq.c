@@ -237,7 +237,7 @@ int main(int argc,char **argv)
         if (!bVerbose)
           printf("%lf\n",pock_freq);
         else
-          printf("%lf (%d %d) %s\n",pock_freq,any_pock_count,total_hand_count,filename);
+          printf("%lf (%d %d) %s\n",pock_freq,total_hand_count,any_pock_count,filename);
       }
       else {
         for (n = 0; n < NUM_CARDS_IN_SUIT; n++) {
@@ -248,7 +248,7 @@ int main(int argc,char **argv)
               printf("%c%c %lf\n",rank_chars[n],rank_chars[n],pock_freq);
             else {
               printf("%c%c %lf (%d %d) %s\n",rank_chars[n],rank_chars[n],pock_freq,
-                pock_count[n],total_hand_count,filename);
+                total_hand_count,pock_count[n],filename);
             }
           }
         }
