@@ -24,10 +24,10 @@ enum actions {
 };
 
 char *action_strings[] = {
-  "fold ",
+  "fold",
   "check",
-  "call ",
-  "bet  ",
+  "call",
+  "bet",
   "raise"
 };
 
@@ -231,11 +231,11 @@ int main(int argc,char **argv)
       dwork = (double)tot_actions[n] / (double)tot_tot_actions;
 
       if (!bVerbose) {
-        printf("%6.4lf %s %7d\n",dwork,action_strings[n],
+        printf("%6.4lf %-5s %7d\n",dwork,action_strings[n],
           tot_actions[n]);
       }
       else {
-        printf("%6.4lf %s %7d %7d %s\n",dwork,action_strings[n],
+        printf("%6.4lf %=5s %7d %7d %s\n",dwork,action_strings[n],
           tot_actions[n],tot_tot_actions,save_dir);
       }
     }
@@ -244,11 +244,11 @@ int main(int argc,char **argv)
     dwork = (double)tot_actions[action] / (double)tot_tot_actions;
 
     if (!bVerbose) {
-      printf("%6.4lf %s %7d\n",dwork,action_strings[action],
+      printf("%6.4lf %-5s %7d\n",dwork,action_strings[action],
         tot_actions[action]);
     }
     else {
-      printf("%6.4lf %s %7d %7d %s\n",dwork,action_strings[action],
+      printf("%6.4lf %-5s %7d %7d %s\n",dwork,action_strings[action],
         tot_actions[action],tot_tot_actions,save_dir);
     }
   }
