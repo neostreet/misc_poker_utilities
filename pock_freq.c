@@ -8,13 +8,13 @@ using namespace std;
 #include "poker_hand.h"
 
 static char usage[] =
-"usage: pock_freq (-any) total_hands total_pocks\n";
+"usage: pock_freq (-specific) total_hands total_pocks\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 int main(int argc,char **argv)
 {
   int curr_arg;
-  bool bAny;
+  bool bSpecific;
   int total_hands;
   int total_pocks;
   double ratio1;
@@ -26,11 +26,11 @@ int main(int argc,char **argv)
     return 1;
   }
 
-  bAny = false;
+  bSpecific = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
-    if (!strcmp(argv[curr_arg],"-any"))
-      bAny = true;
+    if (!strcmp(argv[curr_arg],"-specific"))
+      bSpecific = true;
     else
       break;
   }
@@ -45,7 +45,7 @@ int main(int argc,char **argv)
 
   ratio1 = (double)total_pocks / (double)total_hands;
 
-  if (bAny)
+  if (!bSpecific)
     ratio2 = (double)NUM_POCKS_IN_DECK / (double)POKER_52_2_PERMUTATIONS;
   else
     ratio2 = (double)NUM_POCKS_PER_DENOM / (double)POKER_52_2_PERMUTATIONS;
