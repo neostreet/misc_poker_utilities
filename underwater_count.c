@@ -314,8 +314,12 @@ int main(int argc,char **argv)
                           else if (!bDebug) {
                             if (bNoPct)
                               printf("%3d %3d\n",count,line_no);
-                            else
-                              printf("%lf %3d %3d\n",pct,count,line_no);
+                            else {
+                              if (!bVerbose)
+                                printf("%lf %3d %3d\n",pct,count,line_no);
+                              else
+                                printf("%lf %3d %3d %s\n",pct,count,line_no,save_dir);
+                            }
                           }
                           else {
                             if (!bGetDateFromPath) {
