@@ -13,7 +13,7 @@
 #define MAX_LINE_LEN 1024
 static char line[MAX_LINE_LEN];
 
-static char usage[] = "usage: session_streak (-debug) (-sort) filename\n";
+static char usage[] = "usage: session_streak (-verbose) (-sort) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 struct session_streak_info {
@@ -61,7 +61,7 @@ int main(int argc,char **argv)
   int m;
   int n;
   int curr_arg;
-  bool bDebug;
+  bool bVerbose;
   bool bSort;
   FILE *fptr;
   int line_len;
@@ -80,12 +80,12 @@ int main(int argc,char **argv)
     return 1;
   }
 
-  bDebug = false;
+  bVerbose = false;
   bSort = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
-    if (!strcmp(argv[curr_arg],"-debug"))
-      bDebug = true;
+    if (!strcmp(argv[curr_arg],"-verbose"))
+      bVerbose = true;
     else if (!strcmp(argv[curr_arg],"-sort"))
       bSort = true;
     else
@@ -181,7 +181,7 @@ int main(int argc,char **argv)
     n += curr_streak - 1;
   }
 
-  if (bDebug) {
+  if (bVerbose) {
     for (n = 0; n < num_sessions; n++)
       ixs[n] = n;
 
@@ -204,7 +204,7 @@ int main(int argc,char **argv)
       printf("====================================================\n");
   }
 
-  if (!bDebug || !bSort) {
+  if (!bVerbose || !bSort) {
     max_streak = 0;
     curr_ix = 0;
     curr_streak = 1;
