@@ -14,7 +14,8 @@ static char line[MAX_LINE_LEN];
 
 static char usage[] =
 "usage: underwater_count (-debug) (-verbose) (-terse) (-diffval) (-reverse)\n"
-"  (-only_none) (-only_all) (-only_winning) (-only_losing) (-exact_countn)\n"
+"  (-only_none) (-only_all) (-only_some)\n"
+"  (-only_winning) (-only_losing) (-exact_countn)\n"
 "  (-le_countn) (-ge_countn) (-last_one_counts) (-get_date_from_path)\n"
 "  (-avg_loss) (-consecutive) (-count_first) (-no_pct) (-skip_zero)\n"
 "  (-zero_is_under) (-is_only_none) (-is_exact_countn) filename\n";
@@ -38,6 +39,7 @@ int main(int argc,char **argv)
   bool bReverse;
   bool bOnlyNone;
   bool bOnlyAll;
+  bool bOnlySome;
   bool bOnlyWinning;
   bool bOnlyLosing;
   bool bExactCount;
@@ -69,7 +71,7 @@ int main(int argc,char **argv)
   double pct;
   double avg_loss;
 
-  if ((argc < 2) || (argc > 24)) {
+  if ((argc < 2) || (argc > 25)) {
     printf(usage);
     return 1;
   }
@@ -81,6 +83,7 @@ int main(int argc,char **argv)
   bReverse = false;
   bOnlyNone = false;
   bOnlyAll = false;
+  bOnlySome = false;
   bOnlyWinning = false;
   bOnlyLosing = false;
   bExactCount = false;
@@ -114,6 +117,8 @@ int main(int argc,char **argv)
       bOnlyNone = true;
     else if (!strcmp(argv[curr_arg],"-only_all"))
       bOnlyAll = true;
+    else if (!strcmp(argv[curr_arg],"-only_some"))
+      bOnlySome = true;
     else if (!strcmp(argv[curr_arg],"-only_winning"))
       bOnlyWinning = true;
     else if (!strcmp(argv[curr_arg],"-only_losing"))
@@ -185,34 +190,44 @@ int main(int argc,char **argv)
     return 5;
   }
 
+  if (bOnlyNone && bOnlySome) {
+    printf("can't specify both -only_none and -only_some\n");
+    return 6;
+  }
+
+  if (bOnlyAll && bOnlySome) {
+    printf("can't specify both -only_all and -only_some\n");
+    return 7;
+  }
+
   if (bOnlyWinning && bOnlyLosing) {
     printf("can't specify both -only_winning and -only_losing\n");
-    return 6;
+    return 8;
   }
 
   if (bOnlyNone && bOnlyLosing) {
     printf("can't specify both -only_none and -only_losing\n");
-    return 7;
+    return 9;
   }
 
   if (bOnlyAll && bOnlyWinning) {
     printf("can't specify both -only_all and -only_winning\n");
-    return 8;
+    return 10;
   }
 
   if (bExactCount && bLeCount) {
     printf("can't specify both -exact_countn and -le_countn\n");
-    return 9;
+    return 11;
   }
 
   if (bExactCount && bGeCount) {
     printf("can't specify both -exact_countn and -ge_countn\n");
-    return 10;
+    return 12;
   }
 
   if (bLeCount && bGeCount && (le_count < ge_count)) {
     printf("le_count must be >= ge_count\n");
-    return 11;
+    return 13;
   }
 
   line_no = 0;
@@ -291,52 +306,54 @@ int main(int argc,char **argv)
     if (!bDiff || (line_no - count == val)) {
       if (!bOnlyNone || (count == 0)) {
         if (!bOnlyAll || (count == line_no)) {
-          if (!bOnlyWinning || (work > 0)) {
-            if (!bOnlyLosing || (work < 0)) {
-              if (!bExactCount || (count == exact_count)) {
-                if (!bLeCount || (count <= le_count)) {
-                  if (!bGeCount || (count >= ge_count)) {
-                    if (!bLastOneCounts || bCurrentOneCounts) {
-                      if (!bSkipZero || count) {
-                        if (bIsOnlyNone) {
-                          printf(fmt_str5,(count == 0),pct,count,line_no,save_dir);
-                        }
-                        else {
-                          if (bAvgLoss)
-                            avg_loss = (double)work / (double)line_no;
-
-                          if (bTerse) {
-                            if (!bGetDateFromPath)
-                              printf(fmt_str1,save_dir);
-                            else
-                              printf(fmt_str1,date_string);
-                          }
-                          else if (!bDebug) {
-                            if (bNoPct)
-                              printf("%3d %3d\n",count,line_no);
-                            else {
-                              if (!bVerbose)
-                                printf("%lf %3d %3d\n",pct,count,line_no);
-                              else
-                                printf("%lf %3d %3d %s\n",pct,count,line_no,save_dir);
-                            }
+          if (!bOnlySome || (count > 0)) {
+            if (!bOnlyWinning || (work > 0)) {
+              if (!bOnlyLosing || (work < 0)) {
+                if (!bExactCount || (count == exact_count)) {
+                  if (!bLeCount || (count <= le_count)) {
+                    if (!bGeCount || (count >= ge_count)) {
+                      if (!bLastOneCounts || bCurrentOneCounts) {
+                        if (!bSkipZero || count) {
+                          if (bIsOnlyNone) {
+                            printf(fmt_str5,(count == 0),pct,count,line_no,save_dir);
                           }
                           else {
-                            if (!bGetDateFromPath) {
-                              if (!bAvgLoss) {
-                                if (!bCountFirst)
-                                  printf(fmt_str2,pct,count,line_no,save_dir);
-                                else
-                                  printf(fmt_str4,count,line_no,pct,save_dir);
-                              }
+                            if (bAvgLoss)
+                              avg_loss = (double)work / (double)line_no;
+
+                            if (bTerse) {
+                              if (!bGetDateFromPath)
+                                printf(fmt_str1,save_dir);
                               else
-                                printf(fmt_str3,avg_loss,work,line_no,save_dir);
+                                printf(fmt_str1,date_string);
+                            }
+                            else if (!bDebug) {
+                              if (bNoPct)
+                                printf("%3d %3d\n",count,line_no);
+                              else {
+                                if (!bVerbose)
+                                  printf("%lf %3d %3d\n",pct,count,line_no);
+                                else
+                                  printf("%lf %3d %3d %s\n",pct,count,line_no,save_dir);
+                              }
                             }
                             else {
-                              if (!bAvgLoss)
-                                printf(fmt_str2,pct,count,line_no,date_string);
-                              else
-                                printf(fmt_str3,avg_loss,work,line_no,date_string);
+                              if (!bGetDateFromPath) {
+                                if (!bAvgLoss) {
+                                  if (!bCountFirst)
+                                    printf(fmt_str2,pct,count,line_no,save_dir);
+                                  else
+                                    printf(fmt_str4,count,line_no,pct,save_dir);
+                                }
+                                else
+                                  printf(fmt_str3,avg_loss,work,line_no,save_dir);
+                              }
+                              else {
+                                if (!bAvgLoss)
+                                  printf(fmt_str2,pct,count,line_no,date_string);
+                                else
+                                  printf(fmt_str3,avg_loss,work,line_no,date_string);
+                              }
                             }
                           }
                         }
