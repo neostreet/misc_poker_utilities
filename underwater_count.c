@@ -331,10 +331,18 @@ int main(int argc,char **argv)
                               if (bNoPct)
                                 printf("%3d %3d\n",count,line_no);
                               else {
-                                if (!bVerbose)
-                                  printf("%lf %3d %3d\n",pct,count,line_no);
-                                else
-                                  printf("%lf %3d %3d %s\n",pct,count,line_no,save_dir);
+                                if (!bVerbose) {
+                                  if (!bCountFirst)
+                                    printf("%lf %3d %3d\n",pct,count,line_no);
+                                  else
+                                    printf("%3d %3d %lf\n",count,line_no,pct);
+                                }
+                                else {
+                                  if (!bCountFirst)
+                                    printf("%lf %3d %3d %s\n",pct,count,line_no,save_dir);
+                                  else
+                                    printf("%3d %3d %lf %s\n",count,line_no,pct,save_dir);
+                                }
                               }
                             }
                             else {
