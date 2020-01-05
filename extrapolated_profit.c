@@ -13,7 +13,7 @@ static char line[MAX_LINE_LEN];
 
 static char usage[] =
 "usage: extrapolated_profit (-terse) (-verbose) (-offsetoffset)\n"
-"  (-extrap_first) filename\n";
+"  (-extrap_first) (-double) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 static time_t cvt_date(char *date_str);
 
@@ -59,6 +59,7 @@ int main(int argc,char **argv)
   bool bVerbose;
   int offset;
   bool bExtrapFirst;
+  bool bDouble;
   FILE *fptr;
   int line_len;
   int line_no;
@@ -78,7 +79,7 @@ int main(int argc,char **argv)
   int days_in_year;
   int days_in_period;
 
-  if ((argc < 2) || (argc > 6)) {
+  if ((argc < 2) || (argc > 7)) {
     printf(usage);
     return 1;
   }
@@ -87,6 +88,7 @@ int main(int argc,char **argv)
   bVerbose = false;
   offset = 0;
   bExtrapFirst = false;
+  bDouble = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-terse"))
@@ -98,6 +100,8 @@ int main(int argc,char **argv)
     }
     else if (!strcmp(argv[curr_arg],"-extrap_first"))
       bExtrapFirst = true;
+    else if (!strcmp(argv[curr_arg],"-double"))
+      bDouble = true;
     else
       break;
   }
@@ -164,26 +168,55 @@ int main(int argc,char **argv)
 
     if (!bVerbose) {
       if (bTerse) {
-        printf("%d\n",(int)dwork);
+        if (!bDouble)
+          printf("%d\n",(int)dwork);
+        else
+          printf("%lf\n",dwork);
       }
       else if (!bExtrapFirst) {
-        printf("%s %10d %10d %10d\n",
-          format_date(cpt),delta,running_delta,(int)dwork);
+        if (!bDouble) {
+          printf("%s %10d %10d %10d\n",
+            format_date(cpt),delta,running_delta,(int)dwork);
+        }
+        else {
+          printf("%s %10d %10d %lf\n",
+            format_date(cpt),delta,running_delta,dwork);
+        }
       }
       else {
-        printf("%10d %s %10d %10d\n",
-          (int)dwork,format_date(cpt),delta,running_delta);
+        if (!bDouble) {
+          printf("%10d %s %10d %10d\n",
+            (int)dwork,format_date(cpt),delta,running_delta);
+        }
+        else {
+          printf("%lf %s %d %d\n",
+            dwork,format_date(cpt),delta,running_delta);
+        }
       }
     }
     else if (!bExtrapFirst) {
-      printf("%s %10d %10d %10d (%5d %5d %10d)\n",
-        format_date(cpt),delta,running_delta,(int)dwork,
-        days_in_year,days_in_period,running_delta);
+      if (!bDouble) {
+        printf("%s %10d %10d %10d (%5d %5d %10d)\n",
+          format_date(cpt),delta,running_delta,(int)dwork,
+          days_in_year,days_in_period,running_delta);
+      }
+      else {
+        printf("%s %10d %10d %lf (%d %d %d)\n",
+          format_date(cpt),delta,running_delta,dwork,
+          days_in_year,days_in_period,running_delta);
+      }
     }
     else {
-      printf("%10d %s %10d %10d (%5d %5d %10d)\n",
-        (int)dwork,format_date(cpt),delta,running_delta,
-        days_in_year,days_in_period,running_delta);
+      if (!bDouble) {
+        printf("%10d %s %10d %10d (%5d %5d %10d)\n",
+          (int)dwork,format_date(cpt),delta,running_delta,
+          days_in_year,days_in_period,running_delta);
+      }
+      else {
+        printf("%lf %s %d %d (%d %d %d)\n",
+          dwork,format_date(cpt),delta,running_delta,
+          days_in_year,days_in_period,running_delta);
+      }
     }
   }
 
