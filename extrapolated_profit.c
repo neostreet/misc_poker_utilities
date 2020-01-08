@@ -12,7 +12,7 @@ static char line[MAX_LINE_LEN];
 #define TAB 0x9
 
 static char usage[] =
-"usage: extrapolated_profit (-terse) (-verbose) (-offsetoffset)\n"
+"usage: extrapolated_profit (-debug) (-terse) (-verbose) (-offsetoffset)\n"
 "  (-extrap_first) (-double) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 static time_t cvt_date(char *date_str);
@@ -55,6 +55,7 @@ static char *format_date(char *cpt);
 int main(int argc,char **argv)
 {
   int curr_arg;
+  bool bDebug;
   bool bTerse;
   bool bVerbose;
   int offset;
@@ -79,11 +80,12 @@ int main(int argc,char **argv)
   int days_in_year;
   int days_in_period;
 
-  if ((argc < 2) || (argc > 7)) {
+  if ((argc < 2) || (argc > 8)) {
     printf(usage);
     return 1;
   }
 
+  bDebug = false;
   bTerse = false;
   bVerbose = false;
   offset = 0;
@@ -91,7 +93,9 @@ int main(int argc,char **argv)
   bDouble = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
-    if (!strcmp(argv[curr_arg],"-terse"))
+    if (!strcmp(argv[curr_arg],"-debug"))
+      bDebug = true;
+    else if (!strcmp(argv[curr_arg],"-terse"))
       bTerse = true;
     else if (!strcmp(argv[curr_arg],"-verbose"))
       bVerbose = true;
@@ -150,6 +154,9 @@ int main(int argc,char **argv)
       datediff = end_date - start_date;
       dwork = (double)datediff / (double)SECS_PER_DAY;
       days_in_year = dwork;
+
+      if (bDebug)
+        printf("days_in_year = %d\n",days_in_year);
     }
 
     running_delta += delta;
@@ -157,7 +164,11 @@ int main(int argc,char **argv)
     datediff = date - start_date;
     dwork = (double)datediff / (double)SECS_PER_DAY;
     days_in_period = dwork;
+
     days_in_period += offset;
+
+    if (bDebug)
+      printf("days_in_period = %d\n",days_in_period);
 
     dwork = ((double)days_in_year / (double)days_in_period) * (double)running_delta;
 
