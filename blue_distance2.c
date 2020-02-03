@@ -12,7 +12,7 @@ static char usage[] =
 "  (-no_dates) (-only_blue) (-from_nonblue) (-in_sessions) (-is_blue) (-skyfall)\n"
 "  (-no_input_dates) (-only_max) (-runtot) (-truncate) (-insert)\n"
 "  (-geval) (-no_distance) (-blue_leap) (-debug)\n"
-"  (-is_max_blue_distance) (-pct) filename\n";
+"  (-is_max_blue_distance) (-pct) (-new_year) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
@@ -41,6 +41,7 @@ int main(int argc,char **argv)
   bool bPrevIsBlue;
   bool bIsMaxBlueDistance;
   bool bPct;
+  bool bNewYear;
   int initial_bal;
   int initial_max_bal;
   int initial_max_blue_dist;
@@ -49,6 +50,7 @@ int main(int argc,char **argv)
   int line_no;
   int last_blue_line_no;
   char str[MAX_STR_LEN];
+  char prev_str[MAX_STR_LEN];
   int delta;
   int balance;
   int max_balance;
@@ -59,7 +61,7 @@ int main(int argc,char **argv)
   int new_max_count;
   int same_max_count;
 
-  if ((argc < 2) || (argc > 25)) {
+  if ((argc < 2) || (argc > 26)) {
     printf(usage);
     return 1;
   }
@@ -87,6 +89,7 @@ int main(int argc,char **argv)
   bDebug = false;
   bIsMaxBlueDistance = false;
   bPct = false;
+  bNewYear = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-terse"))
@@ -133,6 +136,8 @@ int main(int argc,char **argv)
       bDebug = true;
     else if (!strcmp(argv[curr_arg],"-is_max_blue_distance"))
       bIsMaxBlueDistance = true;
+    else if (!strcmp(argv[curr_arg],"-new_year"))
+      bNewYear = true;
     else if (!strcmp(argv[curr_arg],"-pct"))
       bPct = true;
     else
@@ -180,6 +185,8 @@ int main(int argc,char **argv)
   if (bInsert)
     printf("use poker\n\n");
 
+  prev_str[0] = 0;
+
   for ( ; ; ) {
     GetLine(fptr,line,&line_len,MAX_LINE_LEN);
 
@@ -204,6 +211,12 @@ int main(int argc,char **argv)
       blue_leap = 0;
 
     blue_distance = max_balance - balance;
+
+    if (bNewYear) {
+      if (!strncmp(prev_str,str,4))
+        continue;
+      strcpy(prev_str,str);
+    }
 
     if (!bSum) {
       if (!bNoDates) {
