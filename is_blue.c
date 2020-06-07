@@ -6,7 +6,7 @@ static char line[MAX_LINE_LEN];
 
 static char usage[] =
 "usage: is_blue (-starting_amountstarting_amount) (-terse) (-verbose)\n"
-"  (-not) (-date_first) filename\n";
+"  (-not) (-date_first) (-only_blue) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
@@ -21,6 +21,7 @@ int main(int argc,char **argv)
   bool bVerbose;
   bool bNot;
   bool bDateFirst;
+  bool bOnlyBlue;
   int balance;
   FILE *fptr;
   int line_len;
@@ -30,7 +31,7 @@ int main(int argc,char **argv)
   int max;
   char date[DATE_LEN];
 
-  if ((argc < 2) || (argc > 7)) {
+  if ((argc < 2) || (argc > 8)) {
     printf(usage);
     return 1;
   }
@@ -40,6 +41,7 @@ int main(int argc,char **argv)
   bVerbose = false;
   bNot = false;
   bDateFirst = false;
+  bOnlyBlue = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strncmp(argv[curr_arg],"-starting_amount",16))
@@ -52,6 +54,8 @@ int main(int argc,char **argv)
       bNot = true;
     else if (!strcmp(argv[curr_arg],"-date_first"))
       bDateFirst = true;
+    else if (!strcmp(argv[curr_arg],"-only_blue"))
+      bOnlyBlue = true;
     else
       break;
   }
@@ -97,11 +101,15 @@ int main(int argc,char **argv)
           printf("0\n");
       }
       else if (bVerbose) {
-        if (!bNot)
-          printf("1 %d %s\n",balance,line);
-        else
-          printf("0 %d %s\n",balance,line);
+        if (!bNot) {
+          if (!bOnlyBlue)
+            printf("1 %d %s\n",balance,line);
+          else
+            printf("%s %d\n",line,balance);
         }
+        else if (!bOnlyBlue)
+          printf("0 %d %s\n",balance,line);
+      }
       else {
         if (!bNot) {
           if (!bDateFirst)
@@ -125,10 +133,16 @@ int main(int argc,char **argv)
           printf("1\n");
       }
       else if (bVerbose) {
-        if (!bNot)
-          printf("0 %d %s\n",balance,line);
-        else
-          printf("1 %d %s\n",balance,line);
+        if (!bNot) {
+          if (!bOnlyBlue)
+            printf("0 %d %s\n",balance,line);
+        }
+        else {
+          if (!bOnlyBlue)
+            printf("1 %d %s\n",balance,line);
+          else
+            printf("%s %d\n",line,balance);
+        }
       }
       else {
         if (!bNot) {
