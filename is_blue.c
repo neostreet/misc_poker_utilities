@@ -6,7 +6,7 @@ static char line[MAX_LINE_LEN];
 
 static char usage[] =
 "usage: is_blue (-starting_amountstarting_amount) (-terse) (-verbose)\n"
-"  (-not) (-date_first) (-only_blue) filename\n";
+"  (-not) (-date_first) (-only_blue) (-star_ge_amountamount) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
@@ -22,6 +22,7 @@ int main(int argc,char **argv)
   bool bNot;
   bool bDateFirst;
   bool bOnlyBlue;
+  int star_ge_amount;
   int balance;
   FILE *fptr;
   int line_len;
@@ -31,7 +32,7 @@ int main(int argc,char **argv)
   int max;
   char date[DATE_LEN];
 
-  if ((argc < 2) || (argc > 8)) {
+  if ((argc < 2) || (argc > 9)) {
     printf(usage);
     return 1;
   }
@@ -42,6 +43,7 @@ int main(int argc,char **argv)
   bNot = false;
   bDateFirst = false;
   bOnlyBlue = false;
+  star_ge_amount = -1;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strncmp(argv[curr_arg],"-starting_amount",16))
@@ -56,6 +58,8 @@ int main(int argc,char **argv)
       bDateFirst = true;
     else if (!strcmp(argv[curr_arg],"-only_blue"))
       bOnlyBlue = true;
+    else if (!strncmp(argv[curr_arg],"-star_ge_amount",15))
+      sscanf(&argv[curr_arg][15],"%d",&star_ge_amount);
     else
       break;
   }
@@ -104,8 +108,12 @@ int main(int argc,char **argv)
         if (!bNot) {
           if (!bOnlyBlue)
             printf("1 %d %s\n",balance,line);
-          else
-            printf("%s %d\n",line,balance);
+          else {
+            if ((star_ge_amount == -1) || (work < star_ge_amount))
+              printf("%s %d\n",line,balance);
+            else
+              printf("%s * %d\n",line,balance);
+          }
         }
         else if (!bOnlyBlue)
           printf("0 %d %s\n",balance,line);
@@ -140,8 +148,12 @@ int main(int argc,char **argv)
         else {
           if (!bOnlyBlue)
             printf("1 %d %s\n",balance,line);
-          else
-            printf("%s %d\n",line,balance);
+          else {
+            if ((star_ge_amount == -1) || (work < star_ge_amount))
+              printf("%s %d\n",line,balance);
+            else
+              printf("%s * %d\n",line,balance);
+          }
         }
       }
       else {
