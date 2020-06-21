@@ -14,7 +14,7 @@
 static char line[MAX_LINE_LEN];
 
 static char usage[] =
-"usage: missing_dates (-length) (-ctime) filename\n";
+"usage: missing_dates (-length) (-ctime) (-is_missing) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 struct missing_dates_info {
@@ -60,6 +60,7 @@ int main(int argc,char **argv)
   int curr_arg;
   bool bLength;
   bool bCtime;
+  bool bIsMissing;
   int m;
   int n;
   FILE *fptr;
@@ -70,19 +71,22 @@ int main(int argc,char **argv)
   time_t missing_date;
   char *cpt;
 
-  if ((argc < 2) || (argc > 4)) {
+  if ((argc < 2) || (argc > 5)) {
     printf(usage);
     return 1;
   }
 
   bLength = false;
   bCtime = false;
+  bIsMissing = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-length"))
       bLength = true;
     else if (!strcmp(argv[curr_arg],"-ctime"))
       bCtime = true;
+    else if (!strcmp(argv[curr_arg],"-is_missing"))
+      bIsMissing = true;
     else
       break;
   }
@@ -145,7 +149,23 @@ int main(int argc,char **argv)
         (SECS_PER_DAY);
   }
 
-  for (n = 1; n < num_sessions; n++) {
+  for (n = 0; n < num_sessions; n++) {
+    if (!n || (missing_dates[n].datediff == 1)) {
+      if (bIsMissing) {
+        if (!bLength) {
+          missing_date = missing_dates[n].start_date;
+          cpt = ctime(&missing_date);
+
+          if (bCtime)
+            printf("1 %s",cpt);
+          else
+            printf("1 %s\n",format_date(cpt));
+        }
+      }
+
+      continue;
+    }
+
     if (missing_dates[n].datediff > 1) {
       missing_date = missing_dates[n-1].start_date;
 
@@ -154,10 +174,18 @@ int main(int argc,char **argv)
           missing_date += SECS_PER_DAY;
           cpt = ctime(&missing_date);
 
-          if (bCtime)
-            printf("%s",cpt);
-          else
-            printf("%s\n",format_date(cpt));
+          if (bCtime) {
+            if (!bIsMissing)
+              printf("%s",cpt);
+            else
+              printf("0 %s",cpt);
+          }
+          else {
+            if (!bIsMissing)
+              printf("%s\n",format_date(cpt));
+            else
+              printf("0 %s\n",format_date(cpt));
+          }
         }
       }
       else {
