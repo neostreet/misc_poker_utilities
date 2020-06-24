@@ -14,7 +14,7 @@
 static char line[MAX_LINE_LEN];
 
 static char usage[] =
-"usage: missing_dates (-length) (-ctime) (-is_missing) filename\n";
+"usage: missing_dates (-length) (-ctime) (-not_missing) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 struct missing_dates_info {
@@ -60,7 +60,7 @@ int main(int argc,char **argv)
   int curr_arg;
   bool bLength;
   bool bCtime;
-  bool bIsMissing;
+  bool bNotMissing;
   int m;
   int n;
   FILE *fptr;
@@ -78,15 +78,15 @@ int main(int argc,char **argv)
 
   bLength = false;
   bCtime = false;
-  bIsMissing = false;
+  bNotMissing = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-length"))
       bLength = true;
     else if (!strcmp(argv[curr_arg],"-ctime"))
       bCtime = true;
-    else if (!strcmp(argv[curr_arg],"-is_missing"))
-      bIsMissing = true;
+    else if (!strcmp(argv[curr_arg],"-not_missing"))
+      bNotMissing = true;
     else
       break;
   }
@@ -151,7 +151,7 @@ int main(int argc,char **argv)
 
   for (n = 0; n < num_sessions; n++) {
     if (!n || (missing_dates[n].datediff == 1)) {
-      if (bIsMissing) {
+      if (bNotMissing) {
         if (!bLength) {
           missing_date = missing_dates[n].start_date;
           cpt = ctime(&missing_date);
@@ -175,13 +175,13 @@ int main(int argc,char **argv)
           cpt = ctime(&missing_date);
 
           if (bCtime) {
-            if (!bIsMissing)
+            if (!bNotMissing)
               printf("%s",cpt);
             else
               printf("0 %s",cpt);
           }
           else {
-            if (!bIsMissing)
+            if (!bNotMissing)
               printf("%s\n",format_date(cpt));
             else
               printf("0 %s\n",format_date(cpt));
