@@ -187,6 +187,12 @@ int main(int argc,char **argv)
               printf("0 %s\n",format_date(cpt));
           }
         }
+
+        if (bNotMissing) {
+          missing_date += SECS_PER_DAY;
+          cpt = ctime(&missing_date);
+          printf("1 %s\n",format_date(cpt));
+        }
       }
       else {
         cpt = ctime(&missing_date);
