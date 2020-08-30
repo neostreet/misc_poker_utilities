@@ -29,8 +29,8 @@ struct session_info_struct {
 static char usage[] =
 "usage: session_moving_sum (-no_sort) (-ascending) (-absolute_value)\n"
 "  (-skip_interim) (-terse) (-gesum) (-true_false) (-delta_first)\n"
-"  (-outer_sort_by_winning_sessions) (-second_delta) (-homogenous)"
-"  (-count_nonlosing) subset_size filename\n";
+"  (-outer_sort_by_winning_sessions) (-second_delta) (-homogenous)\n"
+"  (-count_nonlosing) (-onlycountcount) subset_size filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char malloc_failed1[] = "malloc of %d session info structures failed\n";
@@ -83,6 +83,7 @@ int main(int argc,char **argv)
   bool bSecondDelta;
   bool bHomogenous;
   bool bCountNonlosing;
+  int only_count;
   int ge_sum;
   int curr_arg;
   int session_ix;
@@ -101,7 +102,7 @@ int main(int argc,char **argv)
   int retval;
   char *cpt;
 
-  if ((argc < 3) || (argc > 15)) {
+  if ((argc < 3) || (argc > 16)) {
     printf(usage);
     return 1;
   }
@@ -118,6 +119,7 @@ int main(int argc,char **argv)
   bSecondDelta = false;
   bHomogenous = false;
   bCountNonlosing = false;
+  only_count = -1;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-no_sort"))
@@ -146,6 +148,8 @@ int main(int argc,char **argv)
       bHomogenous = true;
     else if (!strcmp(argv[curr_arg],"-count_nonlosing"))
       bCountNonlosing = true;
+    else if (!strncmp(argv[curr_arg],"-only_count",11))
+      sscanf(&argv[curr_arg][11],"%d",&only_count);
     else
       break;
   }
@@ -160,6 +164,11 @@ int main(int argc,char **argv)
   if ((fptr = fopen(argv[curr_arg+1],"r")) == NULL) {
     printf(couldnt_open,argv[curr_arg+1]);
     return 3;
+  }
+
+  if (only_count > subset_size) {
+    printf("only_count cannot exceed subset_size\n");
+    return 4;
   }
 
   set_size = 0;
@@ -185,7 +194,7 @@ int main(int argc,char **argv)
   if (subset_size > set_size) {
     printf("subset_size (%d) > set_size (%d)\n",subset_size,set_size);
     fclose(fptr);
-    return 4;
+    return 5;
   }
 
   if (!bSkipInterim)
@@ -197,14 +206,14 @@ int main(int argc,char **argv)
     set_size * sizeof (struct session_info_struct))) == NULL) {
     printf(malloc_failed1,set_size);
     fclose(fptr);
-    return 5;
+    return 6;
   }
 
   if ((sort_ixs = (int *)malloc(
     num_sums * sizeof (int))) == NULL) {
     printf(malloc_failed2,num_sums);
     fclose(fptr);
-    return 6;
+    return 7;
   }
 
   fseek(fptr,0L,SEEK_SET);
@@ -232,7 +241,7 @@ int main(int argc,char **argv)
     if (retval) {
       printf("get_session_info() failed on line %d: %d\n",
         session_ix+1,retval);
-      return 7;
+      return 8;
     }
 
     session_ix++;
@@ -328,6 +337,17 @@ int main(int argc,char **argv)
       }
       else {
         if (session_info[sort_ixs[n]].sum < ge_sum)
+          continue;
+      }
+    }
+
+    if (only_count != -1) {
+      if (!bCountNonlosing) {
+        if (session_info[sort_ixs[n]].num_winning_sessions != only_count)
+          continue;
+      }
+      else {
+        if (session_info[sort_ixs[n]].num_nonlosing_sessions != only_count)
           continue;
       }
     }
