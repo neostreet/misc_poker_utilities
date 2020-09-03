@@ -122,7 +122,7 @@ int main(int argc,char **argv)
       }
     }
 
-    if (work > max) {
+    if (work >= max) {
       if (line_no > 1) {
         if (!bAfterBlue || bPrevIsBlue)
           blue_count[mon - first_mon]++;

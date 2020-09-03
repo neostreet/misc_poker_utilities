@@ -102,7 +102,7 @@ int main(int argc,char **argv)
         year_count[prev_year - first_year]++;
     }
 
-    if (work > max) {
+    if (work >= max) {
       if (line_no > 1) {
         if (!bAfterBlue || bPrevIsBlue)
           blue_count[year - first_year]++;
