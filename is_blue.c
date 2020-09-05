@@ -94,7 +94,7 @@ int main(int argc,char **argv)
 
     balance += work;
 
-    if (balance > max) {
+    if (balance >= max) {
       blue_count++;
       max = balance;
 
