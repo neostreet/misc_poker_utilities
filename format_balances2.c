@@ -57,6 +57,10 @@ int main(int argc,char **argv)
         break;
       case 10:
         sscanf(&line[0],"%d",&bal);
+        printf("blue distance: %s\n",format_balance(bal,buf,BUF_LEN));
+        break;
+      case 13:
+        sscanf(&line[0],"%d",&bal);
         printf("balance: %s\n",format_balance(bal,buf,BUF_LEN));
         break;
     }
