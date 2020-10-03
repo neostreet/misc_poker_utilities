@@ -6,7 +6,7 @@ static char line[MAX_LINE_LEN];
 
 static char usage[] =
 "usage: is_blue (-starting_amountstarting_amount) (-terse) (-verbose)\n"
-"  (-not) (-date_first) (-only_blue) (-star_ge_amountamount) filename\n";
+"  (-not) (-date_first) (-only_blue) (-star_ge_amountamount) (-grand_slam) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
@@ -22,6 +22,7 @@ int main(int argc,char **argv)
   bool bNot;
   bool bDateFirst;
   bool bOnlyBlue;
+  bool bGrandSlam;
   int star_ge_amount;
   int balance;
   FILE *fptr;
@@ -31,8 +32,10 @@ int main(int argc,char **argv)
   int work;
   int max;
   char date[DATE_LEN];
+  int intervening_profits;
+  int intervening_losses;
 
-  if ((argc < 2) || (argc > 9)) {
+  if ((argc < 2) || (argc > 10)) {
     printf(usage);
     return 1;
   }
@@ -43,6 +46,7 @@ int main(int argc,char **argv)
   bNot = false;
   bDateFirst = false;
   bOnlyBlue = false;
+  bGrandSlam = false;
   star_ge_amount = -1;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
@@ -60,6 +64,8 @@ int main(int argc,char **argv)
       bOnlyBlue = true;
     else if (!strncmp(argv[curr_arg],"-star_ge_amount",15))
       sscanf(&argv[curr_arg][15],"%d",&star_ge_amount);
+    else if (!strcmp(argv[curr_arg],"-grand_slam"))
+      bGrandSlam = true;
     else
       break;
   }
@@ -83,6 +89,8 @@ int main(int argc,char **argv)
   blue_count = 0;
   balance = starting_amount;
   max = starting_amount;
+  intervening_profits = 0;
+  intervening_losses = 0;
 
   for ( ; ; ) {
     GetLine(fptr,line,&line_len,MAX_LINE_LEN);
@@ -106,8 +114,16 @@ int main(int argc,char **argv)
       }
       else if (bVerbose) {
         if (!bNot) {
-          if (!bOnlyBlue)
-            printf("1 %d %s\n",balance,line);
+          if (!bOnlyBlue) {
+            if (!bGrandSlam)
+              printf("1 %d %s\n",balance,line);
+            else {
+              if (!intervening_profits && (intervening_losses >= 4))
+                printf("1 1 %d %s\n",balance,line);
+              else
+                printf("1 0 %d %s\n",balance,line);
+            }
+          }
           else {
             if ((star_ge_amount == -1) || (work < star_ge_amount))
               printf("%s %d\n",line,balance);
@@ -132,8 +148,17 @@ int main(int argc,char **argv)
             printf("%s\t0\n",date);
         }
       }
+
+      intervening_profits = 0;
+      intervening_losses = 0;
     }
     else {
+      if (work > 0)
+        intervening_profits++;
+
+      if (work < 0)
+        intervening_losses++;
+
       if (bTerse) {
         if (!bNot)
           printf("0\n");
