@@ -12,7 +12,7 @@ static char usage[] =
 "  (-no_dates) (-only_blue) (-from_nonblue) (-in_sessions) (-is_blue) (-skyfall)\n"
 "  (-no_input_dates) (-only_max) (-runtot) (-truncate) (-insert)\n"
 "  (-geval) (-no_distance) (-blue_leap) (-debug)\n"
-"  (-is_max_blue_distance) (-pct) (-new_year) filename\n";
+"  (-is_max_blue_distance) (-pct) (-new_year) (-is_not_blue) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
@@ -42,6 +42,7 @@ int main(int argc,char **argv)
   bool bIsMaxBlueDistance;
   bool bPct;
   bool bNewYear;
+  bool bIsNotBlue;
   int initial_bal;
   int initial_max_bal;
   int initial_max_blue_dist;
@@ -61,7 +62,7 @@ int main(int argc,char **argv)
   int new_max_count;
   int same_max_count;
 
-  if ((argc < 2) || (argc > 26)) {
+  if ((argc < 2) || (argc > 27)) {
     printf(usage);
     return 1;
   }
@@ -90,6 +91,7 @@ int main(int argc,char **argv)
   bIsMaxBlueDistance = false;
   bPct = false;
   bNewYear = false;
+  bIsNotBlue = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-terse"))
@@ -140,6 +142,8 @@ int main(int argc,char **argv)
       bNewYear = true;
     else if (!strcmp(argv[curr_arg],"-pct"))
       bPct = true;
+    else if (!strcmp(argv[curr_arg],"-is_not_blue"))
+      bIsNotBlue = true;
     else
       break;
   }
@@ -154,12 +158,17 @@ int main(int argc,char **argv)
     return 3;
   }
 
+  if (bIsBlue && bIsNotBlue) {
+    printf("can't specify both -is_blue and -is_not_blue\n");
+    return 4;
+  }
+
   if (bBlueLeap)
     bOnlyBlue = true;
 
   if ((fptr = fopen(argv[curr_arg],"r")) == NULL) {
     printf(couldnt_open,argv[curr_arg]);
-    return 4;
+    return 5;
   }
 
   line_no = 0;
@@ -222,7 +231,7 @@ int main(int argc,char **argv)
       if (!bNoDates) {
         if (!bInSessions) {
           if (!bVerbose) {
-            if (!bIsBlue) {
+            if (!bIsBlue && !bIsNotBlue) {
               if (!bSkyfall || ((delta < 0) && (line_no == max_balance_ix + 1))) {
                 if (bOnlyBlue && blue_distance)
                   continue;
@@ -299,9 +308,16 @@ int main(int argc,char **argv)
                 }
               }
             }
-            else {
+            else if (bIsBlue) {
               printf("%d %d %d\t\%s\n",
                 ((max_balance == balance) ? 1 : 0),
+                ((max_balance > 0) ? max_balance - balance : max_balance * -1),
+                delta,
+                line);
+            }
+            else {
+              printf("%d %d %d\t\%s\n",
+                ((max_balance == balance) ? 0 : 1),
                 ((max_balance > 0) ? max_balance - balance : max_balance * -1),
                 delta,
                 line);
