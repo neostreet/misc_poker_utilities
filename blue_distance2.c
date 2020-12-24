@@ -301,9 +301,10 @@ int main(int argc,char **argv)
             }
             else {
               printf("%d %d %d\t\%s\n",
+                ((max_balance == balance) ? 1 : 0),
                 ((max_balance > 0) ? max_balance - balance : max_balance * -1),
                 delta,
-                ((max_balance == balance) ? 1 : 0),line);
+                line);
             }
           }
           else {
