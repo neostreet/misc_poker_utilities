@@ -6,7 +6,8 @@ static char line[MAX_LINE_LEN];
 
 static char usage[] =
 "usage: is_blue (-starting_amountstarting_amount) (-terse) (-verbose)\n"
-"  (-not) (-date_first) (-only_blue) (-star_ge_amountamount) (-grand_slam) filename\n";
+"  (-not) (-date_first) (-only_blue) (-star_ge_amountamount) (-grand_slam)\n"
+"  (-blue_amount_first) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
@@ -23,6 +24,7 @@ int main(int argc,char **argv)
   bool bDateFirst;
   bool bOnlyBlue;
   bool bGrandSlam;
+  bool bBlueAmountFirst;
   int star_ge_amount;
   int balance;
   FILE *fptr;
@@ -35,7 +37,7 @@ int main(int argc,char **argv)
   int intervening_profits;
   int intervening_losses;
 
-  if ((argc < 2) || (argc > 10)) {
+  if ((argc < 2) || (argc > 11)) {
     printf(usage);
     return 1;
   }
@@ -47,6 +49,7 @@ int main(int argc,char **argv)
   bDateFirst = false;
   bOnlyBlue = false;
   bGrandSlam = false;
+  bBlueAmountFirst = false;
   star_ge_amount = -1;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
@@ -66,6 +69,8 @@ int main(int argc,char **argv)
       sscanf(&argv[curr_arg][15],"%d",&star_ge_amount);
     else if (!strcmp(argv[curr_arg],"-grand_slam"))
       bGrandSlam = true;
+    else if (!strcmp(argv[curr_arg],"-blue_amount_first"))
+      bBlueAmountFirst = true;
     else
       break;
   }
@@ -125,10 +130,18 @@ int main(int argc,char **argv)
             }
           }
           else {
-            if ((star_ge_amount == -1) || (work < star_ge_amount))
-              printf("%s %d\n",line,balance);
-            else
-              printf("%s * %d\n",line,balance);
+            if ((star_ge_amount == -1) || (work < star_ge_amount)) {
+              if (!bBlueAmountFirst)
+                printf("%s %d\n",line,balance);
+              else
+                printf("%d %s\n",balance,line);
+            }
+            else {
+              if (!bBlueAmountFirst)
+                printf("%s * %d\n",line,balance);
+              else
+                printf("%d * %s\n",balance,line);
+            }
           }
         }
         else if (!bOnlyBlue)
