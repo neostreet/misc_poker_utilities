@@ -112,10 +112,14 @@ int main(int argc,char **argv)
       max = balance;
 
       if (bTerse) {
-        if (!bNot)
-          printf("1\n");
+        if (!bOnlyBlue) {
+          if (!bNot)
+            printf("1\n");
+          else
+            printf("0\n");
+        }
         else
-          printf("0\n");
+          printf("%d\n",balance);
       }
       else if (bVerbose) {
         if (!bNot) {
@@ -173,10 +177,12 @@ int main(int argc,char **argv)
         intervening_losses++;
 
       if (bTerse) {
-        if (!bNot)
-          printf("0\n");
-        else
-          printf("1\n");
+        if (!bOnlyBlue) {
+          if (!bNot)
+            printf("0\n");
+          else
+            printf("1\n");
+        }
       }
       else if (bVerbose) {
         if (!bNot) {
