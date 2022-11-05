@@ -71,9 +71,9 @@ int main(int argc,char **argv)
     work = losses * 2 - wins;
 
     if (!bVerbose)
-      printf("%3d\n",work);
+      printf("%d\n",work);
     else
-      printf("%3d %s\n",work,line);
+      printf("%d %s\n",work,line);
   }
 
   fclose(fptr);
