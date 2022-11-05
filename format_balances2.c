@@ -32,6 +32,8 @@ int main(int argc,char **argv)
 
   line_no = 0;
 
+  printf("PokerStars play money stats\n\n");
+
   for ( ; ; ) {
     GetLine(fptr,line,&line_len,MAX_LINE_LEN);
 
