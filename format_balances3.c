@@ -11,6 +11,7 @@ static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
 static char *format_balance(int bal,char *buf,int buf_len);
+static void format_itm_pct(char *line);
 
 int main(int argc,char **argv)
 {
@@ -59,6 +60,9 @@ int main(int argc,char **argv)
       case 11:
         sscanf(&line[0],"%d",&bal);
         printf("balance: %s\n",format_balance(bal,buf,BUF_LEN));
+        break;
+      case 13:
+        format_itm_pct(line);
         break;
     }
   }
@@ -122,4 +126,14 @@ static char *format_balance(int bal,char *buf,int buf_len)
   buf[--m] = '$';
 
   return &buf[m];
+}
+
+static void format_itm_pct(char *line)
+{
+  double itm_pct;
+  int itm;
+  int count;
+
+  sscanf(line,"%lf\t%d\t%d",&itm_pct,&itm,&count);
+  printf("MTT NLHE ITM pct: %5.2lf (%d of %d)\n",itm_pct * (double)100,itm,count);
 }
