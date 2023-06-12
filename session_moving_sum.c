@@ -30,7 +30,7 @@ static char usage[] =
 "usage: session_moving_sum (-no_sort) (-ascending) (-absolute_value)\n"
 "  (-skip_interim) (-terse) (-gesum) (-true_false) (-delta_first)\n"
 "  (-outer_sort_by_winning_sessions) (-second_delta) (-homogenous)\n"
-"  (-count_nonlosing) (-onlycountcount) subset_size filename\n";
+"  (-count_nonlosing) (-only_countcount) subset_size filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char malloc_failed1[] = "malloc of %d session info structures failed\n";
