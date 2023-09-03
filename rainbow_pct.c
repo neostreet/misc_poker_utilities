@@ -46,9 +46,11 @@ int main(int argc,char **argv)
   int p;
   int rainbow_count;
   int flush_count;
+  int other_count;
   int flop_suits[NUM_CARDS_IN_FLOP];
   double rainbow_pct;
   double flush_pct;
+  double other_pct;
 
   rainbow_count = 0;
   flush_count = 0;
@@ -73,13 +75,18 @@ int main(int argc,char **argv)
     }
   }
 
+  other_count = POKER_52_3_PERMUTATIONS - (rainbow_count + flush_count);
+
   rainbow_pct = (double)rainbow_count / (double)POKER_52_3_PERMUTATIONS;
   flush_pct = (double)flush_count / (double)POKER_52_3_PERMUTATIONS;
+  other_pct = (double)other_count / (double)POKER_52_3_PERMUTATIONS;
 
-  printf("%5d %5d %lf\n",
+  printf("rainbows: %5d %5d %lf\n",
     rainbow_count,POKER_52_3_PERMUTATIONS,rainbow_pct);
-  printf("%5d %5d %lf\n",
+  printf("flushes:  %5d %5d %lf\n",
     flush_count,POKER_52_3_PERMUTATIONS,flush_pct);
+  printf("others:   %5d %5d %lf\n",
+    other_count,POKER_52_3_PERMUTATIONS,other_pct);
 
   return 0;
 }
