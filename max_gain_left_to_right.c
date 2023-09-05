@@ -307,7 +307,7 @@ static int get_session_info(
   int work;
 
   for (n = 0; n < line_len; n++) {
-    if (line[n] == TAB)
+    if ((line[n] == TAB) || (line[n] == ' '))
       break;
   }
 
@@ -319,7 +319,7 @@ static int get_session_info(
   session_info->gain_start_date = cvt_date(line);
 
   for (m = n; n < line_len; n++) {
-    if (line[n] == TAB)
+    if ((line[n] == TAB) || (line[n] == ' '))
       break;
   }
 
