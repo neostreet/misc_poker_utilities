@@ -6,7 +6,7 @@ static char line[MAX_LINE_LEN];
 
 #define BUF_LEN 20
 
-static char usage[] = "usage: format_balances balance_str filename\n";
+static char usage[] = "usage: format_balances3 year filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
@@ -50,7 +50,7 @@ int main(int argc,char **argv)
         break;
       case 5:
         sscanf(&line[0],"%d",&bal);
-        printf("%s: %s\n",argv[1],
+        printf("%s balance: %s\n",argv[1],
           format_balance(bal,buf,BUF_LEN));
         break;
       case 8:
@@ -137,3 +137,4 @@ static void format_itm_pct(char *line)
   sscanf(line,"%lf\t%d\t%d",&itm_pct,&itm,&count);
   printf("MTT NLHE ITM pct: %5.2lf (%d of %d)\n",itm_pct * (double)100,itm,count);
 }
+aa
