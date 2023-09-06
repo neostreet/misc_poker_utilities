@@ -137,4 +137,3 @@ static void format_itm_pct(char *line)
   sscanf(line,"%lf\t%d\t%d",&itm_pct,&itm,&count);
   printf("MTT NLHE ITM pct: %5.2lf (%d of %d)\n",itm_pct * (double)100,itm,count);
 }
-aa
