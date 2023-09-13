@@ -269,9 +269,9 @@ int main(int argc,char **argv)
 
         if (!bVerbose) {
           if (bTerse || !bHaveHoleCards)
-            printf("%d\n",delta);
+            printf("%d (%d %d)\n",delta,ending_balance,starting_balance);
           else
-            printf("%s %10d\n",hole_cards,delta);
+            printf("%s %10d (%10d %10d)\n",hole_cards,delta,ending_balance,starting_balance);
         }
         else {
           if (!bHaveHoleCards)
@@ -333,9 +333,9 @@ int main(int argc,char **argv)
 
         if (!bVerbose) {
           if (bTerse || !bHaveHoleCards)
-            printf("%d\n",delta);
+            printf("%d (%d %d)\n",delta,ending_balance,starting_balance);
           else
-            printf("%s %10d\n",hole_cards,delta);
+            printf("%s %10d (%10d %10d)\n",hole_cards,delta,ending_balance,starting_balance);
         }
         else {
           if (!bHaveHoleCards)
