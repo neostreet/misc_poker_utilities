@@ -4,7 +4,7 @@
 
 static char usage[] =
 "usage: aggreg_hands2 (-debug) (-verbose) (-dbg_ixix) (-totals) (-avgs)\n"
-"  (-pairs_only) (-s_or_o_between) (-denomdenom) (-sort_by_freq) filename\n";
+"  (-pairs_only) (-s_or_o_between) (-denomdenom) (-sort_by_freq) (-sort_by_total) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 static char avg_fmt[] = " %9.2lf %9.2lf\n";
 
@@ -68,6 +68,7 @@ static void get_permutation_instance(
   int instance_ix
 );
 int compare(const void *elem1,const void *elem2);
+int compare2(const void *elem1,const void *elem2);
 
 int main(int argc,char **argv)
 {
@@ -81,6 +82,7 @@ int main(int argc,char **argv)
   bool bDenom;
   char denom;
   bool bSortByFreq;
+  bool bSortByTotal;
   int dbg_ix;
   int dbg;
   int m;
@@ -107,7 +109,7 @@ int main(int argc,char **argv)
   int num_collapsed_hands;
   int ixs[NUM_COLLAPSED_HANDS];
 
-  if ((argc < 2) || (argc > 11)) {
+  if ((argc < 2) || (argc > 12)) {
     printf(usage);
     return 1;
   }
@@ -120,6 +122,7 @@ int main(int argc,char **argv)
   bSorOBetween = false;
   bDenom = false;
   bSortByFreq = false;
+  bSortByTotal = false;
   dbg_ix = -1;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
@@ -143,8 +146,20 @@ int main(int argc,char **argv)
     }
     else if (!strcmp(argv[curr_arg],"-sort_by_freq"))
       bSortByFreq = true;
+    else if (!strcmp(argv[curr_arg],"-sort_by_total"))
+      bSortByTotal = true;
     else
       break;
+  }
+
+  if (argc - curr_arg != 1) {
+    printf(usage);
+    return 2;
+  }
+
+  if (bSortByFreq && bSortByTotal) {
+    printf("can't specify both -sort_by_freq and -sort_by_total\n");
+    return 3;
   }
 
   if (bPairsOnly)
@@ -152,14 +167,9 @@ int main(int argc,char **argv)
   else
     num_collapsed_hands = NUM_COLLAPSED_HANDS;
 
-  if (argc - curr_arg != 1) {
-    printf(usage);
-    return 2;
-  }
-
   if ((fptr = fopen(argv[curr_arg],"r")) == NULL) {
     printf(couldnt_open,argv[curr_arg]);
-    return 3;
+    return 4;
   }
 
   for (n = 0; n < num_collapsed_hands; n++) {
@@ -188,7 +198,7 @@ int main(int argc,char **argv)
 
     if (rank_ix1 == NUM_CARDS_IN_SUIT) {
       printf(bad_rank_in_line,total_hand_count+1,line);
-      return 4;
+      return 5;
     }
 
     for (suit_ix1 = 0; suit_ix1 < NUM_SUITS; suit_ix1++) {
@@ -198,7 +208,7 @@ int main(int argc,char **argv)
 
     if (suit_ix1 == NUM_SUITS) {
       printf(bad_suit_in_line,total_hand_count+1,line);
-      return 5;
+      return 6;
     }
 
     for (rank_ix2 = 0; rank_ix2 < NUM_CARDS_IN_SUIT; rank_ix2++) {
@@ -208,7 +218,7 @@ int main(int argc,char **argv)
 
     if (rank_ix2 == NUM_CARDS_IN_SUIT) {
       printf(bad_rank_in_line,total_hand_count+1,line);
-      return 6;
+      return 7;
     }
 
     for (suit_ix2 = 0; suit_ix2 < NUM_SUITS; suit_ix2++) {
@@ -218,7 +228,7 @@ int main(int argc,char **argv)
 
     if (suit_ix2 == NUM_SUITS) {
       printf(bad_suit_in_line,total_hand_count+1,line);
-      return 7;
+      return 8;
     }
 
     if (bPairsOnly) {
@@ -327,6 +337,8 @@ int main(int argc,char **argv)
 
   if (bSortByFreq)
     qsort(ixs,NUM_COLLAPSED_HANDS,sizeof (int),compare);
+  else if (bSortByTotal)
+    qsort(ixs,NUM_COLLAPSED_HANDS,sizeof (int),compare2);
 
   for (o = 0; o < NUM_COLLAPSED_HANDS; o++) {
     ix = ixs[o];
@@ -508,6 +520,20 @@ int compare(const void *elem1,const void *elem2)
   int2 = *(int *)elem2;
 
   if (aggreg[int2].freq_factor < aggreg[int1].freq_factor)
+    return -1;
+  else
+    return 1;
+}
+
+int compare2(const void *elem1,const void *elem2)
+{
+  int int1;
+  int int2;
+
+  int1 = *(int *)elem1;
+  int2 = *(int *)elem2;
+
+  if (aggreg[int2].sum_delta < aggreg[int1].sum_delta)
     return -1;
   else
     return 1;
