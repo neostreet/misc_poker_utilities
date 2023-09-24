@@ -408,7 +408,7 @@ int main(int argc,char **argv)
     total_num_losses += aggreg[ix].num_losses;
     total_num_washes += aggreg[ix].num_washes;
 
-    if (bAvgs) {
+    if (bAvgs && bPrint) {
       if (!aggreg[ix].num_wins)
         win_avg = (double)0;
       else
@@ -421,8 +421,10 @@ int main(int argc,char **argv)
 
       printf(avg_fmt,win_avg,loss_avg);
     }
-    else
-      putchar(0x0a);
+    else {
+      if (bPrint)
+        putchar(0x0a);
+    }
   }
 
   if (bTotals) {
