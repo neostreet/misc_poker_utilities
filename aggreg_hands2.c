@@ -4,7 +4,8 @@
 
 static char usage[] =
 "usage: aggreg_hands2 (-debug) (-verbose) (-dbg_ixix) (-totals) (-avgs)\n"
-"  (-pairs_only) (-s_or_o_between) (-denomdenom) (-sort_by_freq) (-sort_by_total) filename\n";
+"  (-pairs_only) (-s_or_o_between) (-denomdenom) (-sort_by_freq) (-sort_by_total)\n"
+"  (-only_missing) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 static char avg_fmt[] = " %9.2lf %9.2lf\n";
 
@@ -83,6 +84,8 @@ int main(int argc,char **argv)
   char denom;
   bool bSortByFreq;
   bool bSortByTotal;
+  bool bOnlyMissing;
+  bool bPrint;
   int dbg_ix;
   int dbg;
   int m;
@@ -109,7 +112,7 @@ int main(int argc,char **argv)
   int num_collapsed_hands;
   int ixs[NUM_COLLAPSED_HANDS];
 
-  if ((argc < 2) || (argc > 12)) {
+  if ((argc < 2) || (argc > 13)) {
     printf(usage);
     return 1;
   }
@@ -123,6 +126,7 @@ int main(int argc,char **argv)
   bDenom = false;
   bSortByFreq = false;
   bSortByTotal = false;
+  bOnlyMissing = false;
   dbg_ix = -1;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
@@ -148,6 +152,8 @@ int main(int argc,char **argv)
       bSortByFreq = true;
     else if (!strcmp(argv[curr_arg],"-sort_by_total"))
       bSortByTotal = true;
+    else if (!strcmp(argv[curr_arg],"-only_missing"))
+      bOnlyMissing = true;
     else
       break;
   }
@@ -346,33 +352,53 @@ int main(int argc,char **argv)
     if (bDenom && (aggreg[ix].card_string[0] != denom))
       continue;
 
+    bPrint = false;
+
     if (bVerbose) {
-      printf("%-3s %10d %10d %10d %6d %6d %6d %6d %9.2lf %6d %11.4lf %6.4lf",
-        aggreg[ix].card_string,
-        aggreg[ix].sum_delta,
-        aggreg[ix].sum_wins,
-        aggreg[ix].sum_losses,
-        aggreg[ix].num_wins,
-        aggreg[ix].num_losses,
-        aggreg[ix].num_washes,
-        aggreg[ix].hand_count,
-        periodicities[aggreg[ix].handtype],
-        total_hand_count,
-        aggreg[ix].freq_factor,
-        aggreg[ix].win_pct);
+      if (bOnlyMissing) {
+        if (!aggreg[ix].hand_count)
+          bPrint = true;
+      }
+      else
+        bPrint = true;
+
+      if (bPrint) {
+        printf("%-3s %10d %10d %10d %6d %6d %6d %6d %9.2lf %6d %11.4lf %6.4lf",
+          aggreg[ix].card_string,
+          aggreg[ix].sum_delta,
+          aggreg[ix].sum_wins,
+          aggreg[ix].sum_losses,
+          aggreg[ix].num_wins,
+          aggreg[ix].num_losses,
+          aggreg[ix].num_washes,
+          aggreg[ix].hand_count,
+          periodicities[aggreg[ix].handtype],
+          total_hand_count,
+          aggreg[ix].freq_factor,
+          aggreg[ix].win_pct);
+      }
     }
     else {
-      printf("%-3s %10d %10d %10d %6d %6d %6d %6d %11.4lf %6.4lf",
-        aggreg[ix].card_string,
-        aggreg[ix].sum_delta,
-        aggreg[ix].sum_wins,
-        aggreg[ix].sum_losses,
-        aggreg[ix].num_wins,
-        aggreg[ix].num_losses,
-        aggreg[ix].num_washes,
-        aggreg[ix].hand_count,
-        aggreg[ix].freq_factor,
-        aggreg[ix].win_pct);
+      if (bOnlyMissing) {
+        if (!aggreg[ix].hand_count)
+          bPrint = true;
+      }
+      else
+        bPrint = true;
+
+      if (bPrint) {
+        printf("%-3s %10d %10d %10d %6d %6d %6d %6d %11.4lf %6.4lf",
+          aggreg[ix].card_string,
+          aggreg[ix].sum_delta,
+          aggreg[ix].sum_wins,
+          aggreg[ix].sum_losses,
+          aggreg[ix].num_wins,
+          aggreg[ix].num_losses,
+          aggreg[ix].num_washes,
+          aggreg[ix].hand_count,
+          aggreg[ix].freq_factor,
+          aggreg[ix].win_pct);
+      }
     }
 
     total_sum_delta += aggreg[ix].sum_delta;
