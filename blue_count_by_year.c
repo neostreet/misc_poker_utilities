@@ -9,11 +9,11 @@ static int blue_count[MAX_YEARS];
 static int year_count[MAX_YEARS];
 
 static char usage[] =
-"usage: blue_count_by_year (-offsetoffset) (-after_blue) filename\n";
+"usage: blue_count_by_year (-offsetoffset) (-after_blue) (-reset) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
-static int get_year_and_balance(char *line,int line_len,int *year,int *balance);
+static int get_year_and_balances(char *line,int line_len,int *year,int *start_balance,int *end_balance);
 
 int main(int argc,char **argv)
 {
@@ -21,7 +21,9 @@ int main(int argc,char **argv)
   int curr_arg;
   int offset;
   bool bAfterBlue;
+  bool bReset;
   bool bPrevIsBlue;
+  bool bLoss;
   FILE *fptr;
   int line_len;
   int line_no;
@@ -30,25 +32,29 @@ int main(int argc,char **argv)
   int year;
   int prev_year;
   int prev_line_no;
-  int work;
+  int start_balance;
+  int end_balance;
   int max;
   double blue_pct;
   int tot_blue_count;
   int tot_year_count;
 
-  if ((argc < 2) || (argc > 4)) {
+  if ((argc < 2) || (argc > 5)) {
     printf(usage);
     return 1;
   }
 
   offset = 0;
   bAfterBlue = false;
+  bReset = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strncmp(argv[curr_arg],"-offset",7))
       sscanf(&argv[curr_arg][7],"%d",&offset);
     else if (!strcmp(argv[curr_arg],"-after_blue"))
       bAfterBlue = true;
+    else if (!strcmp(argv[curr_arg],"-reset"))
+      bReset = true;
     else
       break;
   }
@@ -80,10 +86,10 @@ int main(int argc,char **argv)
 
     line_no++;
 
-    retval = get_year_and_balance(line,line_len,&year,&work);
+    retval = get_year_and_balances(line,line_len,&year,&start_balance,&end_balance);
 
     if (retval) {
-      printf("get_year_and_balance() failed on line %d: %d\n",line_no,retval);
+      printf("get_year_and_balances() failed on line %d: %d\n",line_no,retval);
       return 4;
     }
 
@@ -96,19 +102,38 @@ int main(int argc,char **argv)
     }
 
     if (!bAfterBlue || bPrevIsBlue) {
-      if (!bAfterBlue)
+      if (!bAfterBlue) {
         year_count[year - first_year]++;
+
+        if (bReset && (year_count[year - first_year] == 1)) {
+          max = -1;
+          bPrevIsBlue = false;
+        }
+      }
       else if (prev_line_no > 1)
         year_count[prev_year - first_year]++;
     }
 
-    if (work >= max) {
-      if (line_no > 1) {
-        if (!bAfterBlue || bPrevIsBlue)
-          blue_count[year - first_year]++;
+    if (end_balance >= max) {
+      if (max == -1) {
+        if (start_balance > end_balance) {
+          max = start_balance;
+          bLoss = true;
+        }
+        else {
+          max = end_balance;
+          bLoss = false;
+        }
+      }
+      else {
+        max = end_balance;
+        bLoss = false;
       }
 
-      max = work;
+      if (!bAfterBlue || bPrevIsBlue) {
+        if (!bLoss)
+          blue_count[year - first_year]++;
+      }
 
       if (bAfterBlue) {
         bPrevIsBlue = true;
@@ -170,12 +195,12 @@ static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen)
   *line_len = local_line_len;
 }
 
-static int get_year_and_balance(char *line,int line_len,int *year,int *balance)
+static int get_year_and_balances(char *line,int line_len,int *year,int *start_balance,int *end_balance)
 {
   if (sscanf(line,"%d",year) != 1)
     return 1;
 
-  if (sscanf(&line[11],"%d",balance) != 1)
+  if (sscanf(&line[11],"%d %d",start_balance,end_balance) != 2)
     return 2;
 
   return 0;
