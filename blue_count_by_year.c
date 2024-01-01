@@ -157,9 +157,8 @@ int main(int argc,char **argv)
       printf("%d: %d of %d (%lf)\n",first_year + n,blue_count[n],year_count[n],blue_pct);
 
       tot_blue_count += blue_count[n];
+      tot_year_count += year_count[n];
     }
-
-    tot_year_count += year_count[n];
   }
 
   putchar(0x0a);
