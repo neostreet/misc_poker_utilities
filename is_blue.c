@@ -159,10 +159,12 @@ int main(int argc,char **argv)
             printf("%s\t1\n",date);
         }
         else {
-          if (!bDateFirst)
-            printf("0\t%s\n",date);
-          else
-            printf("%s\t0\n",date);
+          if (!bOnlyBlue) {
+            if (!bDateFirst)
+              printf("0\t%s\n",date);
+            else
+              printf("%s\t0\n",date);
+          }
         }
       }
 
@@ -202,10 +204,12 @@ int main(int argc,char **argv)
       }
       else {
         if (!bNot) {
-          if (!bDateFirst)
-            printf("0\t%s\n",date);
-          else
-            printf("%s\t0\n",date);
+          if (!bOnlyBlue) {
+            if (!bDateFirst)
+              printf("0\t%s\n",date);
+            else
+              printf("%s\t0\n",date);
+          }
         }
         else {
           if (!bDateFirst)
