@@ -23,7 +23,7 @@ struct session_info_struct {
 #define TAB 0x9
 
 static char usage[] =
-"usage: session_moving_avg (-no_sort) (-ascending) (-absolute_value) subset_size filename\n";
+"usage: session_moving_avg (-no_sort) (-ascending) (-absolute_value) (-terse) subset_size filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char malloc_failed1[] = "malloc of %d session info structures failed\n";
@@ -65,6 +65,7 @@ int main(int argc,char **argv)
   int n;
   bool bNoSort;
   bool bAbsoluteValue;
+  bool bTerse;
   int curr_arg;
   int session_ix;
   int subset_size;
@@ -79,7 +80,7 @@ int main(int argc,char **argv)
   int retval;
   char *cpt;
 
-  if ((argc < 3) || (argc > 6)) {
+  if ((argc < 3) || (argc > 7)) {
     printf(usage);
     return 1;
   }
@@ -87,6 +88,7 @@ int main(int argc,char **argv)
   bNoSort = false;
   bAscending = false;
   bAbsoluteValue = false;
+  bTerse = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-no_sort"))
@@ -95,6 +97,8 @@ int main(int argc,char **argv)
       bAscending = true;
     else if (!strcmp(argv[curr_arg],"-absolute_value"))
       bAbsoluteValue = true;
+    else if (!strcmp(argv[curr_arg],"-terse"))
+      bTerse = true;
     else
       break;
   }
@@ -200,13 +204,18 @@ int main(int argc,char **argv)
     qsort(sort_ixs,num_avgs,sizeof (int),elem_compare);
 
   for (n = 0; n < num_avgs; n++) {
-    printf("%10lf ",session_info[sort_ixs[n]].avg);
+    if (bTerse) {
+      printf("%lf\n",session_info[sort_ixs[n]].avg);
+    }
+    else {
+      printf("%10lf ",session_info[sort_ixs[n]].avg);
 
-    cpt = ctime(&session_info[sort_ixs[n]].start_date);
-    printf("%s ",format_date(cpt));
+      cpt = ctime(&session_info[sort_ixs[n]].start_date);
+      printf("%s ",format_date(cpt));
 
-    cpt = ctime(&session_info[sort_ixs[n]].end_date);
-    printf("%s\n",format_date(cpt));
+      cpt = ctime(&session_info[sort_ixs[n]].end_date);
+      printf("%s\n",format_date(cpt));
+    }
   }
 
   fclose(fptr);
