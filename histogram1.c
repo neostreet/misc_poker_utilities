@@ -4,7 +4,7 @@
 #define MAX_LINE_LEN 1024
 static char line[MAX_LINE_LEN];
 
-static char usage[] = "usage: histogram1 (-verbose) filename\n";
+static char usage[] = "usage: histogram1 (-terse) (-verbose) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
@@ -15,6 +15,7 @@ int main(int argc,char **argv)
 {
   int n;
   int curr_arg;
+  bool bTerse;
   bool bVerbose;
   FILE *fptr;
   int line_len;
@@ -27,15 +28,18 @@ int main(int argc,char **argv)
   int tier;
   double dwork;
 
-  if ((argc < 2) || (argc > 3)) {
+  if ((argc < 2) || (argc > 4)) {
     printf(usage);
     return 1;
   }
 
+  bTerse = false;
   bVerbose = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
-    if (!strcmp(argv[curr_arg],"-verbose"))
+    if (!strcmp(argv[curr_arg],"-terse"))
+      bTerse = true;
+    else if (!strcmp(argv[curr_arg],"-verbose"))
       bVerbose = true;
     else
       break;
@@ -87,11 +91,16 @@ int main(int argc,char **argv)
     putchar(0x0a);
 
   for (n = 0; n < NUM_TIERS; n++) {
-    dwork = (double)hist[n] / (double)total;
-    printf("%d %lf\n",hist[n],dwork);
+    if (bTerse)
+      printf("%d\n",hist[n]);
+    else {
+      dwork = (double)hist[n] / (double)total;
+      printf("%d %lf\n",hist[n],dwork);
+    }
   }
 
-  printf("\n%d\n",total);
+  if (!bTerse)
+    printf("\n%d\n",total);
 
   fclose(fptr);
 
