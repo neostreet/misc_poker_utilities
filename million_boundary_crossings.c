@@ -8,7 +8,7 @@ static char line[MAX_LINE_LEN];
 static int crossings[MAX_MILLION_BOUNDARIES];
 
 static char usage[] =
-"usage: million_boundary_crossings (-debug) filename\n";
+"usage: million_boundary_crossings (-verbose) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
@@ -18,7 +18,7 @@ int main(int argc,char **argv)
   int m;
   int n;
   int curr_arg;
-  bool bDebug;
+  bool bVerbose;
   FILE *fptr;
   int line_len;
   int line_no;
@@ -35,11 +35,11 @@ int main(int argc,char **argv)
     return 1;
   }
 
-  bDebug = false;
+  bVerbose = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
-    if (!strcmp(argv[curr_arg],"-debug"))
-      bDebug = true;
+    if (!strcmp(argv[curr_arg],"-verbose"))
+      bVerbose = true;
     else
       break;
   }
@@ -85,25 +85,35 @@ int main(int argc,char **argv)
         dbg = 1;
 
       if (starting_million < ending_million) {
-        for (starting_million++; starting_million <= ending_million; starting_million++)
-          crossings[starting_million]++;
+        for (starting_million++; starting_million <= ending_million; starting_million++) {
+          if (!bVerbose)
+            crossings[starting_million]++;
+          else
+            printf("%s %d\n",date_str,starting_million);
+        }
       }
       else {
-        for (starting_million--; starting_million >= ending_million; starting_million--)
-          crossings[starting_million+1]++;
+        for (starting_million--; starting_million >= ending_million; starting_million--) {
+          if (!bVerbose)
+            crossings[starting_million+1]++;
+          else
+            printf("%s %d\n",date_str,starting_million);
+        }
       }
     }
   }
 
-  for (n = MAX_MILLION_BOUNDARIES - 1; (n > 0); n--) {
-    if (crossings[n])
-      break;
-  }
-
-  for (m = 1; m <= n; m++)
-    printf("%2d %8d\n",crossings[m],m * 1000000);
-
   fclose(fptr);
+
+  if (!bVerbose) {
+    for (n = MAX_MILLION_BOUNDARIES - 1; (n > 0); n--) {
+      if (crossings[n])
+        break;
+    }
+
+    for (m = 1; m <= n; m++)
+      printf("%2d %8d\n",crossings[m],m * 1000000);
+  }
 
   return 0;
 }
