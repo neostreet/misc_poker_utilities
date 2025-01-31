@@ -87,17 +87,18 @@ char *plain_hand_types[] = {
 int plain_hand_type_lens[NUM_HAND_TYPES];
 
 char *premium_hand_abbrevs[] = {
-  "AA ",
-  "KK ",
-  "QQ ",
+  "AA",
+  "KK",
+  "QQ",
   "AKs",
-  "JJ ",
-  "TT ",
+  "JJ",
+  "TT",
   "AQs",
   "AKo",
   "AJs",
   "KQs"
 };
+#define NUM_PREMIUM_HAND_ABBREVS (sizeof premium_hand_abbrevs / sizeof (char *))
 int compare_key_called;
 bool bQuick;
 struct hand_and_type *hands_and_types;
