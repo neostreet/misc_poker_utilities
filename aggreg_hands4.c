@@ -37,7 +37,6 @@ struct aggreg_info {
   hand_type handtype;
   char card_string[4];
   int hand_count;
-  int total_hands;
   double freq_factor;
 };
 
@@ -118,10 +117,8 @@ int main(int argc,char **argv)
     return 3;
   }
 
-  for (n = 0; n < num_collapsed_hands; n++) {
+  for (n = 0; n < num_collapsed_hands; n++)
     aggreg[n].hand_count = 0;
-    aggreg[n].total_hands = 0;
-  }
 
   total_hand_count = 0;
 
@@ -189,8 +186,6 @@ int main(int argc,char **argv)
 
     aggreg[ix].handtype = handtype;
     aggreg[ix].hand_count++;
-
-    aggreg[ix].total_hands++;
   }
 
   fclose(fptr);
