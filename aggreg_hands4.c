@@ -3,7 +3,7 @@
 #include <string.h>
 
 static char usage[] =
-"usage: aggreg_hands4 (-debug) (-sort_by_freq) (-sort_by_total) filename\n";
+"usage: aggreg_hands4 (-debug) (-verbose) (-sort_by_freq) (-sort_by_total) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 #define MAX_LINE_LEN 1024
@@ -64,6 +64,7 @@ int main(int argc,char **argv)
 {
   int curr_arg;
   bool bDebug;
+  bool bVerbose;
   bool bSortByFreq;
   bool bSortByTotal;
   int dbg_ix;
@@ -83,12 +84,13 @@ int main(int argc,char **argv)
   int num_collapsed_hands;
   int ixs[NUM_COLLAPSED_HANDS];
 
-  if ((argc < 2) || (argc > 5)) {
+  if ((argc < 2) || (argc > 6)) {
     printf(usage);
     return 1;
   }
 
   bDebug = false;
+  bVerbose = false;
   bSortByFreq = false;
   bSortByTotal = false;
 
@@ -97,6 +99,8 @@ int main(int argc,char **argv)
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-debug"))
       bDebug = true;
+    else if (!strcmp(argv[curr_arg],"-verbose"))
+      bVerbose = true;
     else if (!strcmp(argv[curr_arg],"-sort_by_freq"))
       bSortByFreq = true;
     else if (!strcmp(argv[curr_arg],"-sort_by_total"))
@@ -177,6 +181,10 @@ int main(int argc,char **argv)
 
     ix = index_of_hand(rank_ix1,suit_ix1,rank_ix2,suit_ix2,&handtype);
 
+    if (bDebug) {
+      printf("index_of_hand(): %d %d %d %d: ix = %d, handtype = %d\n",rank_ix1,suit_ix1,rank_ix2,suit_ix2,ix,handtype);
+    }
+
     if (ix == dbg_ix)
       dbg = 1;
 
@@ -241,12 +249,20 @@ int main(int argc,char **argv)
   for (o = 0; o < NUM_COLLAPSED_HANDS; o++) {
     ix = ixs[o];
 
-    printf("%-3s %6d %9.2lf %6d %11.4lf\n",
-      aggreg[ix].card_string,
-      aggreg[ix].hand_count,
-      periodicities[aggreg[ix].handtype],
-      total_hand_count,
-      aggreg[ix].freq_factor);
+    if (!bVerbose) {
+      printf("%-3s %6d\n",
+        aggreg[ix].card_string,
+        aggreg[ix].hand_count);
+    }
+    else {
+      printf("%-3s %6d %d %9.2lf %6d %11.4lf\n",
+        aggreg[ix].card_string,
+        aggreg[ix].hand_count,
+        aggreg[ix].handtype,
+        periodicities[aggreg[ix].handtype],
+        total_hand_count,
+        aggreg[ix].freq_factor);
+    }
   }
 
   return 0;
