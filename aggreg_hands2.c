@@ -250,6 +250,10 @@ int main(int argc,char **argv)
 
     ix = index_of_hand(rank_ix1,suit_ix1,rank_ix2,suit_ix2,&handtype);
 
+    if (bDebug) {
+      printf("index_of_hand(): %d %d %d %d: ix = %d, handtype = %d\n",rank_ix1,suit_ix1,rank_ix2,suit_ix2,ix,handtype);
+    }
+
     if (ix == dbg_ix)
       dbg = 1;
 
