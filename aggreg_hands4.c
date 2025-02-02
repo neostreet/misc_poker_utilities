@@ -135,7 +135,7 @@ int main(int argc,char **argv)
 
     if (rank_ix1 == NUM_CARDS_IN_SUIT) {
       printf(bad_rank_in_line,total_hand_count+1,line);
-      return 5;
+      return 4;
     }
 
     for (suit_ix1 = 0; suit_ix1 < NUM_SUITS; suit_ix1++) {
@@ -145,7 +145,7 @@ int main(int argc,char **argv)
 
     if (suit_ix1 == NUM_SUITS) {
       printf(bad_suit_in_line,total_hand_count+1,line);
-      return 6;
+      return 5;
     }
 
     for (rank_ix2 = 0; rank_ix2 < NUM_CARDS_IN_SUIT; rank_ix2++) {
@@ -155,7 +155,7 @@ int main(int argc,char **argv)
 
     if (rank_ix2 == NUM_CARDS_IN_SUIT) {
       printf(bad_rank_in_line,total_hand_count+1,line);
-      return 7;
+      return 6;
     }
 
     for (suit_ix2 = 0; suit_ix2 < NUM_SUITS; suit_ix2++) {
@@ -165,7 +165,7 @@ int main(int argc,char **argv)
 
     if (suit_ix2 == NUM_SUITS) {
       printf(bad_suit_in_line,total_hand_count+1,line);
-      return 8;
+      return 7;
     }
 
     total_hand_count++;
