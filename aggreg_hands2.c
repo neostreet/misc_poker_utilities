@@ -46,7 +46,6 @@ struct aggreg_info {
   int num_wins;
   int num_losses;
   int num_washes;
-  int total_hands;
   double freq_factor;
   double win_pct;
 };
@@ -190,7 +189,6 @@ int main(int argc,char **argv)
     aggreg[n].num_wins = 0;
     aggreg[n].num_losses = 0;
     aggreg[n].num_washes = 0;
-    aggreg[n].total_hands = 0;
   }
 
   total_hand_count = 0;
@@ -278,8 +276,6 @@ int main(int argc,char **argv)
     }
     else
       aggreg[ix].num_washes++;
-
-    aggreg[ix].total_hands++;
   }
 
   fclose(fptr);
@@ -287,8 +283,8 @@ int main(int argc,char **argv)
   for (o = 0; o < NUM_COLLAPSED_HANDS; o++) {
     aggreg[o].freq_factor = (double)aggreg[o].hand_count * periodicities[aggreg[o].handtype] /
       (double)total_hand_count;
-    if (aggreg[o].total_hands)
-      aggreg[o].win_pct = (double)aggreg[o].num_wins / (double)aggreg[o].total_hands;
+    if (aggreg[o].hand_count)
+      aggreg[o].win_pct = (double)aggreg[o].num_wins / (double)aggreg[o].hand_count;
     else
       aggreg[o].win_pct = (double)0;
 
