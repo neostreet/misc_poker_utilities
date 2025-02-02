@@ -369,7 +369,7 @@ int main(int argc,char **argv)
         bPrint = true;
 
       if (bPrint) {
-        printf("%-3s %10d %10d %10d %6d %6d %6d %6d %9.2lf %6d %11.4lf %6.4lf",
+        printf("%-3s %10d %10d %10d %6d %6d %6d %6d %d %9.2lf %6d %11.4lf %6.4lf",
           aggreg[ix].card_string,
           aggreg[ix].sum_delta,
           aggreg[ix].sum_wins,
@@ -378,6 +378,7 @@ int main(int argc,char **argv)
           aggreg[ix].num_losses,
           aggreg[ix].num_washes,
           aggreg[ix].hand_count,
+          aggreg[ix].handtype,
           periodicities[aggreg[ix].handtype],
           total_hand_count,
           aggreg[ix].freq_factor,
