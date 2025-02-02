@@ -126,8 +126,16 @@ int main(int argc,char **argv)
     return 4;
   }
 
-  for (n = 0; n < num_collapsed_hands; n++)
+  for (n = 0; n < num_collapsed_hands; n++) {
+    if (n < NUM_CARDS_IN_SUIT)
+      aggreg[n].handtype = HAND_TYPE_PAIR;
+    else if (n < NUM_CARDS_IN_SUIT + NUM_SUITED_NONPAIRS)
+      aggreg[n].handtype = HAND_TYPE_SUITED_NONPAIR;
+    else
+      aggreg[n].handtype = HAND_TYPE_NONSUITED_NONPAIR;
+
     aggreg[n].hand_count = 0;
+  }
 
   total_hand_count = 0;
 
@@ -197,7 +205,6 @@ int main(int argc,char **argv)
       ix = 0;
     }
 
-    aggreg[ix].handtype = handtype;
     aggreg[ix].hand_count++;
   }
 
