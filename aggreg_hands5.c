@@ -3,7 +3,7 @@
 #include <string.h>
 
 static char usage[] =
-"usage: aggreg_hands5 (-debug) (-verbose) (-sort_by_freq) (-sort_by_total) filename\n";
+"usage: aggreg_hands5 (-debug) (-verbose) (-sort_by_freq) (-sort_by_total) (-only_missing) (-not) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 #define MAX_FILENAME_LEN 1024
@@ -70,6 +70,9 @@ int main(int argc,char **argv)
   bool bVerbose;
   bool bSortByFreq;
   bool bSortByTotal;
+  bool bOnlyMissing;
+  bool bPrint;
+  bool bNot;
   int dbg_ix;
   int dbg;
   int m;
@@ -89,7 +92,7 @@ int main(int argc,char **argv)
   int num_collapsed_hands;
   int ixs[NUM_COLLAPSED_HANDS];
 
-  if ((argc < 2) || (argc > 6)) {
+  if ((argc < 2) || (argc > 8)) {
     printf(usage);
     return 1;
   }
@@ -98,6 +101,8 @@ int main(int argc,char **argv)
   bVerbose = false;
   bSortByFreq = false;
   bSortByTotal = false;
+  bOnlyMissing = false;
+  bNot = false;
 
   dbg_ix = -1;
 
@@ -110,6 +115,10 @@ int main(int argc,char **argv)
       bSortByFreq = true;
     else if (!strcmp(argv[curr_arg],"-sort_by_total"))
       bSortByTotal = true;
+    else if (!strcmp(argv[curr_arg],"-only_missing"))
+      bOnlyMissing = true;
+    else if (!strcmp(argv[curr_arg],"-not"))
+      bNot = true;
     else
       break;
   }
@@ -274,20 +283,36 @@ int main(int argc,char **argv)
 
   for (o = 0; o < NUM_COLLAPSED_HANDS; o++) {
     ix = ixs[o];
+    bPrint = false;
 
-    if (!bVerbose) {
-      printf("%-3s %6d\n",
-        aggreg[ix].card_string,
-        aggreg[ix].hand_count);
+    if (bOnlyMissing) {
+      if (!bNot) {
+        if (!aggreg[ix].hand_count)
+          bPrint = true;
+      }
+      else {
+        if (aggreg[ix].hand_count)
+          bPrint = true;
+      }
     }
-    else {
-      printf("%-3s %6d %d %9.2lf %6d %11.4lf\n",
-        aggreg[ix].card_string,
-        aggreg[ix].hand_count,
-        aggreg[ix].handtype,
-        periodicities[aggreg[ix].handtype],
-        total_hand_count,
-        aggreg[ix].freq_factor);
+    else
+      bPrint = true;
+
+    if (bPrint) {
+      if (!bVerbose) {
+        printf("%-3s %6d\n",
+          aggreg[ix].card_string,
+          aggreg[ix].hand_count);
+      }
+      else {
+        printf("%-3s %6d %d %9.2lf %6d %11.4lf\n",
+          aggreg[ix].card_string,
+          aggreg[ix].hand_count,
+          aggreg[ix].handtype,
+          periodicities[aggreg[ix].handtype],
+          total_hand_count,
+          aggreg[ix].freq_factor);
+      }
     }
   }
 
