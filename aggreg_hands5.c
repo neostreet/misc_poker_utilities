@@ -6,6 +6,9 @@ static char usage[] =
 "usage: aggreg_hands5 (-debug) (-verbose) (-sort_by_freq) (-sort_by_total) (-only_missing) (-not) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
+static char ws_str[] = "ws";
+#define WS_STR_LEN (sizeof (ws_str) - 1)
+
 #define MAX_FILENAME_LEN 1024
 static char filename[MAX_FILENAME_LEN];
 
@@ -40,7 +43,10 @@ struct aggreg_info {
   hand_type handtype;
   char card_string[4];
   int hand_count;
+  int num_wins;
+  int num_losses;
   double freq_factor;
+  double win_pct;
 };
 
 #define NUM_COLLAPSED_HANDS 169
@@ -54,6 +60,8 @@ char rank_chars[] = "23456789TJQKA";
 static char bad_suit_in_line[] = "bad suit in line %d: %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
+static bool Contains(bool bCaseSens,char *line,int line_len,
+  char *string,int string_len,int *index);
 static int index_of_hand(int rank_ix1,int suit_ix1,int rank_ix2,int suit_ix2,hand_type *handtype_pt);
 static void get_permutation_instance(
   int set_size,
@@ -88,6 +96,7 @@ int main(int argc,char **argv)
   int suit_ix2;
   hand_type handtype;
   int ix;
+  int ix2;
   int total_hand_count;
   int num_collapsed_hands;
   int ixs[NUM_COLLAPSED_HANDS];
@@ -144,6 +153,8 @@ int main(int argc,char **argv)
       aggreg[n].handtype = HAND_TYPE_NONSUITED_NONPAIR;
 
     aggreg[n].hand_count = 0;
+    aggreg[n].num_wins = 0;
+    aggreg[n].num_losses = 0;
   }
 
   total_hand_count = 0;
@@ -231,6 +242,16 @@ int main(int argc,char **argv)
       }
 
       aggreg[ix].hand_count++;
+
+      if (Contains(true,
+        line,line_len,
+        ws_str,WS_STR_LEN,
+        &ix2)) {
+
+        aggreg[ix].num_wins++;
+      }
+      else
+        aggreg[ix].num_losses++;
     }
 
     fclose(fptr);
@@ -241,6 +262,10 @@ int main(int argc,char **argv)
   for (o = 0; o < NUM_COLLAPSED_HANDS; o++) {
     aggreg[o].freq_factor = (double)aggreg[o].hand_count * periodicities[aggreg[o].handtype] /
       (double)total_hand_count;
+    if (aggreg[o].hand_count)
+      aggreg[o].win_pct = (double)aggreg[o].num_wins / (double)aggreg[o].hand_count * (double)100;
+    else
+      aggreg[o].win_pct = (double)0;
 
     if (o < NUM_CARDS_IN_SUIT) {
       for (n = 0; n < 2; n++)
@@ -305,13 +330,16 @@ int main(int argc,char **argv)
           aggreg[ix].hand_count);
       }
       else {
-        printf("%-3s %6d %d %9.2lf %6d %11.4lf\n",
+        printf("%-3s %6d %6d %6d %d %9.2lf %6d %11.4lf %6.2lf\n",
           aggreg[ix].card_string,
+          aggreg[ix].num_wins,
+          aggreg[ix].num_losses,
           aggreg[ix].hand_count,
           aggreg[ix].handtype,
           periodicities[aggreg[ix].handtype],
           total_hand_count,
-          aggreg[ix].freq_factor);
+          aggreg[ix].freq_factor,
+          aggreg[ix].win_pct);
       }
     }
   }
@@ -341,6 +369,41 @@ static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen)
 
   line[local_line_len] = 0;
   *line_len = local_line_len;
+}
+
+static bool Contains(bool bCaseSens,char *line,int line_len,
+  char *string,int string_len,int *index)
+{
+  int m;
+  int n;
+  int tries;
+  char chara;
+
+  tries = line_len - string_len + 1;
+
+  if (tries <= 0)
+    return false;
+
+  for (m = 0; m < tries; m++) {
+    for (n = 0; n < string_len; n++) {
+      chara = line[m + n];
+
+      if (!bCaseSens) {
+        if ((chara >= 'A') && (chara <= 'Z'))
+          chara += 'a' - 'A';
+      }
+
+      if (chara != string[n])
+        break;
+    }
+
+    if (n == string_len) {
+      *index = m;
+      return true;
+    }
+  }
+
+  return false;
 }
 
 static int index_of_hand(int rank_ix1,int suit_ix1,int rank_ix2,int suit_ix2,hand_type *handtype_pt)
