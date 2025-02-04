@@ -364,21 +364,21 @@ int main(int argc,char **argv)
 
     bPrint = false;
 
-    if (bVerbose) {
-      if (bOnlyMissing) {
-        if (!bNot) {
-          if (!aggreg[ix].hand_count)
-            bPrint = true;
-        }
-        else {
-          if (aggreg[ix].hand_count)
-            bPrint = true;
-        }
+    if (bOnlyMissing) {
+      if (!bNot) {
+        if (!aggreg[ix].hand_count)
+          bPrint = true;
       }
-      else
-        bPrint = true;
+      else {
+        if (aggreg[ix].hand_count)
+          bPrint = true;
+      }
+    }
+    else
+      bPrint = true;
 
-      if (bPrint) {
+    if (bPrint) {
+      if (bVerbose) {
         printf("%-3s %10d %10d %10d %6d %6d %6d %6d %d %9.2lf %6d %11.4lf %6.4lf",
           aggreg[ix].card_string,
           aggreg[ix].sum_delta,
@@ -394,22 +394,7 @@ int main(int argc,char **argv)
           aggreg[ix].freq_factor,
           aggreg[ix].win_pct);
       }
-    }
-    else {
-      if (bOnlyMissing) {
-        if (!bNot) {
-          if (!aggreg[ix].hand_count)
-            bPrint = true;
-        }
-        else {
-          if (aggreg[ix].hand_count)
-            bPrint = true;
-        }
-      }
-      else
-        bPrint = true;
-
-      if (bPrint) {
+      else {
         printf("%-3s %10d %10d %10d %6d %6d %6d %6d %6d %11.4lf %6.4lf",
           aggreg[ix].card_string,
           aggreg[ix].sum_delta,
