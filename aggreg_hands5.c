@@ -3,7 +3,7 @@
 #include <string.h>
 
 static char usage[] =
-"usage: aggreg_hands5 (-debug) (-verbose) (-sort_by_freq) (-sort_by_total) (-only_missing) (-not) filename\n";
+"usage: aggreg_hands5 (-debug) (-verbose) (-terse) (-sort_by_freq) (-sort_by_total) (-only_missing) (-not) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char fbf_str[] = "fbf";
@@ -86,6 +86,7 @@ int main(int argc,char **argv)
   int curr_arg;
   bool bDebug;
   bool bVerbose;
+  bool bTerse;
   bool bSortByFreq;
   bool bSortByTotal;
   bool bOnlyMissing;
@@ -111,13 +112,14 @@ int main(int argc,char **argv)
   int num_collapsed_hands;
   int ixs[NUM_COLLAPSED_HANDS];
 
-  if ((argc < 2) || (argc > 8)) {
+  if ((argc < 2) || (argc > 9)) {
     printf(usage);
     return 1;
   }
 
   bDebug = false;
   bVerbose = false;
+  bTerse = false;
   bSortByFreq = false;
   bSortByTotal = false;
   bOnlyMissing = false;
@@ -130,6 +132,8 @@ int main(int argc,char **argv)
       bDebug = true;
     else if (!strcmp(argv[curr_arg],"-verbose"))
       bVerbose = true;
+    else if (!strcmp(argv[curr_arg],"-terse"))
+      bTerse = true;
     else if (!strcmp(argv[curr_arg],"-sort_by_freq"))
       bSortByFreq = true;
     else if (!strcmp(argv[curr_arg],"-sort_by_total"))
@@ -147,9 +151,14 @@ int main(int argc,char **argv)
     return 2;
   }
 
+  if (bVerbose && bTerse) {
+    printf("can't specify both -verbose and -terse\n");
+    return 3;
+  }
+
   if (bSortByFreq && bSortByTotal) {
     printf("can't specify both -sort_by_freq and -sort_by_total\n");
-    return 3;
+    return 4;
   }
 
   num_collapsed_hands = NUM_COLLAPSED_HANDS;
@@ -173,7 +182,7 @@ int main(int argc,char **argv)
 
   if ((fptr0 = fopen(argv[curr_arg],"r")) == NULL) {
     printf(couldnt_open,argv[curr_arg]);
-    return 4;
+    return 5;
   }
 
   for ( ; ; ) {
@@ -200,7 +209,7 @@ int main(int argc,char **argv)
 
       if (rank_ix1 == NUM_CARDS_IN_SUIT) {
         printf(bad_rank_in_line,total_hand_count+1,line);
-        return 5;
+        return 6;
       }
 
       for (suit_ix1 = 0; suit_ix1 < NUM_SUITS; suit_ix1++) {
@@ -210,7 +219,7 @@ int main(int argc,char **argv)
 
       if (suit_ix1 == NUM_SUITS) {
         printf(bad_suit_in_line,total_hand_count+1,line);
-        return 6;
+        return 7;
       }
 
       for (rank_ix2 = 0; rank_ix2 < NUM_CARDS_IN_SUIT; rank_ix2++) {
@@ -220,7 +229,7 @@ int main(int argc,char **argv)
 
       if (rank_ix2 == NUM_CARDS_IN_SUIT) {
         printf(bad_rank_in_line,total_hand_count+1,line);
-        return 7;
+        return 8;
       }
 
       for (suit_ix2 = 0; suit_ix2 < NUM_SUITS; suit_ix2++) {
@@ -230,7 +239,7 @@ int main(int argc,char **argv)
 
       if (suit_ix2 == NUM_SUITS) {
         printf(bad_suit_in_line,total_hand_count+1,line);
-        return 8;
+        return 9;
       }
 
       total_hand_count++;
@@ -357,12 +366,10 @@ int main(int argc,char **argv)
       bPrint = true;
 
     if (bPrint) {
-      if (!bVerbose) {
-        printf("%-3s %6d\n",
-          aggreg[ix].card_string,
-          aggreg[ix].hand_count);
+      if (bTerse) {
+        printf("%s\n",aggreg[ix].card_string);
       }
-      else {
+      else if (bVerbose) {
         printf("%-3s %6d %6d %6d %d %9.2lf %6d %11.4lf %6.2lf %6d %6.2lf %6d %6.2lf\n",
           aggreg[ix].card_string,
           aggreg[ix].num_wins,
@@ -377,6 +384,11 @@ int main(int argc,char **argv)
           aggreg[ix].flops_seen_pct,
           aggreg[ix].num_fbfs,
           aggreg[ix].fbf_pct);
+      }
+      else {
+        printf("%-3s %6d\n",
+          aggreg[ix].card_string,
+          aggreg[ix].hand_count);
       }
     }
   }
