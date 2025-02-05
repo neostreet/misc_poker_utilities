@@ -6,6 +6,9 @@ static char usage[] =
 "usage: aggreg_hands5 (-debug) (-verbose) (-sort_by_freq) (-sort_by_total) (-only_missing) (-not) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
+static char fbf_str[] = "fbf";
+#define FBF_STR_LEN (sizeof (fbf_str) - 1)
+
 static char sf_str[] = "sf";
 #define SF_STR_LEN (sizeof (sf_str) - 1)
 
@@ -46,10 +49,12 @@ struct aggreg_info {
   hand_type handtype;
   char card_string[4];
   int hand_count;
+  int num_fbfs;
   int num_flops_seen;
   int num_wins;
   int num_losses;
   double freq_factor;
+  double fbf_pct;
   double flops_seen_pct;
   double win_pct;
 };
@@ -158,6 +163,7 @@ int main(int argc,char **argv)
       aggreg[n].handtype = HAND_TYPE_NONSUITED_NONPAIR;
 
     aggreg[n].hand_count = 0;
+    aggreg[n].num_fbfs = 0;
     aggreg[n].num_flops_seen = 0;
     aggreg[n].num_wins = 0;
     aggreg[n].num_losses = 0;
@@ -251,6 +257,14 @@ int main(int argc,char **argv)
 
       if (Contains(true,
         line,line_len,
+        fbf_str,FBF_STR_LEN,
+        &ix2)) {
+
+        aggreg[ix].num_fbfs++;
+      }
+
+      if (Contains(true,
+        line,line_len,
         sf_str,SF_STR_LEN,
         &ix2)) {
 
@@ -277,6 +291,7 @@ int main(int argc,char **argv)
     aggreg[o].freq_factor = (double)aggreg[o].hand_count * periodicities[aggreg[o].handtype] /
       (double)total_hand_count;
     if (aggreg[o].hand_count) {
+      aggreg[o].fbf_pct = (double)aggreg[o].num_fbfs / (double)aggreg[o].hand_count * (double)100;
       aggreg[o].flops_seen_pct = (double)aggreg[o].num_flops_seen / (double)aggreg[o].hand_count * (double)100;
       aggreg[o].win_pct = (double)aggreg[o].num_wins / (double)aggreg[o].hand_count * (double)100;
     }
@@ -348,7 +363,7 @@ int main(int argc,char **argv)
           aggreg[ix].hand_count);
       }
       else {
-        printf("%-3s %6d %6d %6d %d %9.2lf %6d %11.4lf %6.2lf %6d %6.2lf\n",
+        printf("%-3s %6d %6d %6d %d %9.2lf %6d %11.4lf %6.2lf %6d %6.2lf %6d %6.2lf\n",
           aggreg[ix].card_string,
           aggreg[ix].num_wins,
           aggreg[ix].num_losses,
@@ -359,7 +374,9 @@ int main(int argc,char **argv)
           aggreg[ix].freq_factor,
           aggreg[ix].win_pct,
           aggreg[ix].num_flops_seen,
-          aggreg[ix].flops_seen_pct);
+          aggreg[ix].flops_seen_pct,
+          aggreg[ix].num_fbfs,
+          aggreg[ix].fbf_pct);
       }
     }
   }
