@@ -86,6 +86,178 @@ char *plain_hand_types[] = {
 };
 int plain_hand_type_lens[NUM_HAND_TYPES];
 
+char *hand_abbrevs[] = {
+  "22",
+  "33",
+  "44",
+  "55",
+  "66",
+  "77",
+  "88",
+  "99",
+  "TT",
+  "JJ",
+  "QQ",
+  "KK",
+  "AA",
+  "32s",
+  "42s",
+  "52s",
+  "62s",
+  "72s",
+  "82s",
+  "92s",
+  "T2s",
+  "J2s",
+  "Q2s",
+  "K2s",
+  "A2s",
+  "43s",
+  "53s",
+  "63s",
+  "73s",
+  "83s",
+  "93s",
+  "T3s",
+  "J3s",
+  "Q3s",
+  "K3s",
+  "A3s",
+  "54s",
+  "64s",
+  "74s",
+  "84s",
+  "94s",
+  "T4s",
+  "J4s",
+  "Q4s",
+  "K4s",
+  "A4s",
+  "65s",
+  "75s",
+  "85s",
+  "95s",
+  "T5s",
+  "J5s",
+  "Q5s",
+  "K5s",
+  "A5s",
+  "76s",
+  "86s",
+  "96s",
+  "T6s",
+  "J6s",
+  "Q6s",
+  "K6s",
+  "A6s",
+  "87s",
+  "97s",
+  "T7s",
+  "J7s",
+  "Q7s",
+  "K7s",
+  "A7s",
+  "98s",
+  "T8s",
+  "J8s",
+  "Q8s",
+  "K8s",
+  "A8s",
+  "T9s",
+  "J9s",
+  "Q9s",
+  "K9s",
+  "A9s",
+  "JTs",
+  "QTs",
+  "KTs",
+  "ATs",
+  "QJs",
+  "KJs",
+  "AJs",
+  "KQs",
+  "AQs",
+  "AKs",
+  "32o",
+  "42o",
+  "52o",
+  "62o",
+  "72o",
+  "82o",
+  "92o",
+  "T2o",
+  "J2o",
+  "Q2o",
+  "K2o",
+  "A2o",
+  "43o",
+  "53o",
+  "63o",
+  "73o",
+  "83o",
+  "93o",
+  "T3o",
+  "J3o",
+  "Q3o",
+  "K3o",
+  "A3o",
+  "54o",
+  "64o",
+  "74o",
+  "84o",
+  "94o",
+  "T4o",
+  "J4o",
+  "Q4o",
+  "K4o",
+  "A4o",
+  "65o",
+  "75o",
+  "85o",
+  "95o",
+  "T5o",
+  "J5o",
+  "Q5o",
+  "K5o",
+  "A5o",
+  "76o",
+  "86o",
+  "96o",
+  "T6o",
+  "J6o",
+  "Q6o",
+  "K6o",
+  "A6o",
+  "87o",
+  "97o",
+  "T7o",
+  "J7o",
+  "Q7o",
+  "K7o",
+  "A7o",
+  "98o",
+  "T8o",
+  "J8o",
+  "Q8o",
+  "K8o",
+  "A8o",
+  "T9o",
+  "J9o",
+  "Q9o",
+  "K9o",
+  "A9o",
+  "JTo",
+  "QTo",
+  "KTo",
+  "ATo",
+  "QJo",
+  "KJo",
+  "AJo",
+  "KQo",
+  "AQo",
+  "AKo"
+};
+
 char *premium_hand_abbrevs[] = {
   "AA",
   "KK",
@@ -99,6 +271,18 @@ char *premium_hand_abbrevs[] = {
   "KQs"
 };
 #define NUM_PREMIUM_HAND_ABBREVS (sizeof premium_hand_abbrevs / sizeof (char *))
+int premium_hand_abbrev_lens[] = {
+  2,
+  2,
+  2,
+  3,
+  2,
+  2,
+  3,
+  3,
+  3,
+  3
+};
 int compare_key_called;
 bool bQuick;
 struct hand_and_type *hands_and_types;
@@ -107,7 +291,9 @@ extern char suit_chars[];
 extern char rank_chars[];
 extern char *plain_hand_types[];
 extern int plain_hand_type_lens[];
+extern char *hand_abbrevs[];
 extern char *premium_hand_abbrevs[];
+extern int premium_hand_abbrev_lens[];
 extern int compare_key_called;
 extern bool bQuick;
 extern struct hand_and_type *hands_and_types;
@@ -157,6 +343,8 @@ extern struct hand_and_type *hands_and_types;
 #define NUM_SELECTED_COMMUNITY_CARDS_IN_OMAHA_HAND 3
 
 #define MAX_STREET_MARKERS 6
+
+#define NUM_HAND_ABBREVS 169
 
 #ifdef MAIN_MODULE
 char *hand_type_abbrevs[] = {
@@ -599,4 +787,4 @@ int get_52_2_index_of_hole_cards(char *hole_cards,int *index);
 int get_52_2_index_of_hand2(int *cards);
 int get_52_2_index_of_hole_cards2(char *hole_cards,int *index);
 void get_abbrev(char *line,char *abbrev);
-bool is_premium_hand(char *abbrev);
+bool is_premium_hand(char *abbrev,int *premium_ix);
