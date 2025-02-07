@@ -1,9 +1,14 @@
+#include <iostream>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
+using namespace std;
+
+#define MAIN_MODULE
+#include "poker_hand.h"
 
 static char usage[] =
-"usage: aggreg_hands5 (-debug) (-verbose) (-terse) (-sort_by_freq) (-sort_by_total) (-only_missing) (-not) filename\n";
+"usage: aggreg_hands5 (-debug) (-verbose) (-terse) (-sort_by_freq) (-sort_by_total) (-only_missing) (-not)\n"
+"  (-only_premium) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char fbf_str[] = "fbf";
@@ -64,9 +69,6 @@ static struct aggreg_info aggreg[NUM_COLLAPSED_HANDS];
 
 static char bad_rank_in_line[] = "bad rank in line %d: %s\n";
 
-char suit_chars[] = "cdhs";
-char rank_chars[] = "23456789TJQKA";
-
 static char bad_suit_in_line[] = "bad suit in line %d: %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
@@ -92,6 +94,8 @@ int main(int argc,char **argv)
   bool bOnlyMissing;
   bool bPrint;
   bool bNot;
+  bool bOnlyPremium;
+  int premium_ix;
   int dbg_ix;
   int dbg;
   int m;
@@ -112,7 +116,7 @@ int main(int argc,char **argv)
   int num_collapsed_hands;
   int ixs[NUM_COLLAPSED_HANDS];
 
-  if ((argc < 2) || (argc > 9)) {
+  if ((argc < 2) || (argc > 10)) {
     printf(usage);
     return 1;
   }
@@ -124,6 +128,7 @@ int main(int argc,char **argv)
   bSortByTotal = false;
   bOnlyMissing = false;
   bNot = false;
+  bOnlyPremium = false;
 
   dbg_ix = -1;
 
@@ -142,6 +147,8 @@ int main(int argc,char **argv)
       bOnlyMissing = true;
     else if (!strcmp(argv[curr_arg],"-not"))
       bNot = true;
+    else if (!strcmp(argv[curr_arg],"-only_premium"))
+      bOnlyPremium = true;
     else
       break;
   }
@@ -361,6 +368,10 @@ int main(int argc,char **argv)
         if (aggreg[ix].hand_count)
           bPrint = true;
       }
+    }
+    else if (bOnlyPremium) {
+      if (is_premium_hand(aggreg[ix].card_string,&premium_ix))
+        bPrint = true;
     }
     else
       bPrint = true;
