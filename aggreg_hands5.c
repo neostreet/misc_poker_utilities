@@ -357,24 +357,23 @@ int main(int argc,char **argv)
 
   for (o = 0; o < NUM_COLLAPSED_HANDS; o++) {
     ix = ixs[o];
-    bPrint = false;
+    bPrint = true;
 
     if (bOnlyMissing) {
       if (!bNot) {
-        if (!aggreg[ix].hand_count)
-          bPrint = true;
+        if (aggreg[ix].hand_count)
+          bPrint = false;
       }
       else {
-        if (aggreg[ix].hand_count)
-          bPrint = true;
+        if (!aggreg[ix].hand_count)
+          bPrint = false;
       }
     }
-    else if (bOnlyPremium) {
-      if (is_premium_hand(aggreg[ix].card_string,&premium_ix))
-        bPrint = true;
+
+    if (bOnlyPremium) {
+      if (!is_premium_hand(aggreg[ix].card_string,&premium_ix))
+        bPrint = false;
     }
-    else
-      bPrint = true;
 
     if (bPrint) {
       if (bTerse) {
