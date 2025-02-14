@@ -364,7 +364,7 @@ int main(int argc,char **argv)
 
     if (bPrint) {
       if (bTerse) {
-        printf("%s\n",aggreg[ix].card_string);
+        printf("%d %s\n",aggreg[ix].hand_count,aggreg[ix].card_string);
       }
       else if (bVerbose) {
         printf("%-3s %6d %6d %6d %d %9.2lf %6d %11.4lf %6.2lf %6d %6.2lf %6d %6.2lf\n",
