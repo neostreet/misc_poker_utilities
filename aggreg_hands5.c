@@ -209,6 +209,9 @@ int main(int argc,char **argv)
       if (feof(fptr))
         break;
 
+      if ((line[0] >= 'a') && (line[0] <= 'z'))
+        line[0] -= 'a' - 'A';
+
       for (rank_ix1 = 0; rank_ix1 < NUM_CARDS_IN_SUIT; rank_ix1++) {
         if (line[0] == rank_chars[rank_ix1])
           break;
@@ -228,6 +231,9 @@ int main(int argc,char **argv)
         printf(bad_suit_in_line,total_hand_count+1,line);
         return 7;
       }
+
+      if ((line[3] >= 'a') && (line[3] <= 'z'))
+        line[3] -= 'a' - 'A';
 
       for (rank_ix2 = 0; rank_ix2 < NUM_CARDS_IN_SUIT; rank_ix2++) {
         if (line[3] == rank_chars[rank_ix2])
