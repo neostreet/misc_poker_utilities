@@ -2,14 +2,14 @@
 #include <string.h>
 
 static char usage[] =
-"usage: calc_freq (-verbose) hands instances periodicity\n";
+"usage: calc_freq (-verbose) instances hands periodicity\n";
 
 int main(int argc,char **argv)
 {
   int curr_arg;
   bool bVerbose;
-  int hands;
   int instances;
+  int hands;
   double periodicity;
   double work;
 
@@ -32,8 +32,8 @@ int main(int argc,char **argv)
     return 2;
   }
 
-  sscanf(argv[curr_arg],"%d",&hands);
-  sscanf(argv[curr_arg+1],"%d",&instances);
+  sscanf(argv[curr_arg],"%d",&instances);
+  sscanf(argv[curr_arg+1],"%d",&hands);
   sscanf(argv[curr_arg+2],"%lf",&periodicity);
 
   work = (double)instances * periodicity;
@@ -42,7 +42,7 @@ int main(int argc,char **argv)
   if (!bVerbose)
     printf("%lf\n",work);
   else
-    printf("%lf (%d %d %lf)\n",work,hands,instances,periodicity);
+    printf("%lf (%d %d %lf)\n",work,instances,hands,periodicity);
 
   return 0;
 }
