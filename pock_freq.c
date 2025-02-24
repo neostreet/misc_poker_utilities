@@ -8,15 +8,15 @@ using namespace std;
 #include "poker_hand.h"
 
 static char usage[] =
-"usage: pock_freq (-specific) total_hands total_pocks\n";
+"usage: pock_freq (-specific) total_pocks total_hands\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 int main(int argc,char **argv)
 {
   int curr_arg;
   bool bSpecific;
-  int total_hands;
   int total_pocks;
+  int total_hands;
   double ratio1;
   double ratio2;
   double dwork;
@@ -40,8 +40,8 @@ int main(int argc,char **argv)
     return 2;
   }
 
-  sscanf(argv[curr_arg],"%d",&total_hands);
-  sscanf(argv[curr_arg+1],"%d",&total_pocks);
+  sscanf(argv[curr_arg],"%d",&total_pocks);
+  sscanf(argv[curr_arg+1],"%d",&total_hands);
 
   ratio1 = (double)total_pocks / (double)total_hands;
 
@@ -52,7 +52,7 @@ int main(int argc,char **argv)
 
   dwork = ratio1 / ratio2;
 
-  printf("%lf (%d %d)\n",dwork,total_hands,total_pocks);
+  printf("%lf (%d %d)\n",dwork,total_pocks,total_hands);
 
   return 0;
 }
