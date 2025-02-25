@@ -2,7 +2,7 @@
 #include <string.h>
 
 static char usage[] =
-"usage: aggreg_hands (-debug) (-reverse) filename\n";
+"usage: aggreg_hands (-debug) (-reverse) (-not_missing) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 #define MAX_LINE_LEN 1024
@@ -57,6 +57,7 @@ int main(int argc,char **argv)
   int curr_arg;
   bool bDebug;
   bool bReverse;
+  bool bNotMissing;
   int m;
   int n;
   int o;
@@ -80,19 +81,22 @@ int main(int argc,char **argv)
   int total_num_losses;
   int total_num_washes;
 
-  if ((argc < 2) || (argc > 4)) {
+  if ((argc < 2) || (argc > 5)) {
     printf(usage);
     return 1;
   }
 
   bDebug = false;
   bReverse = false;
+  bNotMissing = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-debug"))
       bDebug = true;
     else if (!strcmp(argv[curr_arg],"-reverse"))
       bReverse = true;
+    else if (!strcmp(argv[curr_arg],"-not_missing"))
+      bNotMissing = true;
     else
       break;
   }
@@ -213,6 +217,11 @@ int main(int argc,char **argv)
       get_permutation_instance_reverse(
         NUM_CARDS_IN_DECK,
         &m,&n,o);
+    }
+
+    if (bNotMissing){
+      if (!aggreg[o].hand_count)
+        continue;
     }
 
     card_string_from_card_value(m,card_string[0]);
