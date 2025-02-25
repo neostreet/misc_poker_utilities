@@ -1,8 +1,10 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 static char usage[] =
-"usage: aggreg_hands (-debug) (-reverse) (-not_missing) filename\n";
+"usage: aggreg_hands (-debug) (-not_missing) (-sort_by_delta)\n"
+"  (-descending) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 #define MAX_LINE_LEN 1024
@@ -15,7 +17,10 @@ static char line[MAX_LINE_LEN];
 
 #define rank_of(card) (card % NUM_CARDS_IN_SUIT)
 
+static bool bDescending;
+
 struct aggreg_info {
+  int card_values[2];
   int hand_count;
   int sum_delta;
   int sum_wins;
@@ -27,6 +32,7 @@ struct aggreg_info {
 
 #define POKER_52_2_PERMUTATIONS      1326
 static struct aggreg_info aggreg[POKER_52_2_PERMUTATIONS];
+static int ixs[POKER_52_2_PERMUTATIONS];
 
 static char bad_denom_in_line[] = "bad denomination in line %d: %s\n";
 
@@ -44,20 +50,15 @@ static void get_permutation_instance(
   int *m,int *n,
   int instance_ix
 );
-
-static void get_permutation_instance_reverse(
-  int set_size,
-  int *m,int *n,
-  int instance_ix
-);
 int card_string_from_card_value(int card_value,char *card_string);
+int compare(const void *elem1,const void *elem2);
 
 int main(int argc,char **argv)
 {
   int curr_arg;
   bool bDebug;
-  bool bReverse;
   bool bNotMissing;
+  bool bSortByDelta;
   int m;
   int n;
   int o;
@@ -81,22 +82,25 @@ int main(int argc,char **argv)
   int total_num_losses;
   int total_num_washes;
 
-  if ((argc < 2) || (argc > 5)) {
+  if ((argc < 2) || (argc > 6)) {
     printf(usage);
     return 1;
   }
 
   bDebug = false;
-  bReverse = false;
   bNotMissing = false;
+  bSortByDelta = false;
+  bDescending = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-debug"))
       bDebug = true;
-    else if (!strcmp(argv[curr_arg],"-reverse"))
-      bReverse = true;
     else if (!strcmp(argv[curr_arg],"-not_missing"))
       bNotMissing = true;
+    else if (!strcmp(argv[curr_arg],"-sort_by_delta"))
+      bSortByDelta = true;
+    else if (!strcmp(argv[curr_arg],"-descending"))
+      bDescending = true;
     else
       break;
   }
@@ -111,14 +115,20 @@ int main(int argc,char **argv)
     return 3;
   }
 
-  for (n = 0; n < POKER_52_2_PERMUTATIONS; n++) {
-    aggreg[n].hand_count = 0;
-    aggreg[n].sum_delta = 0;
-    aggreg[n].sum_wins = 0;
-    aggreg[n].sum_losses = 0;
-    aggreg[n].num_wins = 0;
-    aggreg[n].num_losses = 0;
-    aggreg[n].num_washes = 0;
+  for (o = 0; o < POKER_52_2_PERMUTATIONS; o++) {
+    get_permutation_instance(
+      NUM_CARDS_IN_DECK,
+      &m,&n,o);
+
+    aggreg[o].card_values[0] = m;
+    aggreg[o].card_values[1] = n;
+    aggreg[o].hand_count = 0;
+    aggreg[o].sum_delta = 0;
+    aggreg[o].sum_wins = 0;
+    aggreg[o].sum_losses = 0;
+    aggreg[o].num_wins = 0;
+    aggreg[o].num_losses = 0;
+    aggreg[o].num_washes = 0;
   }
 
   line_no = 0;
@@ -207,50 +217,47 @@ int main(int argc,char **argv)
   for (n = 0; n < 2; n++)
     card_string[n][2] = 0;
 
-  for (o = 0; o < POKER_52_2_PERMUTATIONS; o++) {
-    if (!bReverse) {
-      get_permutation_instance(
-        NUM_CARDS_IN_DECK,
-        &m,&n,o);
-    }
-    else {
-      get_permutation_instance_reverse(
-        NUM_CARDS_IN_DECK,
-        &m,&n,o);
-    }
+  for (n = 0; n < POKER_52_2_PERMUTATIONS; n++)
+    ixs[n] = n;
+
+  if (bSortByDelta)
+    qsort(ixs,POKER_52_2_PERMUTATIONS,sizeof (int),compare);
+
+  for (n = 0; n < POKER_52_2_PERMUTATIONS; n++) {
+    ix = ixs[n];
 
     if (bNotMissing){
-      if (!aggreg[o].hand_count)
+      if (!aggreg[ix].hand_count)
         continue;
     }
 
-    card_string_from_card_value(m,card_string[0]);
-    card_string_from_card_value(n,card_string[1]);
+    card_string_from_card_value(aggreg[ix].card_values[0],card_string[0]);
+    card_string_from_card_value(aggreg[ix].card_values[1],card_string[1]);
 
-    if (rank_of(m) >= rank_of(n))
+    if (rank_of(aggreg[ix].card_values[0]) >= rank_of(aggreg[ix].card_values[1]))
       printf(fmt,card_string[0],card_string[1]);
     else
       printf(fmt,card_string[1],card_string[0]);
 
     printf("%10d %10d %10d %6d %6d %6d %6d\n",
-      aggreg[o].sum_delta,
-      aggreg[o].sum_wins,
-      aggreg[o].sum_losses,
-      aggreg[o].num_wins,
-      aggreg[o].num_losses,
-      aggreg[o].num_washes,
-      aggreg[o].hand_count);
-    total_hand_count += aggreg[o].hand_count;
-    total_sum_delta += aggreg[o].sum_delta;
-    total_sum_wins += aggreg[o].sum_wins;
-    total_sum_losses += aggreg[o].sum_losses;
-    total_num_wins += aggreg[o].num_wins;
+      aggreg[ix].sum_delta,
+      aggreg[ix].sum_wins,
+      aggreg[ix].sum_losses,
+      aggreg[ix].num_wins,
+      aggreg[ix].num_losses,
+      aggreg[ix].num_washes,
+      aggreg[ix].hand_count);
+    total_hand_count += aggreg[ix].hand_count;
+    total_sum_delta += aggreg[ix].sum_delta;
+    total_sum_wins += aggreg[ix].sum_wins;
+    total_sum_losses += aggreg[ix].sum_losses;
+    total_num_wins += aggreg[ix].num_wins;
 
     if (bDebug)
       printf("debug: total_num_wins = %6d\n",total_num_wins);
 
-    total_num_losses += aggreg[o].num_losses;
-    total_num_washes += aggreg[o].num_washes;
+    total_num_losses += aggreg[ix].num_losses;
+    total_num_washes += aggreg[ix].num_washes;
   }
 
   printf("\n      %10d %10d %10d %6d %6d %6d %6d\n",
@@ -334,25 +341,6 @@ static void get_permutation_instance(
   }
 }
 
-static void get_permutation_instance_reverse(
-  int set_size,
-  int *m,int *n,
-  int instance_ix
-)
-{
-  if (instance_ix)
-    goto after_return_point;
-
-  for (*m = set_size - 1; *m > 0; (*m)--) {
-    for (*n = *m - 1; *n >= 0; (*n)--) {
-      return;
-
-      after_return_point:
-      ;
-    }
-  }
-}
-
 int card_string_from_card_value(int card_value,char *card_string)
 {
   int rank_ix;
@@ -368,4 +356,18 @@ int card_string_from_card_value(int card_value,char *card_string)
   card_string[1] = suit_chars[suit_ix];
 
   return 0;
+}
+
+int compare(const void *elem1,const void *elem2)
+{
+  int int1;
+  int int2;
+
+  int1 = *(int *)elem1;
+  int2 = *(int *)elem2;
+
+  if (!bDescending)
+    return aggreg[int1].sum_delta - aggreg[int2].sum_delta;
+  else
+    return aggreg[int2].sum_delta - aggreg[int1].sum_delta;
 }
