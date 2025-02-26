@@ -7,7 +7,7 @@ using namespace std;
 #include "poker_hand.h"
 
 static char usage[] =
-"usage: aggreg_hands5 (-debug) (-verbose) (-terse) (-sort_by_freq) (-sort_by_total) (-only_missing) (-not)\n"
+"usage: aggreg_hands5 (-debug) (-verbose) (-terse) (-sort_by_freq) (-sort_by_count) (-only_missing) (-not)\n"
 "  (-only_premium) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
@@ -82,7 +82,7 @@ int main(int argc,char **argv)
   bool bVerbose;
   bool bTerse;
   bool bSortByFreq;
-  bool bSortByTotal;
+  bool bSortByCount;
   bool bOnlyMissing;
   bool bPrint;
   bool bNot;
@@ -117,7 +117,7 @@ int main(int argc,char **argv)
   bVerbose = false;
   bTerse = false;
   bSortByFreq = false;
-  bSortByTotal = false;
+  bSortByCount = false;
   bOnlyMissing = false;
   bNot = false;
   bOnlyPremium = false;
@@ -133,8 +133,8 @@ int main(int argc,char **argv)
       bTerse = true;
     else if (!strcmp(argv[curr_arg],"-sort_by_freq"))
       bSortByFreq = true;
-    else if (!strcmp(argv[curr_arg],"-sort_by_total"))
-      bSortByTotal = true;
+    else if (!strcmp(argv[curr_arg],"-sort_by_count"))
+      bSortByCount = true;
     else if (!strcmp(argv[curr_arg],"-only_missing"))
       bOnlyMissing = true;
     else if (!strcmp(argv[curr_arg],"-not"))
@@ -155,8 +155,8 @@ int main(int argc,char **argv)
     return 3;
   }
 
-  if (bSortByFreq && bSortByTotal) {
-    printf("can't specify both -sort_by_freq and -sort_by_total\n");
+  if (bSortByFreq && bSortByCount) {
+    printf("can't specify both -sort_by_freq and -sort_by_count\n");
     return 4;
   }
 
@@ -350,7 +350,7 @@ int main(int argc,char **argv)
 
   if (bSortByFreq)
     qsort(ixs,NUM_COLLAPSED_HANDS,sizeof (int),compare);
-  else if (bSortByTotal)
+  else if (bSortByCount)
     qsort(ixs,NUM_COLLAPSED_HANDS,sizeof (int),compare2);
 
   for (o = 0; o < NUM_COLLAPSED_HANDS; o++) {
