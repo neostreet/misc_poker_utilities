@@ -531,8 +531,10 @@ int compare(const void *elem1,const void *elem2)
 
   if (aggreg[int2].freq_factor < aggreg[int1].freq_factor)
     return -1;
-  else
+  else if (aggreg[int2].freq_factor > aggreg[int1].freq_factor)
     return 1;
+  else
+    return 0;
 }
 
 int compare2(const void *elem1,const void *elem2)
@@ -543,8 +545,5 @@ int compare2(const void *elem1,const void *elem2)
   int1 = *(int *)elem1;
   int2 = *(int *)elem2;
 
-  if (aggreg[int2].hand_count < aggreg[int1].hand_count)
-    return -1;
-  else
-    return 1;
+  return aggreg[int2].hand_count - aggreg[int1].hand_count;
 }
