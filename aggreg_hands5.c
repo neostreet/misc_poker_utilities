@@ -378,20 +378,14 @@ int main(int argc,char **argv)
         printf("%d %s\n",aggreg[ix].hand_count,aggreg[ix].card_string);
       }
       else if (bVerbose) {
-        printf("%-3s %6d %6d %6d %d %9.2lf %6d %11.4lf %6.2lf %6d %6.2lf %6d %6.2lf\n",
+        printf("%-3s %6d %6d %6d %6.2lf %6d %11.4lf\n",
           aggreg[ix].card_string,
           aggreg[ix].num_wins,
           aggreg[ix].num_losses,
           aggreg[ix].hand_count,
-          aggreg[ix].handtype,
-          periodicities[aggreg[ix].handtype],
-          total_hand_count,
-          aggreg[ix].freq_factor,
           aggreg[ix].win_pct,
-          aggreg[ix].num_flops_seen,
-          aggreg[ix].flops_seen_pct,
-          aggreg[ix].num_fbfs,
-          aggreg[ix].fbf_pct);
+          total_hand_count,
+          aggreg[ix].freq_factor);
       }
       else {
         printf("%-3s %6d\n",
