@@ -7,7 +7,7 @@ using namespace std;
 #include "poker_hand.h"
 
 static char usage[] =
-"usage: aggreg_hands5 (-debug) (-verbose) (-terse) (-sort_by_freq) (-sort_by_count) (-only_missing) (-not)\n"
+"usage: aggreg_hands4 (-debug) (-verbose) (-terse) (-sort_by_freq) (-sort_by_count) (-only_missing) (-not)\n"
 "  (-only_premium) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
@@ -19,9 +19,6 @@ static char sf_str[] = "sf";
 
 static char ws_str[] = "ws";
 #define WS_STR_LEN (sizeof (ws_str) - 1)
-
-#define MAX_FILENAME_LEN 1024
-static char filename[MAX_FILENAME_LEN];
 
 #define MAX_LINE_LEN 1024
 static char line[MAX_LINE_LEN];
@@ -93,8 +90,6 @@ int main(int argc,char **argv)
   int m;
   int n;
   int o;
-  FILE *fptr0;
-  int filename_len;
   FILE *fptr;
   int line_len;
   int rank_ix1;
@@ -162,6 +157,11 @@ int main(int argc,char **argv)
 
   num_collapsed_hands = NUM_COLLAPSED_HANDS;
 
+  if ((fptr = fopen(argv[curr_arg],"r")) == NULL) {
+    printf(couldnt_open,argv[curr_arg]);
+    return 5;
+  }
+
   for (n = 0; n < num_collapsed_hands; n++) {
     if (n < NUM_CARDS_IN_SUIT)
       aggreg[n].handtype = HAND_TYPE_PAIR;
@@ -179,127 +179,108 @@ int main(int argc,char **argv)
 
   total_hand_count = 0;
 
-  if ((fptr0 = fopen(argv[curr_arg],"r")) == NULL) {
-    printf(couldnt_open,argv[curr_arg]);
-    return 5;
-  }
-
   for ( ; ; ) {
-    GetLine(fptr0,filename,&filename_len,MAX_FILENAME_LEN);
+    GetLine(fptr,line,&line_len,MAX_LINE_LEN);
 
-    if (feof(fptr0))
+    if (feof(fptr))
       break;
 
-    if ((fptr = fopen(filename,"r")) == NULL) {
-      printf(couldnt_open,filename);
-      continue;
-    }
+    if ((line[0] >= 'a') && (line[0] <= 'z'))
+      line[0] -= 'a' - 'A';
 
-    for ( ; ; ) {
-      GetLine(fptr,line,&line_len,MAX_LINE_LEN);
-
-      if (feof(fptr))
+    for (rank_ix1 = 0; rank_ix1 < NUM_CARDS_IN_SUIT; rank_ix1++) {
+      if (line[0] == rank_chars[rank_ix1])
         break;
-
-      if ((line[0] >= 'a') && (line[0] <= 'z'))
-        line[0] -= 'a' - 'A';
-
-      for (rank_ix1 = 0; rank_ix1 < NUM_CARDS_IN_SUIT; rank_ix1++) {
-        if (line[0] == rank_chars[rank_ix1])
-          break;
-      }
-
-      if (rank_ix1 == NUM_CARDS_IN_SUIT) {
-        printf(bad_rank_in_line,total_hand_count+1,line);
-        return 6;
-      }
-
-      for (suit_ix1 = 0; suit_ix1 < NUM_SUITS; suit_ix1++) {
-        if (line[1] == suit_chars[suit_ix1])
-          break;
-      }
-
-      if (suit_ix1 == NUM_SUITS) {
-        printf(bad_suit_in_line,total_hand_count+1,line);
-        return 7;
-      }
-
-      if ((line[3] >= 'a') && (line[3] <= 'z'))
-        line[3] -= 'a' - 'A';
-
-      for (rank_ix2 = 0; rank_ix2 < NUM_CARDS_IN_SUIT; rank_ix2++) {
-        if (line[3] == rank_chars[rank_ix2])
-          break;
-      }
-
-      if (rank_ix2 == NUM_CARDS_IN_SUIT) {
-        printf(bad_rank_in_line,total_hand_count+1,line);
-        return 8;
-      }
-
-      for (suit_ix2 = 0; suit_ix2 < NUM_SUITS; suit_ix2++) {
-        if (line[4] == suit_chars[suit_ix2])
-          break;
-      }
-
-      if (suit_ix2 == NUM_SUITS) {
-        printf(bad_suit_in_line,total_hand_count+1,line);
-        return 9;
-      }
-
-      total_hand_count++;
-
-      ix = index_of_hand(rank_ix1,suit_ix1,rank_ix2,suit_ix2,&handtype);
-
-      if (bDebug) {
-        printf("index_of_hand(): %d %d %d %d: ix = %d, handtype = %d\n",rank_ix1,suit_ix1,rank_ix2,suit_ix2,ix,handtype);
-      }
-
-      if (ix == dbg_ix)
-        dbg = 1;
-
-      if (ix > num_collapsed_hands) {
-        printf("error:  ix = %d\n",ix);
-        printf("  rank_ix1 = %d\n",rank_ix1);
-        printf("  suit_ix1 = %d\n",suit_ix1);
-        printf("  rank_ix2 = %d\n",rank_ix2);
-        printf("  suit_ix2 = %d\n",suit_ix2);
-        ix = 0;
-      }
-
-      aggreg[ix].hand_count++;
-
-      if (Contains(true,
-        line,line_len,
-        fbf_str,FBF_STR_LEN,
-        &ix2)) {
-
-        aggreg[ix].num_fbfs++;
-      }
-
-      if (Contains(true,
-        line,line_len,
-        sf_str,SF_STR_LEN,
-        &ix2)) {
-
-        aggreg[ix].num_flops_seen++;
-      }
-
-      if (Contains(true,
-        line,line_len,
-        ws_str,WS_STR_LEN,
-        &ix2)) {
-
-        aggreg[ix].num_wins++;
-      }
-      else
-        aggreg[ix].num_losses++;
     }
 
-    fclose(fptr);
+    if (rank_ix1 == NUM_CARDS_IN_SUIT) {
+      printf(bad_rank_in_line,total_hand_count+1,line);
+      return 6;
+    }
+
+    for (suit_ix1 = 0; suit_ix1 < NUM_SUITS; suit_ix1++) {
+      if (line[1] == suit_chars[suit_ix1])
+        break;
+    }
+
+    if (suit_ix1 == NUM_SUITS) {
+      printf(bad_suit_in_line,total_hand_count+1,line);
+      return 7;
+    }
+
+    if ((line[3] >= 'a') && (line[3] <= 'z'))
+      line[3] -= 'a' - 'A';
+
+    for (rank_ix2 = 0; rank_ix2 < NUM_CARDS_IN_SUIT; rank_ix2++) {
+      if (line[3] == rank_chars[rank_ix2])
+        break;
+    }
+
+    if (rank_ix2 == NUM_CARDS_IN_SUIT) {
+      printf(bad_rank_in_line,total_hand_count+1,line);
+      return 8;
+    }
+
+    for (suit_ix2 = 0; suit_ix2 < NUM_SUITS; suit_ix2++) {
+      if (line[4] == suit_chars[suit_ix2])
+        break;
+    }
+
+    if (suit_ix2 == NUM_SUITS) {
+      printf(bad_suit_in_line,total_hand_count+1,line);
+      return 9;
+    }
+
+    total_hand_count++;
+
+    ix = index_of_hand(rank_ix1,suit_ix1,rank_ix2,suit_ix2,&handtype);
+
+    if (bDebug) {
+      printf("index_of_hand(): %d %d %d %d: ix = %d, handtype = %d\n",rank_ix1,suit_ix1,rank_ix2,suit_ix2,ix,handtype);
+    }
+
+    if (ix == dbg_ix)
+      dbg = 1;
+
+    if (ix > num_collapsed_hands) {
+      printf("error:  ix = %d\n",ix);
+      printf("  rank_ix1 = %d\n",rank_ix1);
+      printf("  suit_ix1 = %d\n",suit_ix1);
+      printf("  rank_ix2 = %d\n",rank_ix2);
+      printf("  suit_ix2 = %d\n",suit_ix2);
+      ix = 0;
+    }
+
+    aggreg[ix].hand_count++;
+
+    if (Contains(true,
+      line,line_len,
+      fbf_str,FBF_STR_LEN,
+      &ix2)) {
+
+      aggreg[ix].num_fbfs++;
+    }
+
+    if (Contains(true,
+      line,line_len,
+      sf_str,SF_STR_LEN,
+      &ix2)) {
+
+      aggreg[ix].num_flops_seen++;
+    }
+
+    if (Contains(true,
+      line,line_len,
+      ws_str,WS_STR_LEN,
+      &ix2)) {
+
+      aggreg[ix].num_wins++;
+    }
+    else
+      aggreg[ix].num_losses++;
   }
 
-  fclose(fptr0);
+  fclose(fptr);
 
   for (o = 0; o < NUM_COLLAPSED_HANDS; o++) {
     aggreg[o].freq_factor = (double)aggreg[o].hand_count * periodicities[aggreg[o].handtype] /
