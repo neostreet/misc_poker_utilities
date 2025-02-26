@@ -349,7 +349,7 @@ int main(int argc,char **argv)
       }
     }
 
-    if (bOnlyPremium) {
+    if (bPrint && bOnlyPremium) {
       if (!is_premium_hand(aggreg[ix].card_string,&premium_ix))
         bPrint = false;
     }
