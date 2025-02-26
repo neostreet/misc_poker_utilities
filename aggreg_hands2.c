@@ -1,24 +1,20 @@
+#include <iostream>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
+using namespace std;
+
+#define MAIN_MODULE
+#include "poker_hand.h"
 
 static char usage[] =
 "usage: aggreg_hands2 (-debug) (-verbose) (-dbg_ixix) (-totals) (-avgs)\n"
 "  (-pairs_only) (-s_or_o_between) (-denomdenom) (-sort_by_freq) (-sort_by_total)\n"
-"  (-only_missing) (-not) filename\n";
+"  (-only_missing) (-not) (-only_premium) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 static char avg_fmt[] = " %9.2lf %9.2lf\n";
 
 #define MAX_LINE_LEN 1024
 static char line[MAX_LINE_LEN];
-
-#define NUM_CARDS_IN_SUIT 13
-#define NUM_SUITS 4
-
-#define NUM_SUITED_NONPAIRS ((NUM_CARDS_IN_SUIT * (NUM_CARDS_IN_SUIT - 1)) / 2)
-#define NUM_NONSUITED_NONPAIRS NUM_SUITED_NONPAIRS
-
-#define NUM_CARDS_IN_DECK (NUM_SUITS * NUM_CARDS_IN_SUIT)
 
 #define PAIR_PERIODICITY               221.0
 #define SUITED_NONPAIR_PERIODICITY     331.5
@@ -55,9 +51,6 @@ static struct aggreg_info aggreg[NUM_COLLAPSED_HANDS];
 
 static char bad_rank_in_line[] = "bad rank in line %d: %s\n";
 
-char suit_chars[] = "cdhs";
-char rank_chars[] = "23456789TJQKA";
-
 static char bad_suit_in_line[] = "bad suit in line %d: %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
@@ -86,6 +79,8 @@ int main(int argc,char **argv)
   bool bOnlyMissing;
   bool bPrint;
   bool bNot;
+  bool bOnlyPremium;
+  int premium_ix;
   int dbg_ix;
   int dbg;
   int m;
@@ -112,7 +107,7 @@ int main(int argc,char **argv)
   int num_collapsed_hands;
   int ixs[NUM_COLLAPSED_HANDS];
 
-  if ((argc < 2) || (argc > 14)) {
+  if ((argc < 2) || (argc > 15)) {
     printf(usage);
     return 1;
   }
@@ -128,6 +123,7 @@ int main(int argc,char **argv)
   bSortByTotal = false;
   bOnlyMissing = false;
   bNot = false;
+  bOnlyPremium = false;
   dbg_ix = -1;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
@@ -157,6 +153,8 @@ int main(int argc,char **argv)
       bOnlyMissing = true;
     else if (!strcmp(argv[curr_arg],"-not"))
       bNot = true;
+    else if (!strcmp(argv[curr_arg],"-only_premium"))
+      bOnlyPremium = true;
     else
       break;
   }
@@ -362,20 +360,23 @@ int main(int argc,char **argv)
     if (bDenom && (aggreg[ix].card_string[0] != denom))
       continue;
 
-    bPrint = false;
+    bPrint = true;
 
     if (bOnlyMissing) {
       if (!bNot) {
-        if (!aggreg[ix].hand_count)
-          bPrint = true;
+        if (aggreg[ix].hand_count)
+          bPrint = false;
       }
       else {
-        if (aggreg[ix].hand_count)
-          bPrint = true;
+        if (!aggreg[ix].hand_count)
+          bPrint = false;
       }
     }
-    else
-      bPrint = true;
+
+    if (bOnlyPremium) {
+      if (!is_premium_hand(aggreg[ix].card_string,&premium_ix))
+        bPrint = false;
+    }
 
     if (bPrint) {
       if (bVerbose) {
