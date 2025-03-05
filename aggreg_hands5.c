@@ -8,7 +8,7 @@ using namespace std;
 
 static char usage[] =
 "usage: aggreg_hands5 (-debug) (-verbose) (-terse) (-sort_by_freq) (-sort_by_count) (-only_missing) (-not)\n"
-"  (-only_premium) filename\n";
+"  (-only_premium) (-only_wws) (-only_sf) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char fbf_str[] = "fbf";
@@ -91,6 +91,7 @@ int main(int argc,char **argv)
   bool bNot;
   bool bOnlyPremium;
   bool bOnlyWws;
+  bool bOnlySf;
   int premium_ix;
   int dbg_ix;
   int dbg;
@@ -112,7 +113,7 @@ int main(int argc,char **argv)
   int num_collapsed_hands;
   int ixs[NUM_COLLAPSED_HANDS];
 
-  if ((argc < 2) || (argc > 11)) {
+  if ((argc < 2) || (argc > 12)) {
     printf(usage);
     return 1;
   }
@@ -126,6 +127,7 @@ int main(int argc,char **argv)
   bNot = false;
   bOnlyPremium = false;
   bOnlyWws = false;
+  bOnlySf = false;
 
   dbg_ix = -1;
 
@@ -148,6 +150,8 @@ int main(int argc,char **argv)
       bOnlyPremium = true;
     else if (!strcmp(argv[curr_arg],"-only_wws"))
       bOnlyWws = true;
+    else if (!strcmp(argv[curr_arg],"-only_sf"))
+      bOnlySf = true;
     else
       break;
   }
@@ -212,6 +216,16 @@ int main(int argc,char **argv)
         if (!Contains(true,
           line,line_len,
           wws_str,WWS_STR_LEN,
+          &ix2)) {
+
+          continue;
+        }
+      }
+
+      if (bOnlySf) {
+        if (!Contains(true,
+          line,line_len,
+          sf_str,SF_STR_LEN,
           &ix2)) {
 
           continue;
