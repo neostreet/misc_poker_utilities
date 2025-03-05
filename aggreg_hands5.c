@@ -20,6 +20,9 @@ static char sf_str[] = "sf";
 static char ws_str[] = "ws";
 #define WS_STR_LEN (sizeof (ws_str) - 1)
 
+static char wws_str[] = "wws";
+#define WWS_STR_LEN (sizeof (wws_str) - 1)
+
 #define MAX_FILENAME_LEN 1024
 static char filename[MAX_FILENAME_LEN];
 
@@ -87,6 +90,7 @@ int main(int argc,char **argv)
   bool bPrint;
   bool bNot;
   bool bOnlyPremium;
+  bool bOnlyWws;
   int premium_ix;
   int dbg_ix;
   int dbg;
@@ -108,7 +112,7 @@ int main(int argc,char **argv)
   int num_collapsed_hands;
   int ixs[NUM_COLLAPSED_HANDS];
 
-  if ((argc < 2) || (argc > 10)) {
+  if ((argc < 2) || (argc > 11)) {
     printf(usage);
     return 1;
   }
@@ -121,6 +125,7 @@ int main(int argc,char **argv)
   bOnlyMissing = false;
   bNot = false;
   bOnlyPremium = false;
+  bOnlyWws = false;
 
   dbg_ix = -1;
 
@@ -141,6 +146,8 @@ int main(int argc,char **argv)
       bNot = true;
     else if (!strcmp(argv[curr_arg],"-only_premium"))
       bOnlyPremium = true;
+    else if (!strcmp(argv[curr_arg],"-only_wws"))
+      bOnlyWws = true;
     else
       break;
   }
@@ -200,6 +207,16 @@ int main(int argc,char **argv)
 
       if (feof(fptr))
         break;
+
+      if (bOnlyWws) {
+        if (!Contains(true,
+          line,line_len,
+          wws_str,WWS_STR_LEN,
+          &ix2)) {
+
+          continue;
+        }
+      }
 
       if ((line[0] >= 'a') && (line[0] <= 'z'))
         line[0] -= 'a' - 'A';
