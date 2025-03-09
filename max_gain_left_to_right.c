@@ -16,7 +16,7 @@ static char line[MAX_LINE_LEN];
 #define TAB 0x9
 
 static char usage[] =
-"usage: max_gain_left_to_right (-debug) (-verbose) (-no_sort) (-sort_by_avg) filename\n";
+"usage: max_gain_left_to_right (-debug) (-verbose) (-no_sort) (-sort_by_avg) (-date_last) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char malloc_failed1[] = "malloc of %d session info structures failed\n";
@@ -26,6 +26,7 @@ static char fmt1[] = "%10d %4d ";
 static char fmt2[] = "%10d %4d %10.2lf\n";
 
 static bool bSortByAvg;
+static bool bDateLast;
 
 struct digit_range {
   int lower;
@@ -86,7 +87,7 @@ int main(int argc,char **argv)
   int retval;
   char *cpt;
 
-  if ((argc < 2) || (argc > 6)) {
+  if ((argc < 2) || (argc > 7)) {
     printf(usage);
     return 1;
   }
@@ -95,6 +96,7 @@ int main(int argc,char **argv)
   bVerbose = false;
   bNoSort = false;
   bSortByAvg = false;
+  bDateLast = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-debug"))
@@ -105,6 +107,8 @@ int main(int argc,char **argv)
       bNoSort = true;
     else if (!strcmp(argv[curr_arg],"-sort_by_avg"))
       bSortByAvg = true;
+    else if (!strcmp(argv[curr_arg],"-date_last"))
+      bDateLast = true;
     else
       break;
   }
@@ -306,35 +310,68 @@ static int get_session_info(
   int n;
   int work;
 
-  for (n = 0; n < line_len; n++) {
-    if ((line[n] == TAB) || (line[n] == ' '))
-      break;
+  if (!bDateLast) {
+    for (n = 0; n < line_len; n++) {
+      if ((line[n] == TAB) || (line[n] == ' '))
+        break;
+    }
+
+    if (n == line_len)
+      return 1;
+
+    line[n++] = 0;
+
+    session_info->gain_start_date = cvt_date(line);
+
+    for (m = n; n < line_len; n++) {
+      if ((line[n] == TAB) || (line[n] == ' '))
+        break;
+    }
+
+    if (n == line_len)
+      return 2;
+
+    line[n++] = 0;
+
+    sscanf(&line[m],"%d",&work);
+
+    session_info->starting_amount = work;
+
+    sscanf(&line[n],"%d",&work);
+
+    session_info->ending_amount = work;
   }
+  else {
+    for (n = line_len - 1; n >= 0; n--) {
+      if ((line[n] == TAB) || (line[n] == ' '))
+        break;
+    }
 
-  if (n == line_len)
-    return 1;
+    if (n < 0)
+      return 3;
 
-  line[n++] = 0;
+    line[n--] = 0;
 
-  session_info->gain_start_date = cvt_date(line);
+    session_info->gain_start_date = cvt_date(&line[n+2]);
 
-  for (m = n; n < line_len; n++) {
-    if ((line[n] == TAB) || (line[n] == ' '))
-      break;
+    for ( ; n >= 0; n--) {
+      if ((line[n] == TAB) || (line[n] == ' '))
+        break;
+    }
+
+    if (n < 0)
+      return 4;
+
+    line[n] = 0;
+
+    sscanf(&line[n+1],"%d",&work);
+
+    session_info->ending_amount = work;
+
+    sscanf(line,"%d",&work);
+
+    session_info->starting_amount = work;
   }
-
-  if (n == line_len)
-    return 2;
-
-  line[n++] = 0;
-
-  sscanf(&line[m],"%d",&work);
-
-  session_info->starting_amount = work;
-
-  sscanf(&line[n],"%d",&work);
-
-  session_info->ending_amount = work;
 
   return 0;
 }
