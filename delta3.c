@@ -13,7 +13,7 @@ static char save_dir[_MAX_PATH];
 #define MAX_LINE_LEN 1024
 static char line[MAX_LINE_LEN];
 
-static char usage[] = "usage: delta3 (-debug) (-terse) (-verbose) player_name filename\n";
+static char usage[] = "usage: delta3 (-debug) (-terse) (-verbose) (-delta_first) player_name filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static char in_chips[] = " in chips";
@@ -53,6 +53,7 @@ int main(int argc,char **argv)
   bool bDebug;
   bool bTerse;
   bool bVerbose;
+  bool bDeltaFirst;
   bool bHaveHoleCards;
   int player_name_ix;
   int player_name_len;
@@ -79,7 +80,7 @@ int main(int argc,char **argv)
   char hole_cards[6];
   bool bSkipping;
 
-  if ((argc < 3) || (argc > 6)) {
+  if ((argc < 3) || (argc > 7)) {
     printf(usage);
     return 1;
   }
@@ -87,6 +88,7 @@ int main(int argc,char **argv)
   bDebug = false;
   bTerse = false;
   bVerbose = false;
+  bDeltaFirst = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-debug"))
@@ -97,6 +99,8 @@ int main(int argc,char **argv)
       bVerbose = true;
       getcwd(save_dir,_MAX_PATH);
     }
+    else if (!strcmp(argv[curr_arg],"-delta_first"))
+      bDeltaFirst = true;
     else
       break;
   }
@@ -269,15 +273,23 @@ int main(int argc,char **argv)
 
         if (!bVerbose) {
           if (bTerse || !bHaveHoleCards)
-            printf("%d (%d %d)\n",delta,ending_balance,starting_balance);
+            printf("%d\n",delta);
+          else if (!bDeltaFirst)
+            printf("%s %10d\n",hole_cards,delta);
           else
-            printf("%s %10d (%10d %10d)\n",hole_cards,delta,ending_balance,starting_balance);
+            printf("%10d %s\n",delta,hole_cards);
         }
         else {
           if (!bHaveHoleCards)
-            printf("%10d %s/%s\n",delta,save_dir,argv[curr_arg]);
-          else
-            printf("%s %10d %s/%s\n",hole_cards,delta,save_dir,argv[curr_arg]);
+            printf("%10d (%d %d) %s/%s\n",delta,ending_balance,starting_balance,save_dir,argv[curr_arg]);
+          else if (!bDeltaFirst) {
+            printf("%s %10d (%10d %10d) %s/%s\n",
+              hole_cards,delta,ending_balance,starting_balance,save_dir,argv[curr_arg]);
+          }
+          else {
+            printf("%10d (%10d %10d) %s %s/%s\n",
+              delta,ending_balance,starting_balance,hole_cards,save_dir,argv[curr_arg]);
+          }
         }
 
         continue;
@@ -333,15 +345,23 @@ int main(int argc,char **argv)
 
         if (!bVerbose) {
           if (bTerse || !bHaveHoleCards)
-            printf("%d (%d %d)\n",delta,ending_balance,starting_balance);
+            printf("%d\n",delta);
+          else if (!bDeltaFirst)
+            printf("%s %10d\n",hole_cards,delta);
           else
-            printf("%s %10d (%10d %10d)\n",hole_cards,delta,ending_balance,starting_balance);
+            printf("%10d %s\n",delta,hole_cards);
         }
         else {
           if (!bHaveHoleCards)
-            printf("%10d %s/%s\n",delta,save_dir,argv[curr_arg]);
-          else
-            printf("%s %10d %s/%s\n",hole_cards,delta,save_dir,argv[curr_arg]);
+            printf("%10d (%d %d) %s/%s\n",delta,ending_balance,starting_balance,save_dir,argv[curr_arg]);
+          else if (!bDeltaFirst) {
+            printf("%s %10d (%10d %10d) %s/%s\n",
+              hole_cards,delta,ending_balance,starting_balance,save_dir,argv[curr_arg]);
+          }
+          else {
+            printf("%10d (%10d %10d) %s %s/%s\n",
+              delta,ending_balance,starting_balance,hole_cards,save_dir,argv[curr_arg]);
+          }
         }
 
         continue;
