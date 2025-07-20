@@ -8,7 +8,7 @@ static char line[MAX_LINE_LEN];
 static int crossings[MAX_MILLION_BOUNDARIES];
 
 static char usage[] =
-"usage: million_boundary_crossings (-verbose) (-terse) (-ge_valval) filename\n";
+"usage: million_boundary_crossings (-verbose) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
@@ -19,8 +19,6 @@ int main(int argc,char **argv)
   int n;
   int curr_arg;
   bool bVerbose;
-  bool bTerse;
-  int ge_val;
   FILE *fptr;
   int line_len;
   int line_no;
@@ -32,22 +30,16 @@ int main(int argc,char **argv)
   int dbg_million;
   int dbg;
 
-  if ((argc < 2) || (argc > 5)) {
+  if ((argc < 2) || (argc > 3)) {
     printf(usage);
     return 1;
   }
 
   bVerbose = false;
-  bTerse = false;
-  ge_val = -1;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-verbose"))
       bVerbose = true;
-    else if (!strcmp(argv[curr_arg],"-terse"))
-      bTerse = true;
-    else if (!strncmp(argv[curr_arg],"-ge_val",7))
-      sscanf(&argv[curr_arg][7],"%d",&ge_val);
     else
       break;
   }
@@ -57,14 +49,9 @@ int main(int argc,char **argv)
     return 2;
   }
 
-  if (bVerbose && bTerse) {
-    printf("can't specify both -verbose and -terse\n");
-    return 3;
-  }
-
   if ((fptr = fopen(argv[curr_arg],"r")) == NULL) {
     printf(couldnt_open,argv[curr_arg]);
-    return 4;
+    return 3;
   }
 
   for (n = 0; n < MAX_MILLION_BOUNDARIES; n++)
@@ -89,7 +76,7 @@ int main(int argc,char **argv)
       printf("ending_million (%d) > MAX_MILLION_BOUNDARIES (%d)\n",
         ending_million,MAX_MILLION_BOUNDARIES);
       fclose(fptr);
-      return 5;
+      return 4;
     }
 
     if (starting_million != ending_million) {
@@ -99,30 +86,18 @@ int main(int argc,char **argv)
 
       if (starting_million < ending_million) {
         for (starting_million++; starting_million <= ending_million; starting_million++) {
-          if (bVerbose) {
-            if ((ge_val == -1) || (starting_million >= ge_val))
-              printf("%s %d\n",date_str,starting_million);
-          }
-          else if (bTerse) {
-            if ((ge_val == -1) || (starting_million >= ge_val))
-              printf("%d\n",starting_million);
-          }
-          else
+          if (!bVerbose)
             crossings[starting_million]++;
+          else
+            printf("%s %d\n",date_str,starting_million);
         }
       }
       else {
         for (starting_million--; starting_million >= ending_million; starting_million--) {
-          if (bVerbose) {
-            if ((ge_val == -1) || (starting_million >= ge_val))
-              printf("%s %d\n",date_str,starting_million);
-          }
-          else if (bTerse) {
-            if ((ge_val == -1) || (starting_million >= ge_val))
-              printf("%d\n",starting_million);
-          }
+          if (!bVerbose)
+            crossings[starting_million+1]++;
           else
-            crossings[starting_million]++;
+            printf("%s %d\n",date_str,starting_million);
         }
       }
     }
