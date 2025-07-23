@@ -22,6 +22,8 @@ static char summary[] = "*** SUMMARY ***";
 #define SUMMARY_LEN (sizeof (summary) - 1)
 static char street_marker[] = "*** ";
 #define STREET_MARKER_LEN (sizeof (street_marker) - 1)
+static char posts_the_ante[] = " posts the ante ";
+#define POSTS_THE_ANTE_LEN (sizeof (posts_the_ante) - 1)
 static char posts[] = " posts ";
 #define POSTS_LEN (sizeof (posts) - 1)
 static char dealt_to[] = "Dealt to ";
@@ -79,6 +81,7 @@ int main(int argc,char **argv)
   double dwork2;
   char hole_cards[6];
   bool bSkipping;
+  int ante;
 
   if ((argc < 3) || (argc > 7)) {
     printf(usage);
@@ -141,9 +144,6 @@ int main(int argc,char **argv)
     if (line_no == dbg_line_no)
       dbg = 1;
 
-    if (bDebug)
-      printf("line %d %s\n",line_no,line);
-
     if (Contains(true,
       line,line_len,
       argv[player_name_ix],player_name_len,
@@ -156,6 +156,7 @@ int main(int argc,char **argv)
 
         bSkipping = false;
 
+        ante = 0;
         street = 0;
         num_street_markers = 0;
         spent_this_street = 0;
@@ -179,6 +180,20 @@ int main(int argc,char **argv)
       }
       else if (bSkipping)
         continue;
+      else if (Contains(true,
+        line,line_len,
+        posts_the_ante,POSTS_THE_ANTE_LEN,
+        &ix)) {
+        ante = get_work_amount(line,line_len);
+        spent_this_hand = ante;
+
+        if (bDebug) {
+          printf("line %d street %d POSTS ante = %d, spent_this_hand = %d\n",
+            line_no,street,ante,spent_this_hand);
+        }
+
+        continue;
+      }
       else if (Contains(true,
         line,line_len,
         posts,POSTS_LEN,
