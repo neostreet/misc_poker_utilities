@@ -27,6 +27,8 @@ int main(int argc,char **argv)
   int folded_before_flop_count;
   int saw_flop_count;
   double dwork;
+  int total_num_hands;
+  int total_saw_flop_count;
 
   if (argc != 3) {
     printf(usage);
@@ -37,6 +39,9 @@ int main(int argc,char **argv)
     printf(couldnt_open,argv[2]);
     return 2;
   }
+
+  total_num_hands = 0;
+  total_saw_flop_count = 0;
 
   for ( ; ; ) {
     GetLine(fptr0,filename,&filename_len,MAX_FILENAME_LEN);
@@ -79,7 +84,11 @@ int main(int argc,char **argv)
 
     fclose(fptr);
 
+
     saw_flop_count = num_hands - folded_before_flop_count;
+
+    total_saw_flop_count += saw_flop_count;
+    total_num_hands += num_hands;
 
     if (!num_hands)
       dwork = (double)0;
@@ -90,6 +99,13 @@ int main(int argc,char **argv)
   }
 
   fclose(fptr0);
+
+  if (!total_num_hands)
+    dwork = (double)0;
+  else
+    dwork = (double)total_saw_flop_count / (double)total_num_hands * (double)100;
+
+  printf("\n%6.2lf%% (saw flop %d times in %d total hands)\n",dwork,total_saw_flop_count,total_num_hands);
 
   return 0;
 }
