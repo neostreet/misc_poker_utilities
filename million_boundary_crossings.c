@@ -8,7 +8,7 @@ static char line[MAX_LINE_LEN];
 static int crossings[MAX_MILLION_BOUNDARIES];
 
 static char usage[] =
-"usage: million_boundary_crossings (-verbose) filename\n";
+"usage: million_boundary_crossings (-verbose) (-up) (-down) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
@@ -19,6 +19,9 @@ int main(int argc,char **argv)
   int n;
   int curr_arg;
   bool bVerbose;
+  bool bUp;
+  bool bDown;
+  bool bEither;
   FILE *fptr;
   int line_len;
   int line_no;
@@ -30,16 +33,25 @@ int main(int argc,char **argv)
   int dbg_million;
   int dbg;
 
-  if ((argc < 2) || (argc > 3)) {
+  if ((argc < 2) || (argc > 5)) {
     printf(usage);
     return 1;
   }
 
+  dbg_million = 0;
+
   bVerbose = false;
+  bUp = false;
+  bDown = false;
+  bEither = true;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-verbose"))
       bVerbose = true;
+    else if (!strcmp(argv[curr_arg],"-up"))
+      bUp = true;
+    else if (!strcmp(argv[curr_arg],"-down"))
+      bDown = true;
     else
       break;
   }
@@ -49,9 +61,17 @@ int main(int argc,char **argv)
     return 2;
   }
 
+  if (bUp && bDown) {
+    printf("can't specify both -up and -down\n");
+    return 3;
+  }
+
+  if (bUp || bDown)
+    bEither = false;
+
   if ((fptr = fopen(argv[curr_arg],"r")) == NULL) {
     printf(couldnt_open,argv[curr_arg]);
-    return 3;
+    return 4;
   }
 
   for (n = 0; n < MAX_MILLION_BOUNDARIES; n++)
@@ -76,15 +96,18 @@ int main(int argc,char **argv)
       printf("ending_million (%d) > MAX_MILLION_BOUNDARIES (%d)\n",
         ending_million,MAX_MILLION_BOUNDARIES);
       fclose(fptr);
-      return 4;
+      return 5;
     }
 
-    if (starting_million != ending_million) {
-      if (((starting_million < dbg_million) && (ending_million >= dbg_million)) ||
-          ((starting_million >= dbg_million) && (ending_million < dbg_million)))
-        dbg = 1;
+    if (starting_million == ending_million)
+      continue;
 
-      if (starting_million < ending_million) {
+    if (((starting_million < dbg_million) && (ending_million >= dbg_million)) ||
+        ((starting_million >= dbg_million) && (ending_million < dbg_million)))
+      dbg = 1;
+
+    if (starting_million < ending_million) {
+      if (bEither || bUp) {
         for (starting_million++; starting_million <= ending_million; starting_million++) {
           if (!bVerbose)
             crossings[starting_million]++;
@@ -92,7 +115,9 @@ int main(int argc,char **argv)
             printf("%s %d\n",date_str,starting_million);
         }
       }
-      else {
+    }
+    else {
+      if (bEither || bDown) {
         for (starting_million--; starting_million >= ending_million; starting_million--) {
           if (!bVerbose)
             crossings[starting_million+1]++;
