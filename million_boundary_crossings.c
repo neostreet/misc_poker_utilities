@@ -10,7 +10,7 @@ static int crossings[MAX_MILLION_BOUNDARIES];
 #define FIRST_YEAR 2009
 
 static char usage[] =
-"usage: million_boundary_crossings (-verbose) (-up) (-down) (-by_year) filename\n";
+"usage: million_boundary_crossings (-verbose) (-up) (-down) (-by_year) (-yearyear) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
@@ -25,6 +25,8 @@ int main(int argc,char **argv)
   bool bDown;
   bool bEither;
   bool bByYear;
+  bool bYear;
+  int specified_year;
   FILE *fptr;
   int line_len;
   int line_no;
@@ -42,7 +44,7 @@ int main(int argc,char **argv)
   int low;
   int high;
 
-  if ((argc < 2) || (argc > 6)) {
+  if ((argc < 2) || (argc > 7)) {
     printf(usage);
     return 1;
   }
@@ -54,6 +56,7 @@ int main(int argc,char **argv)
   bDown = false;
   bEither = true;
   bByYear = false;
+  bYear = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-verbose"))
@@ -64,6 +67,10 @@ int main(int argc,char **argv)
       bDown = true;
     else if (!strcmp(argv[curr_arg],"-by_year"))
       bByYear = true;
+    else if (!strncmp(argv[curr_arg],"-year",5)) {
+      bYear = true;
+      sscanf(&argv[curr_arg][5],"%d",&specified_year);
+    }
     else
       break;
   }
@@ -81,9 +88,14 @@ int main(int argc,char **argv)
   if (bUp || bDown)
     bEither = false;
 
+  if (bByYear && bYear) {
+    printf("can't specify both -by_year and -year\n");
+    return 4;
+  }
+
   if ((fptr = fopen(argv[curr_arg],"r")) == NULL) {
     printf(couldnt_open,argv[curr_arg]);
-    return 4;
+    return 5;
   }
 
   for (n = 0; n < MAX_MILLION_BOUNDARIES; n++)
@@ -104,6 +116,9 @@ int main(int argc,char **argv)
 
     sscanf(line,"%d-%d-%d\t%d\t%d",&year,&month,&day,&starting_balance,&ending_balance);
 
+    if (bYear && (year != specified_year))
+      continue;
+
     starting_million = starting_balance / 1000000;
     ending_million = ending_balance / 1000000;
 
@@ -111,7 +126,7 @@ int main(int argc,char **argv)
       printf("ending_million (%d) > MAX_MILLION_BOUNDARIES (%d)\n",
         ending_million,MAX_MILLION_BOUNDARIES);
       fclose(fptr);
-      return 5;
+      return 6;
     }
 
     if (starting_million == ending_million)
@@ -132,7 +147,7 @@ int main(int argc,char **argv)
 
               if ((adjusted_year < 0) || (adjusted_year >= MAX_MILLION_BOUNDARIES)) {
                 printf("year out of bounds on line %d\n",line_no);
-                return 6;
+                return 7;
               }
 
               crossings[adjusted_year]++;
@@ -157,7 +172,7 @@ int main(int argc,char **argv)
 
               if ((adjusted_year < 0) || (adjusted_year >= MAX_MILLION_BOUNDARIES)) {
                 printf("year out of bounds on line %d\n",line_no);
-                return 6;
+                return 8;
               }
 
               crossings[adjusted_year]++;
