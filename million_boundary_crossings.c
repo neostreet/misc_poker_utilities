@@ -39,6 +39,8 @@ int main(int argc,char **argv)
   int ending_million;
   int dbg_million;
   int dbg;
+  int low;
+  int high;
 
   if ((argc < 2) || (argc > 6)) {
     printf(usage);
@@ -175,12 +177,17 @@ int main(int argc,char **argv)
 
   if (!bVerbose) {
     if (!bByYear) {
-      for (n = MAX_MILLION_BOUNDARIES - 1; (n > 0); n--) {
-        if (crossings[n])
+      for (low = 1; low < MAX_MILLION_BOUNDARIES; low++) {
+        if (crossings[low])
           break;
       }
 
-      for (m = 1; m <= n; m++)
+      for (high = MAX_MILLION_BOUNDARIES - 1; (high > 0); high--) {
+        if (crossings[high])
+          break;
+      }
+
+      for (m = low; m <= high; m++)
         printf("%2d %8d\n",crossings[m],m * 1000000);
     }
     else {
