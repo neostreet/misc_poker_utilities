@@ -71,12 +71,12 @@ int main(int argc,char **argv)
 
   fclose(fptr);
 
+  work = (double)above_water_count / (double)count;
+
   if (!bVerbose)
-    printf("%d of %d\n",above_water_count,count);
-  else {
-    work = (double)above_water_count / (double)count;
+    printf("%d of %d (%lf)\n",above_water_count,count,work);
+  else
     printf("\n%lf (%d of %d)\n",work,above_water_count,count);
-  }
 
   return 0;
 }
