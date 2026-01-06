@@ -33,7 +33,7 @@ int main(int argc,char **argv)
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-verbose"))
       bVerbose = true;
-    if (!strcmp(argv[curr_arg],"-not"))
+    else if (!strcmp(argv[curr_arg],"-not"))
       bNot = true;
     else
       break;
