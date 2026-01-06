@@ -69,7 +69,7 @@ int main(int argc,char **argv)
       above_water_count++;
 
       if (bVerbose)
-        printf("%s\n",line);
+        printf("%d %s\n",total,line);
     }
   }
 
