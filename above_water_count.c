@@ -4,7 +4,7 @@
 #define MAX_LINE_LEN 1024
 static char line[MAX_LINE_LEN];
 
-static char usage[] = "usage: above_water_count (-verbose) filename\n";
+static char usage[] = "usage: above_water_count (-verbose) (-not) filename\n";
 static char couldnt_open[] = "couldn't open %s\n";
 
 static void GetLine(FILE *fptr,char *line,int *line_len,int maxllen);
@@ -13,6 +13,7 @@ int main(int argc,char **argv)
 {
   int curr_arg;
   bool bVerbose;
+  bool bNot;
   FILE *fptr;
   int line_len;
   int val;
@@ -21,16 +22,19 @@ int main(int argc,char **argv)
   int above_water_count;
   double work;
 
-  if ((argc < 2) || (argc > 3)) {
+  if ((argc < 2) || (argc > 4)) {
     printf(usage);
     return 1;
   }
 
   bVerbose = false;
+  bNot = false;
 
   for (curr_arg = 1; curr_arg < argc; curr_arg++) {
     if (!strcmp(argv[curr_arg],"-verbose"))
       bVerbose = true;
+    if (!strcmp(argv[curr_arg],"-not"))
+      bNot = true;
     else
       break;
   }
@@ -61,7 +65,7 @@ int main(int argc,char **argv)
 
     total += val;
 
-    if (total > 0) {
+    if ((!bNot && (total > 0)) || (bNot && (total <= 0))) {
       above_water_count++;
 
       if (bVerbose)
